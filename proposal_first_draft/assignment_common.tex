@@ -1,0 +1,352 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% AWAB QURESHI ASSIGNMENT COMMON FILE %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% to use, just do \input{path/to/file}
+
+%% Document Basics
+
+% Better document class that can go up to 14pt, 17pt, 20pt
+\documentclass[]{extarticle}
+% The basic LaTeX/TeX engine expects (or perhaps is meant to process) pure ASCII input,
+% whenever you use unicode (non ASCII) characters, you need to use the inputenc package,
+% see https://tex.stackexchange.com/questions/370278/is-there-any-reason-to-use-inputenc
+\usepackage[utf8]{inputenx}
+% Set the margin away from that terrible built-in margin
+% \usepackage[margin=1in]{geometry}
+\usepackage{fullpage}
+
+%% Formatting Packages
+
+\usepackage{lmodern}
+% The default fontencoding is only 7-bit, this sets it to 8-bit,
+% see https://tex.stackexchange.com/questions/664/why-should-i-use-usepackaget1fontenc
+\usepackage[T1]{fontenc}
+
+% The full ams set includes so many symbols that you need 
+% (you don't need amsmath with mathtools but eh)
+\usepackage{amsmath, amsfonts, amssymb, amsthm, mathtools}
+
+% More symbols, use \mathscr{B} for example
+\usepackage{mathrsfs}
+
+% Lets you write inline codestyle with \verb|a|
+\usepackage{verbatim}
+
+% Symbols of Bra-ket Vectors of the form <a|b> and <a>
+\usepackage{braket}
+
+% The parskip package helps in implementing paragraph layouts where the paragraphs are separated by a vertical space instead of (or in addition to) indenting them.
+\usepackage{parskip}
+
+% Used for long urls to stay within the margin
+\usepackage{xurl}
+
+% Set the header on the top of every page
+\usepackage{fancyhdr}
+
+% Multicolumn Enviroments to split up pages
+\usepackage{multicol}
+
+% To add in pictures
+\usepackage{graphicx}
+
+% To properly align systems of equations
+\usepackage{systeme}
+
+% "provides non expandable macros and tests operating on "strings of tokens""
+% see https://texdoc.org/serve/xstring/0
+\usepackage{xstring}
+
+% Used to draw diagonal lines (“cancelling” a term) and arrows with limits
+\usepackage{cancel}
+
+% To draw cool diagrams
+\usepackage{tikz}
+% To draw trees easier
+\usepackage{forest}
+
+% Far more flexible when compared with enumerate
+% the option should make labels take up less horizontal space
+\usepackage[shortlabels]{enumitem}
+
+% To render out pseudocode well
+% https://tug.ctan.org/macros/latex/contrib/algorithm2e/doc/algorithm2e.pdf
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
+% utility commands to turn on and off algorithm numbering
+\makeatletter
+\newcommand{\RemoveAlgoNumber}{\renewcommand{\fnum@algocf}{\AlCapSty{\AlCapFnt\algorithmcfname}}}
+\newcommand{\RevertAlgoNumber}{\algocf@resetfnum}
+\makeatother
+
+\RemoveAlgoNumber % please don't number the algorithms, I'd rather do that myself with \label{} and \ref{} with \caption{}
+\DontPrintSemicolon % \; marks the end of a line but don't print it
+% Also note that \BlankLine prints a blank line
+\SetKwProg{Fn}{}{ : }{} % function with Fn should have no prefix nor suffix % in order to display function name correctly, run \SetKwFunction{nameCmd}{funcName} to make \nameCmd generate a syntax highlighted function with name funcName
+\SetKwInOut{Input}{Input} % input and output
+\SetKwInOut{Output}{Output}
+\SetKw{None}{None} % make \None a keyword
+\SetKw{True}{True} % make \True a keyword
+\SetKw{False}{False} % make \False a keyword
+\SetNoFillComment % comment with \tcc will look like /* aslkdja */ instead of placing */ at very end
+
+% To render and syntax highlight real code well too
+\usepackage{listings}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\lstset { %
+	frame=tb,
+	language=[11]C++,
+	aboveskip=3mm,
+	belowskip=0mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\bfseries,
+	commentstyle=\itshape\color{gray},
+	stringstyle=\itshape\color{darkgray},
+	directivestyle=\bfseries\itshape\color{darkgray},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=2
+}
+
+% Get rid of >> and << turning into ugly ligatures in listings
+\usepackage{microtype}
+\DisableLigatures[>,<]{encoding = T1,family=tt*}
+
+% colour time
+\usepackage{xcolor}
+
+% define darkmode colours
+\definecolor{bgcolour}{rgb}{0.11,0.11,0.11} %Background : almost black
+\definecolor{txtcolour}{rgb}{0.9,0.9,0.9} %Font : an off-white
+
+% set page colours
+% \pagecolor{bgcolour}
+% \color{txtcolour}
+
+% Change margin for different parts of document
+\usepackage{changepage}
+%\begin{adjustwidth}{left amount}{right amount}
+% \lipsum[2]
+% \end{adjustwidth}
+% https://tex.stackexchange.com/questions/588/how-can-i-change-the-margins-for-only-part-of-the-text
+
+\setlength{\columnseprule}{0.5pt}
+\def\columnseprulecolor{\color{white}}
+
+% Stop indenting paragraphs please
+% \setlength{\parindent}{0pt}
+% UPDATE: This might be done by parskip package instead now
+
+% LaTeX is a bit cramped, and I like 1.2 spacing.
+% At least it's not double spaced
+\usepackage{setspace}
+\setstretch{1.2}
+
+% Make links clickable but don't colour them
+% Note: You should load setspace before hyperref
+\usepackage[hidelinks]{hyperref}
+
+\pagenumbering{gobble}
+
+\theoremstyle{remark}
+\newtheorem{prp}{Proposition}
+
+\newtheorem{claim}{Claim}
+
+%% CUSTOM COMMANDS
+
+% Much easier equation alignment environment
+% \newcommand{\e}[1]{
+% 	\begin{equation*}
+% 		\begin{split}
+% 			#1
+% 		\end{split}
+% 	\end{equation*}
+% }
+\newcommand{\e}[1]{
+	\begin{align*}
+			#1
+	\end{align*}
+}
+
+% Piecewise functions!
+\newcommand{\pw}[1]{
+	\begin{cases}
+		#1
+	\end{cases}
+}
+
+% The sign of a number?
+\newcommand{\sign}{
+	\text{  sign }
+}
+
+% Span of a vector
+\newcommand{\Span}[1]{\text{span}(#1)}
+
+% Much nicer way to have auto resizing brackets
+\newcommand{\br}[1]{
+	\left( #1 \right)
+}
+
+% Align systems of equations
+\newcommand{\system}[1]{
+	% remember to use \+ and \- to escape them if you dont want to insert them in a term
+	% eg:
+	% (2 \+ a) x + (3 \+ b) y = 0
+	% \-a x + (\-2 \+ b) y = 0
+	% systeme splits the terms on a + or a -
+	% also have https://ctan.mirror.rafal.ca/macros/generic/systeme/systeme_fr.pdf 
+	\begin{equation*}
+		\sysalign{c,c} \systeme{#1}
+	\end{equation*}
+}
+
+% Proof enviroment I don't use
+\newcommand{\prf}[1]{
+	\begin{proof}
+		#1
+	\end{proof}
+}
+
+% Set operations
+\newcommand{\U}{\cup}
+\newcommand{\n}{\cap}
+
+% Thick characters
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Q}{\mathbb{Q}}
+
+% partial derrivatives
+\newcommand{\del}{\partial}
+\newcommand{\pd}[2]{\frac{\del #1}{\del #2}}
+\newcommand{\hess}{\text{Hess }}
+
+% Divides and doesn't divide
+\newcommand{\divs}{\mid}
+\newcommand{\ndivs}{\nmid}
+
+% Varphi useful
+\newcommand{\vp}{\varphi}
+
+% Something mod something
+% although \pmod is pretty good too
+\newcommand{\Mod}[1]{\ (\mathrm{mod}\ #1)}
+
+% This is where that Bra-Ket package comes in
+\newcommand{\pideal}[1]{\langle #1 \rangle}
+
+% Trace of a tensor
+\newcommand{\trace}{\text{trace}}
+
+% Rank of a tensor
+\newcommand{\rank}{\text{rank}}
+
+% Image of a map
+\newcommand{\image}{\text{Im }}
+
+% Cute little star at the right of the page
+\newcommand{\Qed}{
+	\begin{flushright}
+		$\large ★\bigstar$
+	\end{flushright}}
+
+% Why is default epsilon the symbol for set include
+\renewcommand{\epsilon}{\varepsilon}
+
+% Floor and cieling
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\ceil}[1]{\lceil #1 \rceil}
+
+% Pictures centered vertically in line
+\newcommand{\vcenteredinclude}[2]{\begingroup
+	\setbox0=\hbox{\includegraphics[#1]{#2}}%
+	\parb}
+
+% Norm ||x|| for topology
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+% Add scoped colour to math text with correct spacing
+% From https://tex.stackexchange.com/questions/21598/how-to-color-math-symbols
+\makeatletter % make the @ symbol just another letter
+\def\mathcolour#1#{\@mathcolour{#1}} % helper function
+\def\@mathcolour#1#2#3{% 
+	\protect\leavevmode
+	\begingroup
+	\color#1{#2}#3 % add colour to text in group environment for correct spacing
+	\endgroup
+}
+\makeatother
+
+% Create a nice large red box that screams "YOU LEFT THIS TODO"
+% From https://tex.stackexchange.com/questions/208128/how-to-make-an-empty-box
+\newcommand{\TODO}{\mathcolor{red}{
+		\raisebox{-5.5\unitlength}{
+			\framebox(20,20){}}
+	}}
+
+% Title (what no way)
+% \title{Assignment}
+% \author{awab qureshi}
+% \date{October 2022}
+
+% This lets you set headers over your pages
+% See more https://tex.stackexchange.com/questions/111320/how-to-print-the-section-name-without-the-section-number-in-a-fancyhdr-header
+% \pagestyle{fancy}
+
+% so that fancyhead stops warning me about too little space
+% \setlength{\headheight}{15pt}
+
+%% This style sucked
+% \fancyhead{}% clear
+% \fancyhead[L]{{Awab Q.}}
+% \fancyhead[R]{\rightmark}
+
+% Nice header with section name and person name
+% \renewcommand{\sectionmark}[1]{\markright{#1}}
+% \fancyhf{}
+% \rhead{\fancyplain{}{Awab Q.}}
+% \lhead{\fancyplain{}{\rightmark}}
+
+% Remove the section numbering please
+% Better than using \section*
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\Large\bfseries}{}{0pt}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\itshape}{}{0pt}{}
+
+% Place each section on a new page.
+% Seems weird but assignments often need each question on a page by itself
+% \AddToHook{cmd/section/before}{\clearpage}
+
+%%%%%%%%%%%%%%%%%%%
+%%  EXAMPLE USE  %%
+%%%%%%%%%%%%%%%%%%%
+%
+% \input{path/to/common}
+%
+% \begin{document}
+%
+% % \maketitle
+%
+% \section{a}
+%
+% \pagebreak
+% aaslkdj
+% \pagebreak
+%
+% \section{b}
+%
+% \pagebreak
+%
+% \end{document}
+%
+%%%%%%%%%%%%%%%%%%
