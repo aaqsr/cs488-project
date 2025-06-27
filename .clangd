@@ -1,0 +1,40 @@
+# Options for both C and C++
+CompileFlags:
+  Add: [
+        -std=c++20,
+        # -xc++,
+        -fprebuilt-module-path=.,
+        -Wall,
+        -Wextra,
+        -Wpedantic
+        -I.,
+        -ferror-limit=0,
+        -fstack-protector-strong,
+      ]
+
+Index:
+  Background: Build
+  StandardLibrary: Yes
+
+Diagnostics:
+  ClangTidy:
+    Add: [
+    # https://clang.llvm.org/extra/clang-tidy/checks/list.html
+      performance*,
+      bugprone*,
+      concurrency*,
+      darwin*,
+      portability*,
+      cppcoreguidelines*,
+      readability*,
+      misc*, # this one's a lilttle suspect
+      modernize*,
+      ]
+    Remove: [
+      bugprone-easily-swappable-parameters,
+      cppcoreguidelines-pro-bounds-pointer-arithmetic, # do not use ptr arithmetic bruh
+      cppcoreguidelines-avoid-magic-numbers, # nAmEd CoNsTanT
+      ]
+
+Hover:
+  ShowAKA: true
