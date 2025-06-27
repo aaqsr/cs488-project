@@ -1,40 +1,66 @@
-# Options for both C and C++
-CompileFlags:
-  Add: [
-        -std=c++20,
-        # -xc++,
-        -fprebuilt-module-path=.,
-        -Wall,
-        -Wextra,
-        -Wpedantic
-        -I.,
-        -ferror-limit=0,
-        -fstack-protector-strong,
-      ]
-
+# Common settings
 Index:
   Background: Build
-  StandardLibrary: Yes
+  StandardLibrary: True
 
 Diagnostics:
   ClangTidy:
     Add: [
     # https://clang.llvm.org/extra/clang-tidy/checks/list.html
       performance*,
+      readability*,
+      modernize*,
       bugprone*,
       concurrency*,
       darwin*,
-      portability*,
-      cppcoreguidelines*,
-      readability*,
       misc*, # this one's a lilttle suspect
-      modernize*,
+      portability*,
       ]
     Remove: [
+      modernize-use-trailing-return-type,
+      readability-identifier-length,
       bugprone-easily-swappable-parameters,
-      cppcoreguidelines-pro-bounds-pointer-arithmetic, # do not use ptr arithmetic bruh
-      cppcoreguidelines-avoid-magic-numbers, # nAmEd CoNsTanT
+      readability-magic-numbers
       ]
 
 Hover:
   ShowAKA: true
+---
+# Fragment specific to C source files
+If:
+  PathMatch: .*\.c
+
+CompileFlags:
+  Add: [
+        -std=c17,
+        -Wall,
+        -Wextra,
+        -Wpedantic
+      ]
+---
+# Fragment specific to C++ source files
+If:
+  PathMatch: [.*\.cc, .*\.cpp]
+
+CompileFlags:
+  Add: [
+      -std=c++20,
+      # -xc++,
+      -fprebuilt-module-path=.,
+      -Wall,
+      -Wextra,
+      -Wpedantic
+    ]
+
+Diagnostics:
+  ClangTidy:
+    Add: [
+    # https://clang.llvm.org/extra/clang-tidy/checks/list.html
+      cppcoreguidelines*,
+      ]
+    Remove: [
+      cppcoreguidelines-owning-memory,
+      cppcoreguidelines-pro-bounds-pointer-arithmetic, # do not use ptr arithmetic bruh
+      cppcoreguidelines-avoid-magic-numbers, # nAmEd CoNsTanT
+      ]
+
