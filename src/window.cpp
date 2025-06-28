@@ -40,8 +40,8 @@ Window::Window()
     glDepthRange(0.0, 1.0);
     glClearDepth(1.0); // clear depth buffer to 1.0 (far plane)
 
-    // Enable VSync
-    // glfwSwapInterval(1);
+    // Disable VSync for them FPS wooooo (TODO: good idea??)
+    glfwSwapInterval(0);
 
     // Callback when window resizes
     // glfwSetFramebufferSizeCallback(

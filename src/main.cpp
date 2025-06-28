@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include "controller.hpp"
 #include "mesh.hpp"
 #include "shader.hpp"
 #include "vertex.hpp"
@@ -7,7 +8,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -15,6 +15,7 @@
 void run()
 {
     Window& window = Window::GetInstance();
+    Controller& controller = Controller::GetInstance();
 
     Shader rainbowShader{
       std::filesystem::path{"shaders/vertex/perspectiveRainbowTriTest.glsl"},
@@ -33,7 +34,6 @@ void run()
       { {-0.7F, 0.5F, 0.0F}, {1.0F, 1.0F, 0.0F, 1.0F}}  // Yellow
     };
 
-
     // Indices for two triangles forming a square
     std::vector<unsigned int> indices1 = {
       0, 1, 2, // First triangle (bottom-left, bottom-right, top-right)
@@ -47,8 +47,28 @@ void run()
     mesh.setupMesh();
 
     Camera camera;
+    controller.setMainCamera(&camera);
+
+    float lastFrameTime = glfwGetTime();
+
+    float lastTimeFramePerformanceComputed = glfwGetTime();
+    int nbFrames = 0;
 
     while (!window.shouldClose()) {
+        //  Calculate delta time
+        float currentFrameTime = static_cast<float>(glfwGetTime());
+        float deltaTime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
+
+        nbFrames++;
+        if (currentFrameTime - lastTimeFramePerformanceComputed >= 1.0F) {
+            printf("%f ms/frame\n", 1000.0 / double(nbFrames));
+            nbFrames = 0;
+            lastTimeFramePerformanceComputed += 1.0;
+        }
+
+        controller.update(deltaTime);
+
         // not clearing the back buffer causes trails
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
