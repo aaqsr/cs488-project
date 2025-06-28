@@ -12,14 +12,12 @@ int main()
 {
     Window& window = Window::GetInstance();
 
-    Shader rainbowShader;
-    Shader flatColourShader;
-
-    rainbowShader.loadFromFile("shaders/vertex/rainbowTriTest.glsl",
-                               "shaders/fragment/rainbowTriTest.glsl");
-
-    flatColourShader.loadFromFile("shaders/vertex/flatTriTest.glsl",
-                                  "shaders/fragment/flatTriTest.glsl");
+    Shader rainbowShader{
+      std::filesystem::path{"shaders/vertex/rainbowTriTest.glsl"},
+      std::filesystem::path{"shaders/fragment/rainbowTriTest.glsl"}};
+    Shader flatColourShader{
+      std::filesystem::path{"shaders/vertex/flatTriTest.glsl"},
+      std::filesystem::path{"shaders/fragment/flatTriTest.glsl"}};
 
     std::vector<Vertex> vertices1 = {
       // Bottom-left

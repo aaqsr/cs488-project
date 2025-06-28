@@ -1,11 +1,15 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 class Shader
 {
   public:
-    Shader() = default;
+    Shader(const std::string& vertexSource, const std::string& fragmentSource);
+
+    Shader(const std::filesystem::path& vertexPath,
+           const std::filesystem::path& fragmentPath);
 
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
@@ -17,8 +21,8 @@ class Shader
     void loadFromSource(const std::string& vertexSource,
                         const std::string& fragmentSource);
 
-    void loadFromFile(const std::string& vertexPath,
-                      const std::string& fragmentPath);
+    void loadFromFile(const std::filesystem::path& vertexPath,
+                      const std::filesystem::path& fragmentPath);
 
     void use() const;
 

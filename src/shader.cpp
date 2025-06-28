@@ -35,11 +35,12 @@ namespace
     return shader;
 }
 
-std::string readFile(const std::string& filePath)
+std::string readFile(const std::filesystem::path& filePath)
 {
     std::ifstream file(filePath);
     if (!file.is_open()) {
-        throw std::runtime_error{"ERROR: Could not open file: " + filePath};
+        throw std::runtime_error{"ERROR: Could not open file: " +
+                                 filePath.string()};
     }
 
     std::stringstream buffer;
@@ -49,6 +50,18 @@ std::string readFile(const std::string& filePath)
     return buffer.str();
 }
 } // namespace
+
+Shader::Shader(const std::string& vertexSource,
+               const std::string& fragmentSource)
+{
+    loadFromSource(vertexSource, fragmentSource);
+}
+
+Shader::Shader(const std::filesystem::path& vertexPath,
+               const std::filesystem::path& fragmentPath)
+{
+    loadFromFile(vertexPath, fragmentPath);
+}
 
 Shader::~Shader()
 {
@@ -83,8 +96,8 @@ void Shader::loadFromSource(const std::string& vertexSource,
     glDeleteShader(fragmentShader);
 }
 
-void Shader::loadFromFile(const std::string& vertexPath,
-                          const std::string& fragmentPath)
+void Shader::loadFromFile(const std::filesystem::path& vertexPath,
+                          const std::filesystem::path& fragmentPath)
 {
     std::string vertexSource = readFile(vertexPath);
     std::string fragmentSource = readFile(fragmentPath);
