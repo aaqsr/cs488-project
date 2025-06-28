@@ -23,7 +23,7 @@ add_executable(CS488
 
 # Headers
 target_include_directories(CS488
-    PUBLIC
+    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/glfw/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/glew/include
@@ -33,7 +33,6 @@ target_include_directories(CS488
 
 # Link libs
 target_link_libraries(CS488 glfw libglew_static)
-
 
 # Generate compile_commands.json in the build directory
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
@@ -45,3 +44,5 @@ add_custom_command(TARGET CS488 POST_BUILD
         "${CMAKE_BINARY_DIR}/compile_commands.json"
         "${CMAKE_SOURCE_DIR}/compile_commands.json"
 )
+
+file(CREATE_LINK "${CMAKE_SOURCE_DIR}/shaders" "${CMAKE_BINARY_DIR}/shaders" SYMBOLIC)
