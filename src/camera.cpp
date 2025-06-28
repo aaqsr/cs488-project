@@ -1,7 +1,5 @@
 #include "camera.hpp"
-
 #include <linalg.h>
-
 #include <numbers>
 
 namespace
@@ -23,57 +21,91 @@ float4x4 computePerspectiveMatrix(float fovy, float aspect, float zNear,
     return m;
 }
 
-float4x4 computeLookAtMatrix(const float3& _eye, const float3& _center,
-                             const float3& _up)
+float4x4 computeViewMatrix(const float3& position,
+                           const Quaternion& orientation)
 {
-    // transformation to the camera coordinate
-    float4x4 m;
-    const float3 f = normalize(_center - _eye);
-    const float3 upp = normalize(_up);
-    const float3 s = normalize(cross(f, upp));
-    const float3 u = cross(s, f);
-
-    m[0] = {s.x, s.y, s.z, 0.0F};
-    m[1] = {u.x, u.y, u.z, 0.0F};
-    m[2] = {-f.x, -f.y, -f.z, 0.0F};
-    m[3] = {0.0F, 0.0F, 0.0F, 1.0F};
-    m = transpose(m);
+    const float4x4 rotationMatrix = orientation.toMatrix4x4();
 
     // translation according to the camera location
-    const float4x4 t = float4x4{
-      {   1.0F,    0.0F,    0.0F, 0.0F},
-      {   0.0F,    1.0F,    0.0F, 0.0F},
-      {   0.0F,    0.0F,    1.0F, 0.0F},
-      {-_eye.x, -_eye.y, -_eye.z, 1.0F}
+    const float4x4 translationMatrix = float4x4{
+      {       1.0F,        0.0F,        0.0F, 0.0F},
+      {       0.0F,        1.0F,        0.0F, 0.0F},
+      {       0.0F,        0.0F,        1.0F, 0.0F},
+      {-position.x, -position.y, -position.z, 1.0F}
     };
 
-    m = mul(m, t);
-    return m;
+    // view matrix is the inverse of the camera transform
+    // rotation matrix is orthogonal, so its inverse is just its transpose
+    const float4x4 rotationTranspose = transpose(rotationMatrix);
+
+    return mul(rotationTranspose, translationMatrix);
 }
+
 } // namespace
 
-void Camera::updateLookAt()
+Camera::Camera()
+  : orientation{Quaternion::identity()},
+    perspectiveMatrix{
+      computePerspectiveMatrix(fov, aspectRatio, nearPlane, farPlane)}
+// init with identity quaternion
 {
-    lookAtMatrix = computeLookAtMatrix(pos, lookAt, up);
+    updateViewMatrix();
 }
 
-Camera::Camera()
-  : perspectiveMatrix{computePerspectiveMatrix(fov, aspectRatio, nearPlane,
-                                               farPlane)},
-    lookAtMatrix{computeLookAtMatrix(pos, lookAt, up)}
+void Camera::updateViewMatrix()
 {
+    viewMatrix = computeViewMatrix(position, orientation);
+}
+
+void Camera::updateDirectionVectors() const
+{
+    if (!vectorsNeedUpdate) {
+        return;
+    }
+
+    front = orientation.forward();
+    right = orientation.right();
+    up = orientation.up();
+
+    vectorsNeedUpdate = false;
+}
+
+void Camera::setPosition(const linalg::aliases::float3& pos)
+{
+    position = pos;
+    updateViewMatrix();
+}
+
+void Camera::move(const linalg::aliases::float3& displacement)
+{
+    position = position + displacement;
+    updateViewMatrix();
+}
+
+void Camera::setOrientation(const Quaternion& quat)
+{
+    orientation = quat.normalized();
+    vectorsNeedUpdate = true;
+    updateViewMatrix();
+}
+
+void Camera::rotate(const Quaternion& deltaRotation)
+{
+    orientation = (deltaRotation * orientation).normalized();
+    vectorsNeedUpdate = true;
+    updateViewMatrix();
+}
+
+void Camera::rotateAroundAxis(const linalg::aliases::float3& axis,
+                              float angleRadians)
+{
+    const Quaternion axisRotation =
+      Quaternion::fromAxisAngle(axis, angleRadians);
+    rotate(axisRotation);
 }
 
 void Camera::setUniforms(Shader& shader) const
 {
-    // TODO: projection doesn't change?? Why send each time? Can we not?
     shader.setUniform("projection", perspectiveMatrix);
-    shader.setUniform("view", lookAtMatrix);
+    shader.setUniform("view", viewMatrix);
 }
-
-// void Camera::moveY(float dist)
-// {
-//     pos += dist;
-//     lookAt += dist;
-//     updateLookAt();
-// }

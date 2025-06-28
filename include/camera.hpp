@@ -1,8 +1,10 @@
 #pragma once
 
-#include "linalg.h"
+#include "quaternion.hpp"
 #include "shader.hpp"
 #include "window.hpp"
+
+#include <linalg.h>
 
 class Camera
 {
@@ -14,28 +16,62 @@ class Camera
     float nearPlane = 5e-5F;
     float farPlane = 100.0F;
 
-    linalg::aliases::float3 up{0.0F, 1.0F, 0.0F};
-
-    linalg::aliases::float3 pos{0.0F, 0.0F, 1.5F};
-    linalg::aliases::float3 lookAt{0.0F, 0.0F, 0.0F};
+    linalg::aliases::float3 position{0.0F, 0.0F, 1.5F};
+    Quaternion orientation{0.0F, 0.0F, 0.0F, 1.0F};
 
     linalg::aliases::float4x4 perspectiveMatrix;
-    linalg::aliases::float4x4 lookAtMatrix;
+    linalg::aliases::float4x4 viewMatrix;
 
-    void updateLookAt();
+    // cached for performance for things that need it, hence mutable
+    // (TODO: does this make a difference?)
+    mutable bool vectorsNeedUpdate = true;
+    mutable linalg::aliases::float3 front{0.0F, 0.0F, -1.0F};
+    mutable linalg::aliases::float3 up{0.0F, 1.0F, 0.0F};
+    mutable linalg::aliases::float3 right{1.0F, 0.0F, 0.0F};
+
+    void updateViewMatrix();
+    void updateDirectionVectors() const;
 
   public:
     Camera();
 
-    // void move(linalg::aliases::float3 displacement);
+    void setPosition(const linalg::aliases::float3& pos);
+    void move(const linalg::aliases::float3& displacement);
+    void setOrientation(const Quaternion& quat);
+    void rotate(const Quaternion& deltaRotation);
+    void rotateAroundAxis(const linalg::aliases::float3& axis,
+                          float angleRadians);
 
+    [[nodiscard]] const linalg::aliases::float3& getPosition() const
+    {
+        return position;
+    }
+    [[nodiscard]] const Quaternion& getOrientation() const
+    {
+        return orientation;
+    }
+    [[nodiscard]] const linalg::aliases::float3& getFront() const
+    {
+        updateDirectionVectors();
+        return front;
+    }
+    [[nodiscard]] const linalg::aliases::float3& getUp() const
+    {
+        updateDirectionVectors();
+        return up;
+    }
+    [[nodiscard]] const linalg::aliases::float3& getRight() const
+    {
+        updateDirectionVectors();
+        return right;
+    }
     [[nodiscard]] const linalg::aliases::float4x4& getPerspectiveMatrix() const
     {
         return perspectiveMatrix;
     }
-    [[nodiscard]] const linalg::aliases::float4x4& getLookAtMatrix() const
+    [[nodiscard]] const linalg::aliases::float4x4& getViewMatrix() const
     {
-        return lookAtMatrix;
+        return viewMatrix;
     }
 
     void setUniforms(Shader& shader) const;
