@@ -19,7 +19,7 @@ namespace
 
     if (success == 0) {
         std::array<GLchar, 1024> infoLog{};
-        glGetShaderInfoLog(shader, sizeof(infoLog), nullptr, infoLog.begin());
+        glGetShaderInfoLog(shader, sizeof(infoLog), nullptr, infoLog.data());
 
         const char* shaderType =
           (type == GL_VERTEX_SHADER) ? "VERTEX" : "FRAGMENT";
@@ -28,7 +28,7 @@ namespace
 
         throw std::runtime_error{std::string{"ERROR: "} + shaderType +
                                  " shader compilation failed:\n" +
-                                 infoLog.begin()};
+                                 infoLog.data()};
     }
 
     return shader;
@@ -136,14 +136,14 @@ void Shader::linkProgram(GLuint vertexShader, GLuint fragmentShader)
     if (success == 0) {
         std::array<GLchar, 1024> infoLog{};
         glGetProgramInfoLog(programId, sizeof(infoLog), nullptr,
-                            infoLog.begin());
+                            infoLog.data());
 
         glDeleteProgram(programId);
         programId = 0;
 
         throw std::runtime_error{
           std::string{"ERROR: Shader program linking failed:\n"} +
-          infoLog.begin()};
+          infoLog.data()};
     }
 }
 
