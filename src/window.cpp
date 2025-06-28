@@ -29,6 +29,17 @@ Window::Window()
         throw std::runtime_error{"Failed to initialize GLEW."};
     }
 
+    //
+    // OpenGL configuration
+    //
+    glEnable(GL_CULL_FACE);
+    // Depth buffer
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE); // allow writing to depth buffer
+    glDepthRange(0.0, 1.0);
+    glClearDepth(1.0); // clear depth buffer to 1.0 (far plane)
+
     // Enable VSync
     // glfwSwapInterval(1);
 

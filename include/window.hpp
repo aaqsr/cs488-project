@@ -6,13 +6,13 @@ struct GLFWwindow;
 
 class Window : public Singleton<Window>
 {
+    GLFWwindow* window;
+
+  public:
     static constexpr int width = 800;
     static constexpr int height = 600;
     inline static const char* title = "CS488";
 
-    GLFWwindow* window;
-
-  public:
     Window();
 
     Window(const Window&) = delete;
