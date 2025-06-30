@@ -1,8 +1,8 @@
 #include "shader.hpp"
+#include "error.hpp"
 
 #include <fstream>
 #include <sstream>
-#include <stdexcept>
 
 namespace
 {
@@ -26,7 +26,7 @@ namespace
 
         glDeleteShader(shader);
 
-        throw std::runtime_error{std::string{"ERROR: "} + shaderType +
+        throw IrrecoverableError{std::string{"ERROR: "} + shaderType +
                                  " shader compilation failed:\n" +
                                  infoLog.data()};
     }
@@ -38,7 +38,7 @@ std::string readFile(const std::filesystem::path& filePath)
 {
     std::ifstream file(filePath);
     if (!file.is_open()) {
-        throw std::runtime_error{"ERROR: Could not open file: " +
+        throw IrrecoverableError{"ERROR: Could not open file: " +
                                  filePath.string()};
     }
 
@@ -77,26 +77,26 @@ void Shader::loadFromSource(const std::string& vertexSource,
 {
     GLuint vertexShader = compileShader(vertexSource, GL_VERTEX_SHADER);
     if (vertexShader == 0) {
-        throw std::runtime_error{"Vertex shader failed to compile"};
+        throw IrrecoverableError{"Vertex shader failed to compile"};
     }
 
     GLuint fragmentShader = compileShader(fragmentSource, GL_FRAGMENT_SHADER);
     if (fragmentShader == 0) {
         glDeleteShader(vertexShader);
-        throw std::runtime_error{"Fragment shader failed to compile"};
+        throw IrrecoverableError{"Fragment shader failed to compile"};
     }
 
     try {
         linkProgram(vertexShader, fragmentShader);
         validateUniforms(requiredUniforms);
-    } catch (...) {
+    } catch (IrrecoverableError& e) {
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         if (programId != 0) {
             glDeleteProgram(programId);
             programId = 0;
         }
-        throw;
+        throw e;
     }
 
     glDeleteShader(vertexShader);
@@ -111,15 +111,20 @@ void Shader::loadFromFile(const std::filesystem::path& vertexPath,
     std::string fragmentSource = readFile(fragmentPath);
 
     if (vertexSource.empty() || fragmentSource.empty()) {
-        throw std::runtime_error{"Failed to read shader file"};
+        throw IrrecoverableError{"Failed to read shader file"};
     }
 
     loadFromSource(vertexSource, fragmentSource, requiredUniforms);
 }
 
-void Shader::use() const
+void Shader::bind() const
 {
     glUseProgram(programId);
+}
+
+void Shader::unbind() const
+{
+    glUseProgram(0);
 }
 
 void Shader::linkProgram(GLuint vertexShader, GLuint fragmentShader)
@@ -141,7 +146,7 @@ void Shader::linkProgram(GLuint vertexShader, GLuint fragmentShader)
         glDeleteProgram(programId);
         programId = 0;
 
-        throw std::runtime_error{
+        throw IrrecoverableError{
           std::string{"ERROR: Shader program linking failed:\n"} +
           infoLog.data()};
     }
@@ -156,7 +161,7 @@ void Shader::validateUniforms(const std::vector<std::string>& requiredUniforms)
         GLint location = glGetUniformLocation(programId, uniformName.c_str());
 
         if (location == -1) {
-            throw std::runtime_error{"Required uniform '" + uniformName +
+            throw IrrecoverableError{"Required uniform '" + uniformName +
                                      "' not found in shader program"};
         }
 
@@ -193,7 +198,7 @@ void Shader::validateUniforms(const std::vector<std::string>& requiredUniforms)
 void Shader::validateUniformExists(const std::string& name) const
 {
     if (!hasUniform(name)) {
-        throw std::runtime_error{"Uniform '" + name +
+        throw IrrecoverableError{"Uniform '" + name +
                                  "' does not exist in shader program"};
     }
 }
@@ -213,7 +218,7 @@ const Shader::UniformInfo& Shader::getUniformInfo(const std::string& name) const
     try {
         return validUniforms.at(name);
     } catch (...) {
-        throw std::runtime_error{"Uniform '" + name +
+        throw IrrecoverableError{"Uniform '" + name +
                                  "' does not exist in shader program"};
     }
 }

@@ -35,10 +35,12 @@ target_include_directories(CS488
 target_link_libraries(CS488 glfw libglew_static)
 
 # Generate compile_commands.json in the build directory
+# TODO: THIS DOES NOT WORK ON WINDOWS AAAA
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
 # Copy or symlink compile_commands.json to the project root
 # (only if it's not already there)
+# TODO: THIS DOES NOT WORK ON WINDOWS AAAA
 add_custom_command(TARGET CS488 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_BINARY_DIR}/compile_commands.json"
@@ -46,3 +48,4 @@ add_custom_command(TARGET CS488 POST_BUILD
 )
 
 file(CREATE_LINK "${CMAKE_SOURCE_DIR}/shaders" "${CMAKE_BINARY_DIR}/shaders" SYMBOLIC)
+file(CREATE_LINK "${CMAKE_SOURCE_DIR}/assets" "${CMAKE_BINARY_DIR}/assets" SYMBOLIC)

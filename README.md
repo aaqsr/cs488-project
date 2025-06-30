@@ -9,9 +9,8 @@ Skip the first step if you have already built the project once and have not adde
 
 Then to actually build the project run,
 ```sh
-cmake --build --preset debug   # for debug build
-cmake --build --preset release # for debug build
-```
+cmake --build --preset debug --parellel   # for debug build
+cmake --build --preset release --parallel # for debug build ```
 
 This will compile an executable in `./build/debug` or `./build/release`.
 To execute the program, run

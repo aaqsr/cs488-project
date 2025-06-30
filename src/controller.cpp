@@ -18,6 +18,10 @@ void Controller::update(float deltaTime)
         return;
     }
 
+    if (!inputCaptured) {
+        return;
+    }
+
     float velocity = moveSpeed * deltaTime;
     linalg::aliases::float3 movement{0.0F, 0.0F, 0.0F};
 
@@ -43,14 +47,14 @@ void Controller::update(float deltaTime)
 
 void Controller::captureMouse()
 {
-    mouseCaptured = true;
+    inputCaptured = true;
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     firstMouse = true;
 }
 
 void Controller::releaseMouse()
 {
-    mouseCaptured = false;
+    inputCaptured = false;
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
@@ -58,8 +62,10 @@ void Controller::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
     Controller* controller =
       static_cast<Controller*>(glfwGetWindowUserPointer(window));
-    if (!controller->mouseCaptured || !controller->camera)
+
+    if (!controller->inputCaptured || (controller->camera == nullptr)) {
         return;
+    }
 
     if (controller->firstMouse) {
         controller->lastMouseX = xpos;
@@ -82,7 +88,7 @@ void Controller::mouseCallback(GLFWwindow* window, double xpos, double ypos)
     float pitchDelta = static_cast<float>(yoffset) * 0.0174533F;
 
     // Apply rotations
-    controller->camera->rotateAroundAxis({0.0f, 1.0f, 0.0f},
+    controller->camera->rotateAroundAxis({0.0F, 1.0F, 0.0F},
                                          -yawDelta); // Yaw (Y-axis)
     controller->camera->rotateAroundAxis(
       controller->camera->getRight(),
