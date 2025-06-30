@@ -1,6 +1,8 @@
 #include "camera.hpp"
 #include "controller.hpp"
+#include "debugShapes.hpp"
 #include "mesh.hpp"
+#include "model.hpp"
 #include "shader.hpp"
 #include "vertex.hpp"
 #include "window.hpp"
@@ -8,43 +10,29 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "error.hpp"
+#include <filesystem>
 #include <iostream>
-#include <stdexcept>
 #include <vector>
+
+namespace
+{
 
 void run()
 {
+    // TODO: Window MUST be init first... should really make a renderer class
+    // that makes it so that I can't accidentally not initialise a window...
     Window& window = Window::GetInstance();
     Controller& controller = Controller::GetInstance();
 
-    Shader rainbowShader{
-      std::filesystem::path{"shaders/vertex/perspectiveRainbowTriTest.glsl"},
-      std::filesystem::path{"shaders/fragment/rainbowTriTest.glsl"},
+    Shader texShader{
+      std::filesystem::path{"shaders/vertex/perspTextureShader.glsl"},
+      std::filesystem::path{"shaders/fragment/textureShader.glsl"},
       {"projection", "view"}
     };
 
-    std::vector<Vertex> vertices1 = {
-      // Bottom-left
-      {{-0.7F, -0.5F, 0.0F}, {1.0F, 0.0F, 0.0F, 1.0F}}, // Red
-      // Bottom-right
-      {{-0.1F, -0.5F, 0.0F}, {0.0F, 1.0F, 0.0F, 1.0F}}, // Green
-      // Top-right
-      { {-0.1F, 0.5F, 0.0F}, {0.0F, 0.0F, 1.0F, 1.0F}}, // Blue
-      // Top-left
-      { {-0.7F, 0.5F, 0.0F}, {1.0F, 1.0F, 0.0F, 1.0F}}  // Yellow
-    };
-
-    // Indices for two triangles forming a square
-    std::vector<unsigned int> indices1 = {
-      0, 1, 2, // First triangle (bottom-left, bottom-right, top-right)
-      2, 3, 0  // Second triangle (top-right, top-left, bottom-left)
-    };
-
-    Mesh mesh;
-
-    mesh.setVertices(vertices1);
-    mesh.setIndices(indices1);
-    mesh.setupMesh();
+    Model teapot{std::filesystem::path{"assets/models/teapot/teapot.obj"}};
+    // Model cube = DebugShape::createCube();
 
     Camera camera;
     controller.setMainCamera(&camera);
@@ -71,16 +59,25 @@ void run()
 
         // not clearing the back buffer causes trails
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.2F, 0.3F, 0.3F, 1.0F); // Dark gray background
 
         /* RENDER COMMANDS HERE */
 
         // Enable this for Wireframe mode
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        camera.setUniforms(rainbowShader);
+        // TODO: Someone else should be doing this I feel
+        // TODO: MUST RESTRUCTURE THE WAY THIS MAIN LOOP IS DONE. TOO MANY
+        // FOOTGUNS LURKING ABOUT.
+        // TODO: Must restructure for the following
+        // Minimize per-frame data transfers from CPU to GPU
+        // Minimize number of state changes (binding framebuffers, textures,
+        // shaders, buffers, etcetera)
+        // Minimize number of individual draw calls per frame
 
-        rainbowShader.use();
-        mesh.draw();
+        camera.setUniforms(texShader);
+
+        teapot.draw(texShader);
 
         // Double buffering.
         // The front buffer contains the final output image that is
@@ -92,13 +89,14 @@ void run()
         glfwPollEvents();
     }
 }
+} // namespace
 
 int main()
 {
     try {
         run();
-    } catch (std::runtime_error& e) {
-        std::cout << e.what() << "\n";
+    } catch (IrrecoverableError& e) {
+        std::cout << e.msg << "\n" << e.what() << "\n";
         return 1;
     }
 }

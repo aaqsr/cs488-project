@@ -14,9 +14,10 @@ class Camera
     // TODO: Should near plane be this close? Or is this far enough? Value
     // stolen from assignment code.
     float nearPlane = 5e-5F;
+    // float nearPlane = 0.1F;
     float farPlane = 100.0F;
 
-    linalg::aliases::float3 position{0.0F, 0.0F, 1.5F};
+    linalg::aliases::float3 position{0.0F, 0.0F, 2.0F};
     Quaternion orientation{0.0F, 0.0F, 0.0F, 1.0F};
 
     linalg::aliases::float4x4 perspectiveMatrix;

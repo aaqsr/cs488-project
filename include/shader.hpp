@@ -31,7 +31,8 @@ class Shader
                       const std::filesystem::path& fragmentPath,
                       const std::vector<std::string>& requiredUniforms = {});
 
-    void use() const;
+    void bind() const;
+    void unbind() const;
 
     [[nodiscard]] uint32_t getId() const;
     [[nodiscard]] bool hasUniform(const std::string& name) const;

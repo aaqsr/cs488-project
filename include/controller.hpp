@@ -12,7 +12,7 @@ class Controller : public Singleton<Controller>
     Camera* camera = nullptr;
 
     // Mouse state
-    bool mouseCaptured = false;
+    bool inputCaptured = false;
     double lastMouseX = 0.0;
     double lastMouseY = 0.0;
     bool firstMouse = true;

@@ -1,34 +1,39 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
+#include "material.hpp"
+#include "vertex.hpp"
 
-class Vertex;
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 class Mesh
 {
-  public:
-    Mesh() = default;
-
-    Mesh(const Mesh&) = delete;
-    Mesh& operator=(const Mesh&) = delete;
-    Mesh(Mesh&&) = delete;
-    Mesh& operator=(Mesh&&) = delete;
-
-    ~Mesh();
-
-    void setVertices(const std::vector<Vertex>& v);
-
-    void setIndices(const std::vector<uint32_t>& i)
-    {
-        indices = i;
-    }
-
-    void setupMesh();
-    void draw() const;
-
-  private:
     uint32_t VAO{0}, VBO{0}, EBO{0};
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
+    std::shared_ptr<Material> material;
+
+    void setupMesh();
+    void setVertices(const std::vector<Vertex>& v);
+    void setIndices(const std::vector<uint32_t>& i);
+
+  public:
+    Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
+         const std::shared_ptr<Material>& material)
+      : vertices{std::move(vertices)}, indices{std::move(indices)},
+        material{material}
+    {
+        setupMesh();
+    }
+
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+    Mesh(Mesh&&) noexcept;
+    Mesh& operator=(Mesh&&) noexcept;
+
+    ~Mesh();
+
+    // TODO: Does not check if shader is bound!
+    void draw() const;
 };

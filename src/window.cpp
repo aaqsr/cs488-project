@@ -1,4 +1,5 @@
 #include "window.hpp"
+#include "error.hpp"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -6,7 +7,7 @@
 Window::Window()
 {
     if (glfwInit() == 0) {
-        throw std::runtime_error{"Failed to initialize GLFW."};
+        throw IrrecoverableError{"Failed to initialize GLFW."};
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -17,24 +18,22 @@ Window::Window()
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (window == nullptr) {
         glfwTerminate();
-        throw std::runtime_error{"Failed to create GLFW window"};
+        throw IrrecoverableError{"Failed to create GLFW window"};
     }
 
     glfwMakeContextCurrent(window);
 
-    // TODO: what is glew for??
     glewExperimental = 1;
     if (glewInit() != GLEW_OK) {
         glfwTerminate();
-        throw std::runtime_error{"Failed to initialize GLEW."};
+        throw IrrecoverableError{"Failed to initialize GLEW."};
     }
 
     //
     // OpenGL configuration
     //
-    glEnable(GL_CULL_FACE);
-    // Depth buffer
-    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);  // don't draw back faces
+    glEnable(GL_DEPTH_TEST); // Depth buffer
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE); // allow writing to depth buffer
     glDepthRange(0.0, 1.0);

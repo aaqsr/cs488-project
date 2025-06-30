@@ -8,7 +8,14 @@ struct Vertex
 {
     // If this changes, go update setupVertexAttributes below!
     linalg::aliases::float3 position;
-    linalg::aliases::float4 colour;
+    linalg::aliases::float3 normal;
+    linalg::aliases::float2 texCoords;
 
     static void setupVertexAttributes();
+
+    bool operator==(const Vertex& other) const
+    {
+        return position == other.position && normal == other.normal &&
+               texCoords == other.texCoords;
+    }
 };
