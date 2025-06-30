@@ -161,7 +161,7 @@ void Shader::validateUniforms(const std::vector<std::string>& requiredUniforms)
         GLint location = glGetUniformLocation(programId, uniformName.c_str());
 
         if (location == -1) {
-            throw IrrecoverableError{"Required uniform '" + uniformName +
+            throw IrrecoverableError{std::string{"Required uniform '"} + uniformName +
                                      "' not found in shader program"};
         }
 

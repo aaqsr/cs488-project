@@ -29,19 +29,6 @@ Window::Window()
         throw IrrecoverableError{"Failed to initialize GLEW."};
     }
 
-    //
-    // OpenGL configuration
-    //
-    glEnable(GL_CULL_FACE);  // don't draw back faces
-    glEnable(GL_DEPTH_TEST); // Depth buffer
-    glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE); // allow writing to depth buffer
-    glDepthRange(0.0, 1.0);
-    glClearDepth(1.0); // clear depth buffer to 1.0 (far plane)
-
-    // Disable VSync for them FPS wooooo (TODO: good idea??)
-    glfwSwapInterval(0);
-
     // Callback when window resizes
     // glfwSetFramebufferSizeCallback(
     //   window, [](GLFWwindow* window, int width, int height) {

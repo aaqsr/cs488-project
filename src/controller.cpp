@@ -12,7 +12,7 @@ Controller::Controller() : window{Window::GetInstance().getWindow()}
     glfwSetKeyCallback(window, keyCallback);
 }
 
-void Controller::update(float deltaTime)
+void Controller::update(double deltaTime)
 {
     if (camera == nullptr) {
         return;
