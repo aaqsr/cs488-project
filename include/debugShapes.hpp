@@ -81,7 +81,7 @@ inline Model createCube()
 inline Model createRectangle()
 {
     auto material = std::make_shared<Material>();
-    material->loadTexture("assets/textures/container.jpg");
+    material->loadTexture("assets/models/cube/container.jpg");
     material->setName("SimpleCubeMaterial");
     material->setType(Material::Type::MAT_LAMBERTIAN);
     material->setAmbient({0.1F, 0.1F, 0.1F});
@@ -97,7 +97,7 @@ inline Model createRectangle()
       // Top-right
       { {-0.1F, 0.5F, 0.0F}, {0.0F, 0.0F, 0.0F}, {0.0F, 1.0F}},
       // Top-left
-      { {-0.7F, 0.5F, 0.0F}, {0.0F, 0.0F, 0.0F}, {1.0F, 0.0F}}
+      { {-0.7F, 0.5F, 0.0F}, {0.0F, 0.0F, 0.0F}, {0.0F, 0.0F}}
     };
 
     // Indices for two triangles forming a square
