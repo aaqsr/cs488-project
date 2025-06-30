@@ -18,3 +18,8 @@ To execute the program, run
 ./build/debug/CS488   # for debug mode
 ./build/release/CS488 # for release mode
 ```
+
+# TODO
+
+- [ ] Better error reporting. Currently program just crashes outside of debugger. Need async error reporting thread tbh.
+- [ ] Clean up TODOs around the codebase
