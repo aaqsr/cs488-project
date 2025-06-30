@@ -31,8 +31,8 @@ void run()
       {"projection", "view"}
     };
 
-    Model teapot{std::filesystem::path{"assets/models/teapot/teapot.obj"}};
-    // Model cube = DebugShape::createCube();
+    // Model teapot{std::filesystem::path{"assets/models/teapot/teapot.obj"}};
+    Model teapot = DebugShape::createRectangle();
 
     Camera camera;
     controller.setMainCamera(&camera);
