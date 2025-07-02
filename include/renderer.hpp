@@ -1,8 +1,9 @@
-#pragma once
+
 
 #include "controller.hpp"
 #include "logger.hpp"
 #include "model.hpp"
+#include "pointLight.hpp"
 #include "singleton.hpp"
 #include "window.hpp"
 
@@ -16,6 +17,7 @@ class Renderer : public Singleton<Renderer>
     Window& window = Window::GetInstance();
     Controller& controller = Controller::GetInstance();
     Camera mainCamera;
+
     double lastFrameTime = glfwGetTime();
     double currentFrameTime = 0.0;
     double deltaTime = 0.0;
@@ -47,14 +49,28 @@ class Renderer : public Singleton<Renderer>
     // having to come in here and poke about
     // Maybe can have a list of models and shaders, and some datastructure can
     // specify which model to draw with which shader with the camera or not etc.
-    Shader texShader{
+    Shader shader{
+      std::filesystem::path{"shaders/vertex/lightPerspTextureShader.glsl"},
+      std::filesystem::path{"shaders/fragment/phongTextureShader.glsl"},
+      // TODO: surely there's a better way than listing ALL of these sjsjsjs
+      // TODO: oh god arrays...oh god...i REALLY need a better way for this
+      {"projection", "view", "material.isDiffuseTextured", "material.isSpecularTextured",  "material.diffuse", "material.specular",
+                            "material.Kd", "material.Ks", "material.Ns", "viewPos",
+                            "lights[0].position", "lights[0].ambient", "lights[0].diffuse",
+                            "lights[0].specular", "lights[0].constantFalloff",
+                            "lights[0].linearFalloff", "lights[0].quadraticFalloff"}
+    };
+
+    Shader flatShader{
       std::filesystem::path{"shaders/vertex/perspTextureShader.glsl"},
       std::filesystem::path{"shaders/fragment/textureShader.glsl"},
       {"projection", "view"}
     };
 
-    Model teapot{
-      std::filesystem::path{"assets/models/teapot-ajrak/teapot.obj"}};
+    PointLight light;
+
+    Model mainModel{
+      std::filesystem::path{"assets/models/cornellbox/cornellbox.obj"}};
 
     void drawLoop();
 

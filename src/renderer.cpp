@@ -1,4 +1,9 @@
 #include "renderer.hpp"
+#include "debugShapes.hpp"
+#include "mesh.hpp"
+#include "shader.hpp"
+
+#include <numbers>
 
 Renderer::Renderer()
 {
@@ -23,12 +28,22 @@ Renderer::Renderer()
 
 void Renderer::drawLoop()
 {
+    // TODO: should be easier to do than one object
+    // TODO: should be easier to do different shaders without everyone assigning things that don't exist
     // TODO: make it so that we can call UseShader on a shader once before
     // all calls to it
     // TODO: should be less easy to forget to do this correctly
-    mainCamera.setUniforms(texShader);
-    // TODO: more than one object??
-    teapot.draw(texShader);
+    shader.bind();
+    mainCamera.setUniforms(shader);
+    light.setUniforms(shader, 0);
+    mainModel.draw(shader);
+    shader.unbind();
+
+    flatShader.bind();
+    mainCamera.setUniforms(flatShader);
+    static Model lcube = DebugShape::createCube(light.getPos(), 0.1F);
+    lcube.draw(flatShader);
+    flatShader.unbind();
 }
 
 void Renderer::loop()

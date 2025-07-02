@@ -1,8 +1,8 @@
 #include "texture.hpp"
 #include "stb_image.h"
 
-#include <gl/glew.h>
-#include <math.h>
+#include <GL/glew.h>
+#include <cmath>
 
 #include "error.hpp"
 
@@ -26,12 +26,20 @@ void setTextureParameters()
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
                         maxAnisotropy);
     }
+
+    glGenerateMipmap(GL_TEXTURE_2D); // mipmaps!
 }
 } // namespace
 
 Texture::Texture(const std::filesystem::path& path)
 {
     loadFromFile(path);
+}
+
+Texture::Texture(int width, int height, const unsigned char* data)
+  : width{width}, height{height}
+{
+    loadFromData(data, width, height, GL_RGB, GL_SRGB);
 }
 
 // whyyyyy did I write this ( i had to :( )
@@ -74,37 +82,62 @@ Texture::~Texture()
     }
 }
 
-void Texture::loadFromFile(const std::filesystem::path& path)
+void Texture::loadFromData(const unsigned char* data, int dataWidth,
+                           int dataHeight, GLenum format, GLenum internalFormat)
 {
     if (textureId != 0) {
         glDeleteTextures(1, &textureId);
         textureId = 0;
     }
 
-    filePath = path.string();
-
-    // flip texture vertically for OpenGL
-    stbi_set_flip_vertically_on_load(1);
-
-    unsigned char* data =
-      stbi_load(filePath.c_str(), &width, &height, &channels, 0);
     if (data == nullptr) {
-        throw IrrecoverableError("Failed to load texture: " + filePath + " - " +
-                                 std::string(stbi_failure_reason()));
+        throw IrrecoverableError{
+          "Failed to load texture from data. Data is nullptr"};
     }
 
     glGenTextures(1, &textureId);
     glBindTexture(GL_TEXTURE_2D, textureId);
 
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, dataWidth, dataHeight, 0,
+                 format, GL_UNSIGNED_BYTE, data);
+
+    setTextureParameters();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Texture::loadFromFile(const std::filesystem::path& path)
+{
+    filePath = path.string();
+
+    // flip texture vertically for OpenGL
+    stbi_set_flip_vertically_on_load(1);
+
+    int newWidth = 0;
+    int newHeight = 0;
+    int newChannels = 0;
+    unsigned char* data =
+      stbi_load(filePath.c_str(), &newWidth, &newHeight, &newChannels, 0);
+    if (data == nullptr) {
+        throw IrrecoverableError("Failed to load texture: " + filePath + " - " +
+                                 std::string(stbi_failure_reason()));
+    }
+
     // fine format based on channels
     GLenum format = GL_RGB;
     GLenum internalFormat = GL_RGB;
 
-    switch (channels) {
+    switch (newChannels) {
         case 1: format = internalFormat = GL_RED; break;
         case 2: format = internalFormat = GL_RG; break;
-        case 3: format = internalFormat = GL_RGB; break;
-        case 4: format = internalFormat = GL_RGBA; break;
+        case 3:
+            format = GL_RGB;
+            // internalFormat = GL_SRGB;
+            break;
+        case 4:
+            format = GL_RGBA;
+            // internalFormat = GL_SRGB_ALPHA;
+            break;
         default:
             stbi_image_free(data);
             throw IrrecoverableError("Unsupported texture format with " +
@@ -112,18 +145,22 @@ void Texture::loadFromFile(const std::filesystem::path& path)
                                      " channels: " + filePath);
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format,
-                 GL_UNSIGNED_BYTE, data);
-
-    setTextureParameters();
-
-    glGenerateMipmap(GL_TEXTURE_2D); // mipmaps!
+    try {
+        loadFromData(data, newWidth, newHeight, format, internalFormat);
+    } catch (...) {
+        stbi_image_free(data);
+        throw;
+    }
 
     stbi_image_free(data);
-    glBindTexture(GL_TEXTURE_2D, 0);
+
+    width = newWidth;
+    height = newHeight;
+    channels = newChannels;
 }
 
-void Texture::bind(GLuint textureUnit) const
+void Texture::bind(Shader& shader, const std::string& textureUniformName,
+                   GLuint textureUnit) const
 {
     if (!isValid()) {
         return;
@@ -135,9 +172,13 @@ void Texture::bind(GLuint textureUnit) const
     // bind the texture.
     glActiveTexture(GL_TEXTURE0 + textureUnit);
     glBindTexture(GL_TEXTURE_2D, textureId);
+
+    shader.setUniformInt(textureUniformName, textureUnit);
 }
 
-void Texture::unbind() const
+void Texture::unbind(GLuint textureUnit) const
 {
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // Not sure if this does what i think it does ngl...
+    // glActiveTexture(GL_TEXTURE0 + textureUnit);
+    // glBindTexture(GL_TEXTURE_2D, 0);
 }

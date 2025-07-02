@@ -21,6 +21,8 @@ To execute the program, run
 
 # TODO
 
+- [ ] Blinn-Phong
+- [ ] Gamma correction
 - [ ] Better error reporting. Currently program just crashes outside of debugger. Need async error reporting thread tbh.
 - [ ] Clean up TODOs around the codebase
 - [ ] Code does not support non-textured items. Should it?

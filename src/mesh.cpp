@@ -1,5 +1,6 @@
 #include "mesh.hpp"
 
+#include "error.hpp"
 #include "vertex.hpp"
 
 #include <GL/glew.h>
@@ -15,6 +16,10 @@ void Mesh::setIndices(const std::vector<uint32_t>& i)
 
 void Mesh::setupMesh()
 {
+    if (material == nullptr) {
+        throw IrrecoverableError{"Mesh material was nullptr"};
+    }
+
     // Generate and bind VAO
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -39,20 +44,16 @@ void Mesh::setupMesh()
     glBindVertexArray(0);
 }
 
-void Mesh::draw() const
+void Mesh::draw(Shader& shader) const
 {
-    if (material && material->isTextured()) {
-        material->getTexture().bind();
-    }
-
     glBindVertexArray(VAO);
+
+    material->setUniformsAndBind(shader);
+
     glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()),
                    GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
 
-    if (material && material->isTextured()) {
-        material->getTexture().unbind();
-    }
+    glBindVertexArray(0);
 }
 
 Mesh::Mesh(Mesh&& other) noexcept

@@ -1,8 +1,11 @@
 #include "shader.hpp"
 #include "error.hpp"
+#include "logger.hpp"
 
 #include <fstream>
+#include <mutex>
 #include <sstream>
+#include <string>
 
 namespace
 {
@@ -161,7 +164,8 @@ void Shader::validateUniforms(const std::vector<std::string>& requiredUniforms)
         GLint location = glGetUniformLocation(programId, uniformName.c_str());
 
         if (location == -1) {
-            throw IrrecoverableError{std::string{"Required uniform '"} + uniformName +
+            throw IrrecoverableError{std::string{"Required uniform '"} +
+                                     uniformName +
                                      "' not found in shader program"};
         }
 
@@ -195,12 +199,14 @@ void Shader::validateUniforms(const std::vector<std::string>& requiredUniforms)
     }
 }
 
-void Shader::validateUniformExists(const std::string& name) const
+bool Shader::validateUniformExists(const std::string& name) const
 {
     if (!hasUniform(name)) {
-        throw IrrecoverableError{"Uniform '" + name +
-                                 "' does not exist in shader program"};
+        // Logger::GetInstance().log("ERROR: Uniform '" + name +
+        //                           "' does not exist in shader program");
+        return false;
     }
+    return true;
 }
 
 bool Shader::hasUniform(const std::string& name) const
@@ -223,9 +229,20 @@ const Shader::UniformInfo& Shader::getUniformInfo(const std::string& name) const
     }
 }
 
+void Shader::setUniformInt(const std::string& name, int value)
+{
+    if (!validateUniformExists(name)) {
+        return;
+    }
+    const UniformInfo& info = validUniforms.at(name);
+    glUniform1i(info.location, value);
+}
+
 void Shader::setUniform(const std::string& name, float value)
 {
-    validateUniformExists(name);
+    if (!validateUniformExists(name)) {
+        return;
+    }
     const UniformInfo& info = validUniforms.at(name);
     glUniform1f(info.location, value);
 }
@@ -233,7 +250,9 @@ void Shader::setUniform(const std::string& name, float value)
 void Shader::setUniform(const std::string& name,
                         const linalg::aliases::float2& value)
 {
-    validateUniformExists(name);
+    if (!validateUniformExists(name)) {
+        return;
+    }
     const UniformInfo& info = validUniforms.at(name);
     glUniform2f(info.location, value.x, value.y);
 }
@@ -241,7 +260,9 @@ void Shader::setUniform(const std::string& name,
 void Shader::setUniform(const std::string& name,
                         const linalg::aliases::float3& value)
 {
-    validateUniformExists(name);
+    if (!validateUniformExists(name)) {
+        return;
+    }
     const UniformInfo& info = validUniforms.at(name);
     glUniform3f(info.location, value.x, value.y, value.z);
 }
@@ -249,7 +270,9 @@ void Shader::setUniform(const std::string& name,
 void Shader::setUniform(const std::string& name,
                         const linalg::aliases::float4& value)
 {
-    validateUniformExists(name);
+    if (!validateUniformExists(name)) {
+        return;
+    }
     const UniformInfo& info = validUniforms.at(name);
     glUniform4f(info.location, value.x, value.y, value.z, value.w);
 }
@@ -257,7 +280,9 @@ void Shader::setUniform(const std::string& name,
 void Shader::setUniform(const std::string& name,
                         const linalg::aliases::float4x4& value)
 {
-    validateUniformExists(name);
+    if (!validateUniformExists(name)) {
+        return;
+    }
     const UniformInfo& info = validUniforms.at(name);
     // TODO: Is memory layout correct here??
     glUniformMatrix4fv(info.location, 1, GL_FALSE, &value.x.x);

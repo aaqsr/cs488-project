@@ -34,6 +34,7 @@ class Mesh
 
     ~Mesh();
 
+    // CALLER IS EXPECTED TO HAVE BOUND THE SHADER
     // TODO: Does not check if shader is bound!
-    void draw() const;
+    void draw(Shader& shader) const;
 };
