@@ -1,4 +1,6 @@
 #include "material.hpp"
+#include "logger.hpp"
+#include <string>
 
 void Material::setName(const std::string& n)
 {
@@ -33,17 +35,73 @@ void Material::setGlossiness(float g)
     glossiness = g;
 }
 
-void Material::loadTexture(const std::filesystem::path& path)
+void Material::loadDiffuseMap(const std::filesystem::path& path)
 {
-    texture = Texture(path);
+    diffuseMap = Texture(path);
 }
 
-bool Material::isTextured() const
+void Material::loadSpecularMap(const std::filesystem::path& path)
 {
-    return texture.isValid();
+    specularMap = Texture(path);
 }
 
-const Texture& Material::getTexture() const
+float Material::getNs() const
 {
-    return texture;
+    return specularExponent_Ns;
+}
+
+const linalg::aliases::float3& Material::getKd() const
+{
+    return diffuseColour_Kd;
+}
+
+const linalg::aliases::float3& Material::getKs() const
+{
+    return specularColour_Ks;
+}
+
+const Texture& Material::getDefaultTexture()
+{
+    if (!Material::defaultTexture.isValid()) {
+        Material::defaultTexture = {1, 1, defaultTexData.data()};
+    }
+
+    return Material::defaultTexture;
+}
+
+const Texture& Material::getDiffuseMap() const
+{
+    if (!diffuseMap.isValid()) {
+        return getDefaultTexture();
+    }
+
+    return diffuseMap;
+}
+
+const Texture& Material::getSpecularMap() const
+{
+    if (!specularMap.isValid()) {
+        return getDefaultTexture();
+    }
+
+    return specularMap;
+}
+
+void Material::setUniformsAndBind(Shader& shader)
+{
+    shader.setUniform("material.Kd", getKd());
+    shader.setUniform("material.Ks", getKs());
+    shader.setUniform("material.Ns", getNs());
+
+    shader.setUniformInt("material.isDiffuseTextured", diffuseMap.isValid());
+    shader.setUniformInt("material.isSpecularTextured", specularMap.isValid());
+
+    getDiffuseMap().bind(shader, "material.diffuse", 0);
+    getSpecularMap().bind(shader, "material.specular", 1);
+}
+
+void Material::unbind()
+{
+    getDiffuseMap().unbind(0);
+    getSpecularMap().unbind(1);
 }

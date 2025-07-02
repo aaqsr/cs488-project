@@ -13,7 +13,9 @@ Window::Window()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
+#ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // for apple
+#endif
 
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (window == nullptr) {

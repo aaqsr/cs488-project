@@ -1,8 +1,9 @@
 #pragma once
 
+#include "logger.hpp"
 #include "mesh.hpp"
+
 #include <filesystem>
-#include <iostream>
 #include <utility>
 #include <vector>
 
@@ -24,7 +25,7 @@ class Model
           std::unordered_map<std::string, std::shared_ptr<Material>> materials)
       : meshes{std::move(meshes)}, materials{std::move(materials)}
     {
-        std::cout << "DO NOT BUILD MODEL BY HAND\n";
+        // Logger::GetInstance().log("DO NOT BUILD MODEL BY HAND");
     }
 
     explicit Model(std::filesystem::path objPath);
@@ -35,5 +36,6 @@ class Model
     Model& operator=(Model&&) = default;
     ~Model() = default;
 
+    // USER MUST BIND SHADER
     void draw(Shader& shader) const;
 };

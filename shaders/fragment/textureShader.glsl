@@ -7,9 +7,13 @@ out vec4 FragColour;
 // takes as a postfix the texture type we want. if we bind the
 // texture before calling glDrawElements, it will automatically
 // assign the texture to the fragment shader's sampler.
-uniform sampler2D theTexture;
+struct Material
+{
+  sampler2D diffuse;
+};
+uniform Material material;
 
 void main()
 {
-    FragColour = texture(theTexture, texCoord);
+    FragColour = texture(material.diffuse, texCoord);
 }

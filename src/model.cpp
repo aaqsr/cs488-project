@@ -1,5 +1,6 @@
 #include "model.hpp"
 #include "error.hpp"
+#include "logger.hpp"
 #include "material.hpp"
 #include "mesh.hpp"
 #include "shader.hpp"
@@ -18,12 +19,9 @@ Model::Model(std::filesystem::path objPath) : objPath{std::move(objPath)}
 
 void Model::draw(Shader& shader) const
 {
-    // TODO: RAII object?
-    shader.bind();
     for (const auto& mesh : meshes) {
-        mesh.draw();
+        mesh.draw(shader);
     }
-    shader.unbind();
 }
 
 void Model::loadModel()
@@ -178,7 +176,16 @@ void Model::loadMaterials(const std::filesystem::path& mtlPath)
             } else if (type == "map_Kd") {
                 std::string texPath;
                 iss >> texPath;
-                currentMaterial->loadTexture(mtlPath.parent_path() / texPath);
+                currentMaterial->loadDiffuseMap(mtlPath.parent_path() /
+                                                texPath);
+            } else if (type == "map_Ks") {
+                std::string texPath;
+                iss >> texPath;
+                currentMaterial->loadSpecularMap(mtlPath.parent_path() /
+                                                 texPath);
+            } else {
+                Logger::GetInstance().log(
+                  "Model Loading >>  mtl file >> Unidentified type: " + type);
             }
         }
     }
