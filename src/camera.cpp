@@ -104,7 +104,7 @@ void Camera::rotateAroundAxis(const linalg::aliases::float3& axis,
     rotate(axisRotation);
 }
 
-void Camera::setUniforms(Shader& shader) const
+void Camera::setUniforms(Shader::BindObject& shader) const
 {
     shader.setUniform("projection", perspectiveMatrix);
     shader.setUniform("view", viewMatrix);

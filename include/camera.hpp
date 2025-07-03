@@ -75,5 +75,5 @@ class Camera
         return viewMatrix;
     }
 
-    void setUniforms(Shader& shader) const;
+    void setUniforms(Shader::BindObject& shader) const;
 };

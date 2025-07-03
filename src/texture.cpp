@@ -159,7 +159,7 @@ void Texture::loadFromFile(const std::filesystem::path& path)
     channels = newChannels;
 }
 
-void Texture::bind(Shader& shader, const std::string& textureUniformName,
+void Texture::bind(Shader::BindObject& shader, const std::string& textureUniformName,
                    GLuint textureUnit) const
 {
     if (!isValid()) {

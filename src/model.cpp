@@ -17,7 +17,7 @@ Model::Model(std::filesystem::path objPath) : objPath{std::move(objPath)}
     loadModel();
 }
 
-void Model::draw(Shader& shader) const
+void Model::draw(Shader::BindObject& shader) const
 {
     for (const auto& mesh : meshes) {
         mesh.draw(shader);

@@ -3,7 +3,6 @@
 #include "logger.hpp"
 
 #include <fstream>
-#include <mutex>
 #include <sstream>
 #include <string>
 
@@ -120,14 +119,15 @@ void Shader::loadFromFile(const std::filesystem::path& vertexPath,
     loadFromSource(vertexSource, fragmentSource, requiredUniforms);
 }
 
-void Shader::bind() const
+Shader::BindObject Shader::bind()
 {
-    glUseProgram(programId);
-}
+    if (isBound) {
+        throw IrrecoverableError{"Attempt to bind shader twice"};
+    }
 
-void Shader::unbind() const
-{
-    glUseProgram(0);
+    isBound = true;
+
+    return BindObject{programId, *this};
 }
 
 void Shader::linkProgram(GLuint vertexShader, GLuint fragmentShader)
@@ -201,7 +201,8 @@ void Shader::validateUniforms(const std::vector<std::string>& requiredUniforms)
 
 bool Shader::validateUniformExists(const std::string& name) const
 {
-    if (!hasUniform(name)) {
+
+    if (!validUniforms.contains(name)) {
         // Logger::GetInstance().log("ERROR: Uniform '" + name +
         //                           "' does not exist in shader program");
         return false;
@@ -209,81 +210,84 @@ bool Shader::validateUniformExists(const std::string& name) const
     return true;
 }
 
-bool Shader::hasUniform(const std::string& name) const
-{
-    return validUniforms.contains(name);
-}
-
-uint32_t Shader::getId() const
-{
-    return programId;
-}
-
-const Shader::UniformInfo& Shader::getUniformInfo(const std::string& name) const
+const Shader::UniformInfo&
+Shader::BindObject::getUniformInfo(const std::string& name) const
 {
     try {
-        return validUniforms.at(name);
+        return shader.validUniforms.at(name);
     } catch (...) {
         throw IrrecoverableError{"Uniform '" + name +
                                  "' does not exist in shader program"};
     }
 }
 
-void Shader::setUniformInt(const std::string& name, int value)
+void Shader::BindObject::setUniformInt(const std::string& name, int value)
 {
-    if (!validateUniformExists(name)) {
+    if (!shader.validateUniformExists(name)) {
         return;
     }
-    const UniformInfo& info = validUniforms.at(name);
+    const UniformInfo& info = shader.validUniforms.at(name);
     glUniform1i(info.location, value);
 }
 
-void Shader::setUniform(const std::string& name, float value)
+void Shader::BindObject::setUniform(const std::string& name, float value)
 {
-    if (!validateUniformExists(name)) {
+    if (!shader.validateUniformExists(name)) {
         return;
     }
-    const UniformInfo& info = validUniforms.at(name);
+    const UniformInfo& info = shader.validUniforms.at(name);
     glUniform1f(info.location, value);
 }
 
-void Shader::setUniform(const std::string& name,
-                        const linalg::aliases::float2& value)
+void Shader::BindObject::setUniform(const std::string& name,
+                                    const linalg::aliases::float2& value)
 {
-    if (!validateUniformExists(name)) {
+    if (!shader.validateUniformExists(name)) {
         return;
     }
-    const UniformInfo& info = validUniforms.at(name);
+    const UniformInfo& info = shader.validUniforms.at(name);
     glUniform2f(info.location, value.x, value.y);
 }
 
-void Shader::setUniform(const std::string& name,
-                        const linalg::aliases::float3& value)
+void Shader::BindObject::setUniform(const std::string& name,
+                                    const linalg::aliases::float3& value)
 {
-    if (!validateUniformExists(name)) {
+    if (!shader.validateUniformExists(name)) {
         return;
     }
-    const UniformInfo& info = validUniforms.at(name);
+    const UniformInfo& info = shader.validUniforms.at(name);
     glUniform3f(info.location, value.x, value.y, value.z);
 }
 
-void Shader::setUniform(const std::string& name,
-                        const linalg::aliases::float4& value)
+void Shader::BindObject::setUniform(const std::string& name,
+                                    const linalg::aliases::float4& value)
 {
-    if (!validateUniformExists(name)) {
+    if (!shader.validateUniformExists(name)) {
         return;
     }
-    const UniformInfo& info = validUniforms.at(name);
+    const UniformInfo& info = shader.validUniforms.at(name);
     glUniform4f(info.location, value.x, value.y, value.z, value.w);
 }
 
-void Shader::setUniform(const std::string& name,
-                        const linalg::aliases::float4x4& value)
+void Shader::BindObject::setUniform(const std::string& name,
+                                    const linalg::aliases::float4x4& value)
 {
-    if (!validateUniformExists(name)) {
+    if (!shader.validateUniformExists(name)) {
         return;
     }
-    const UniformInfo& info = validUniforms.at(name);
+    const UniformInfo& info = shader.validUniforms.at(name);
     // TODO: Is memory layout correct here??
     glUniformMatrix4fv(info.location, 1, GL_FALSE, &value.x.x);
+}
+
+Shader::BindObject::BindObject(uint32_t programId, Shader& shader)
+  : programId{programId}, shader{shader}
+{
+    glUseProgram(programId);
+}
+
+Shader::BindObject::~BindObject()
+{
+    shader.isBound = false;
+    glUseProgram(0);
 }
