@@ -36,7 +36,7 @@ class Texture
 
     // USER IS RESPONSIBLE FOR HAVING BOUND THE SHADER
     // TODO: Need to make a convention for this or something
-    void bind(Shader& shader, const std::string& textureUniformName,
+    void bind(Shader::BindObject& shader, const std::string& textureUniformName,
               GLuint textureUnit) const;
     void unbind(GLuint textureUnit = 0) const;
 

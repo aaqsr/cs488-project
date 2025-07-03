@@ -46,7 +46,7 @@ class Material
     // LOOP AFTER SHADER IS SET.
     // TODO: Restructure code to be better somehow?? Maybe an RAII object that
     // remembers to unbind?
-    void setUniformsAndBind(Shader& shader);
+    void setUniformsAndBind(Shader::BindObject& shader);
     void unbind();
 
     void setName(const std::string& n);

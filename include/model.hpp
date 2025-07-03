@@ -37,5 +37,5 @@ class Model
     ~Model() = default;
 
     // USER MUST BIND SHADER
-    void draw(Shader& shader) const;
+    void draw(Shader::BindObject& shader) const;
 };

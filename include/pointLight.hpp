@@ -10,7 +10,8 @@
 // or something...
 class PointLight
 {
-    linalg::aliases::float3 worldPos{0.0F, 0.4F, 0.0F};
+    // linalg::aliases::float3 worldPos{0.0F, 0.4F, 0.0F};
+    linalg::aliases::float3 worldPos{0.0F, 0.2F, 1.0F};
 
     linalg::aliases::float3 ambientColour{0.1F, 0.1F, 0.1F};
     linalg::aliases::float3 diffuseColour{0.5F, 0.5F, 0.5F};
@@ -28,7 +29,7 @@ class PointLight
     // USER MUST BIND SHADER
     // TODO: there must be consistency... The convention could be that caller
     // always binds shader...
-    void setUniforms(Shader& shader, int lightNum);
+    void setUniforms(Shader::BindObject& shader, int lightNum);
 
     [[nodiscard]] const linalg::aliases::float3& getPos() const
     {
@@ -36,7 +37,7 @@ class PointLight
     }
 };
 
-inline void PointLight::setUniforms(Shader& shader, int lightNum)
+inline void PointLight::setUniforms(Shader::BindObject& shader, int lightNum)
 {
     std::string varName{"lights[" + std::to_string(lightNum) + "]"};
 

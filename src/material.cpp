@@ -87,7 +87,7 @@ const Texture& Material::getSpecularMap() const
     return specularMap;
 }
 
-void Material::setUniformsAndBind(Shader& shader)
+void Material::setUniformsAndBind(Shader::BindObject& shader)
 {
     shader.setUniform("material.Kd", getKd());
     shader.setUniform("material.Ks", getKs());

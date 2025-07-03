@@ -70,7 +70,7 @@ class Renderer : public Singleton<Renderer>
     PointLight light;
 
     Model mainModel{
-      std::filesystem::path{"assets/models/cornellbox/cornellbox.obj"}};
+      std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
 
     void drawLoop();
 
