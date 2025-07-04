@@ -1,4 +1,5 @@
 #include "quaternion.hpp"
+#include "linalg.h"
 #include <cmath>
 
 using namespace linalg::aliases;
@@ -93,6 +94,29 @@ float3x3 Quaternion::toMatrix3x3() const
 float4x4 Quaternion::toMatrix4x4() const
 {
     return linalg::rotation_matrix(q);
+}
+
+namespace
+{
+linalg::aliases::float4x4 toHomogenousMatrix(const linalg::aliases::float3x3& m)
+{
+    return linalg::aliases::float4x4{
+      {m[0], 0.0F},
+      {m[1], 0.0F},
+      {m[2], 0.0F},
+      {0.0F, 0.0F, 0.0F, 1.0F}
+    };
+}
+} // namespace
+
+Quaternion::RotationMaterices Quaternion::toMatrix4x4AndInverse() const
+{
+    const linalg::aliases::float3x3 inhomogenousRotation = linalg::qmat(q);
+    // orthogonal matrix
+    const linalg::aliases::float3x3 inhomogenousRotationInverse =
+      linalg::transpose(inhomogenousRotation);
+    return {toHomogenousMatrix(inhomogenousRotation),
+            toHomogenousMatrix(inhomogenousRotationInverse)};
 }
 
 float3 Quaternion::axis() const

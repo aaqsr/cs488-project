@@ -57,6 +57,7 @@ vec3 getSpecularColour()
 vec3 calcLight(Light light, vec3 normal, vec3 viewDir)
 {
     vec3 lightDir = normalize(light.position - worldPos);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
 
     float distance = length(light.position - worldPos);
     // instead of using a purely quadratic fall-off as in PBR,
@@ -72,7 +73,7 @@ vec3 calcLight(Light light, vec3 normal, vec3 viewDir)
 
     // specular
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.Ns);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), material.Ns);
     vec3 specular = light.specular * spec * getSpecularColour();
 
     // phong lighting
