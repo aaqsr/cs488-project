@@ -14,8 +14,8 @@ class Quaternion
     static Quaternion identity();
     static Quaternion fromAxisAngle(const linalg::aliases::float3& axis,
                                     float angleRadians);
-    static Quaternion fromEulerAngles(float yawRadians, float pitchRadians,
-                                      float rollRadians = 0.0F);
+    static Quaternion fromEulerAngles(float rollRadians, float pitchRadians,
+                                       float yawRadians);
     static Quaternion
     fromMatrix(const linalg::aliases::float3x3& rotationMatrix);
 

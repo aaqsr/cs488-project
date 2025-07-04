@@ -14,6 +14,7 @@ void run()
     Renderer& renderer = Renderer::GetInstance();
 
     try {
+        renderer.init();
         renderer.loop();
     } catch (IrrecoverableError& e) {
         std::cout << e.msg << "\n" << e.what() << "\n";

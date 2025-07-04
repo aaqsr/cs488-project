@@ -68,9 +68,10 @@ class Renderer : public Singleton<Renderer>
 
     PointLight light;
 
-    Model mainModel{std::filesystem::path{"assets/models/teapot/teapot.obj"}};
+    Model mainModel{std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}};
+    Model teaPot2{std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
 
-    void drawLoop();
+    void update();
 
   public:
     Renderer(const Renderer&) = delete;
@@ -78,6 +79,7 @@ class Renderer : public Singleton<Renderer>
     Renderer& operator=(const Renderer&) = delete;
     Renderer& operator=(Renderer&&) = delete;
 
+    void init();
     // TODO: Must restructure for the following
     // Minimize per-frame data transfers from CPU to GPU
     // Minimize number of state changes (binding framebuffers, textures,
