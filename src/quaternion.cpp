@@ -26,8 +26,8 @@ Quaternion Quaternion::fromAxisAngle(const float3& axis, float angleRadians)
     return Quaternion(linalg::rotation_quat(axis, angleRadians));
 }
 
-Quaternion Quaternion::fromEulerAngles(float yawRadians, float pitchRadians,
-                                       float rollRadians)
+Quaternion Quaternion::fromEulerAngles(float rollRadians, float pitchRadians,
+                                       float yawRadians)
 {
     // quaternions for each axis using linalg::rotation_quat
     const float3 xAxis{1.0F, 0.0F, 0.0F};
