@@ -39,7 +39,7 @@ Texture::Texture(const std::filesystem::path& path)
 Texture::Texture(int width, int height, const unsigned char* data)
   : width{width}, height{height}
 {
-    loadFromData(data, width, height, GL_RGB, GL_SRGB);
+    loadFromData(data, width, height, GL_RGB, GL_RGB);
 }
 
 // whyyyyy did I write this ( i had to :( )

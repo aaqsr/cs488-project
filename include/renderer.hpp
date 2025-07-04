@@ -1,5 +1,3 @@
-
-
 #include "controller.hpp"
 #include "logger.hpp"
 #include "model.hpp"
@@ -50,11 +48,12 @@ class Renderer : public Singleton<Renderer>
     // Maybe can have a list of models and shaders, and some datastructure can
     // specify which model to draw with which shader with the camera or not etc.
     Shader shader{
-      std::filesystem::path{"shaders/vertex/lightPerspTextureShader.glsl"},
-      std::filesystem::path{"shaders/fragment/phongTextureShader.glsl"},
+      std::filesystem::path{"shaders/vertex/modelLightPerspTextureShader.glsl"},
+      std::filesystem::path{"shaders/fragment/blinnPhongTextureShader.glsl"},
       // TODO: surely there's a better way than listing ALL of these sjsjsjs
       // TODO: oh god arrays...oh god...i REALLY need a better way for this
-      {"projection", "view", "material.isDiffuseTextured", "material.isSpecularTextured",  "material.diffuse", "material.specular",
+      {"projection", "view", "model", "material.isDiffuseTextured",
+                            "material.isSpecularTextured", "material.diffuse", "material.specular",
                             "material.Kd", "material.Ks", "material.Ns", "viewPos",
                             "lights[0].position", "lights[0].ambient", "lights[0].diffuse",
                             "lights[0].specular", "lights[0].constantFalloff",
@@ -62,15 +61,14 @@ class Renderer : public Singleton<Renderer>
     };
 
     Shader flatShader{
-      std::filesystem::path{"shaders/vertex/perspTextureShader.glsl"},
+      std::filesystem::path{"shaders/vertex/modelPerspTextureShader.glsl"},
       std::filesystem::path{"shaders/fragment/textureShader.glsl"},
-      {"projection", "view"}
+      {"projection", "view", "model"}
     };
 
     PointLight light;
 
-    Model mainModel{
-      std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
+    Model mainModel{std::filesystem::path{"assets/models/teapot/teapot.obj"}};
 
     void drawLoop();
 

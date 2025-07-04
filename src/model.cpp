@@ -5,6 +5,8 @@
 #include "mesh.hpp"
 #include "shader.hpp"
 
+#include <linalg.h>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -17,8 +19,20 @@ Model::Model(std::filesystem::path objPath) : objPath{std::move(objPath)}
     loadModel();
 }
 
-void Model::draw(Shader::BindObject& shader) const
+void Model::updateModelMatrix()
 {
+    modelMatrix = linalg::mul(
+      linalg::mul(linalg::translation_matrix(worldPos), rotation.toMatrix4x4()),
+      linalg::scaling_matrix(scale));
+}
+
+void Model::updateModelMatrixAndDraw(Shader::BindObject& shader)
+{
+    // TODO: Model matrix probably does not need to be recomputed every frame,
+    // only when something changes. Add a way to cache values.
+    updateModelMatrix();
+    shader.setUniform("model", modelMatrix);
+
     for (const auto& mesh : meshes) {
         mesh.draw(shader);
     }

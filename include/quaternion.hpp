@@ -32,6 +32,12 @@ class Quaternion
     rotate(const linalg::aliases::float3& vector) const;
     [[nodiscard]] linalg::aliases::float3x3 toMatrix3x3() const;
     [[nodiscard]] linalg::aliases::float4x4 toMatrix4x4() const;
+    struct RotationMaterices
+    {
+        linalg::aliases::float4x4 rotation;
+        linalg::aliases::float4x4 rotationInverse;
+    };
+    [[nodiscard]] RotationMaterices toMatrix4x4AndInverse() const;
 
     // axis and angle
     [[nodiscard]] linalg::aliases::float3 axis() const;

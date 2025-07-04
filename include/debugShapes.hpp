@@ -29,8 +29,8 @@ inline Model createCube()
       // Back face
       {{-0.5F, -0.5F, -0.5F}, {0.0F, 0.0F, -1.0F}, {1.0F, 0.0F}},
       { {0.5F, -0.5F, -0.5F}, {0.0F, 0.0F, -1.0F}, {0.0F, 0.0F}},
-      {  {0.5F, 0.5F, -0.5F}, {0.0F, 0.0F, -1.0F}, {0.0F, 1.0F}},
       { {-0.5F, 0.5F, -0.5F}, {0.0F, 0.0F, -1.0F}, {1.0F, 1.0F}},
+      {  {0.5F, 0.5F, -0.5F}, {0.0F, 0.0F, -1.0F}, {0.0F, 1.0F}},
 
       // Left face
       {{-0.5F, -0.5F, -0.5F}, {-1.0F, 0.0F, 0.0F}, {0.0F, 0.0F}},
@@ -61,7 +61,7 @@ inline Model createCube()
     std::vector<uint32_t> indices = {// Front face
                                      0, 1, 2, 2, 3, 0,
                                      // Back face
-                                     4, 5, 6, 6, 7, 4,
+                                     5, 4, 6, 6, 7, 5,
                                      // Left face
                                      8, 9, 10, 10, 11, 8,
                                      // Right face
@@ -79,7 +79,8 @@ inline Model createCube()
                    {"", material}}};
 }
 
-inline Model createCube(linalg::aliases::float3 centre, float scale = 0.1F)
+// Purposefully doesn't use model matrix to reposition or scale
+inline Model createCubeWithDefaultModelMatrix(linalg::aliases::float3 centre, float scale = 0.1F)
 {
     // Create material
     auto material = std::make_shared<Material>();

@@ -1,30 +1,7 @@
 #include "renderer.hpp"
 #include "debugShapes.hpp"
-#include "mesh.hpp"
+#include "pointLight.hpp"
 #include "shader.hpp"
-
-#include <numbers>
-
-Renderer::Renderer()
-{
-    //
-    // OpenGL configuration
-    //
-    glEnable(GL_CULL_FACE);  // don't draw back faces
-    glEnable(GL_DEPTH_TEST); // Depth buffer
-    glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE); // allow writing to depth buffer
-    glDepthRange(0.0, 1.0);
-    glClearDepth(1.0); // clear depth buffer to 1.0 (far plane)
-
-    // Disable VSync for them FPS wooooo (TODO: good idea??)
-    glfwSwapInterval(0);
-
-    //
-    // Setting up sub-classes
-    //
-    controller.setMainCamera(&mainCamera);
-}
 
 void Renderer::drawLoop()
 {
@@ -34,18 +11,53 @@ void Renderer::drawLoop()
     // TODO: make it so that we can call UseShader on a shader once before
     // all calls to it
     // TODO: should be less easy to forget to do this correctly
-    {
-        Shader::BindObject boundShader = shader.bind();
-        mainCamera.setUniforms(boundShader);
-        light.setUniforms(boundShader, 0);
-        mainModel.draw(boundShader);
-    }
+
+    // {
+    //     Shader::BindObject boundShader = shader.bind();
+    //     mainCamera.setUniforms(boundShader);
+    //     light.setUniforms(boundShader, 0);
+    //     mainModel.updateModelMatrixAndDraw(boundShader);
+    // }
+    //
+    // {
+    //     Shader::BindObject boundShader = flatShader.bind();
+    //     mainCamera.setUniforms(boundShader);
+    //     static Model lcube = DebugShape::createCube(light.getPos(), 0.1F);
+    //     lcube.updateModelMatrixAndDraw(boundShader);
+    // }
 
     {
         Shader::BindObject boundShader = flatShader.bind();
         mainCamera.setUniforms(boundShader);
-        static Model lcube = DebugShape::createCube(light.getPos(), 0.1F);
-        lcube.draw(boundShader);
+        light.setUniforms(boundShader, 0);
+
+        const double velocity = 3.0 * deltaTime;
+
+        static Model lcube = DebugShape::createCube();
+        lcube.worldPos = {2.0F, 0.0F, 0.0F};
+        lcube.updateModelMatrixAndDraw(boundShader);
+
+        static Model lcubeScale = DebugShape::createCube();
+        static float scaleParam = 0.0F;
+        lcubeScale.worldPos = {1.0F, 0.0F, -2.0F};
+        lcubeScale.scale = {0.5F * sin(scaleParam) + 1.0F, 1.0F, 0.5F * cos(scaleParam) + 1.0F};
+        scaleParam += velocity;
+        lcubeScale.updateModelMatrixAndDraw(boundShader);
+
+        static Model lcubeRot = DebugShape::createCube();
+    
+        lcubeRot.updateModelMatrixAndDraw(boundShader);
+
+        static float Xscale = 0.0F;
+        static float Zscale = 0.0F;
+
+        static float rotAxParam = 0.0F;
+        linalg::aliases::float3 rotationAxis = {sin(rotAxParam), cos(rotAxParam), 0.0F};
+
+        rotAxParam += velocity;
+        Quaternion incrementalRotation =
+          Quaternion::fromAxisAngle(rotationAxis, velocity);
+        lcubeRot.rotation = (incrementalRotation * lcubeRot.rotation).normalized();
     }
 }
 
@@ -67,7 +79,6 @@ void Renderer::loop()
         glClearColor(0.2F, 0.3F, 0.3F, 1.0F); // set a colour background
 
         /* RENDER COMMANDS HERE */
-
         drawLoop();
 
         // Enable this for Wireframe mode
@@ -82,4 +93,25 @@ void Renderer::loop()
         window.swapBuffers();
         glfwPollEvents();
     }
+}
+
+Renderer::Renderer()
+{
+    //
+    // OpenGL configuration
+    //
+    glEnable(GL_CULL_FACE);  // don't draw back faces
+    glEnable(GL_DEPTH_TEST); // Depth buffer
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE); // allow writing to depth buffer
+    glDepthRange(0.0, 1.0);
+    glClearDepth(1.0); // clear depth buffer to 1.0 (far plane)
+
+    // Disable VSync for them FPS wooooo (TODO: good idea??)
+    glfwSwapInterval(0);
+
+    //
+    // Setting up sub-classes
+    //
+    controller.setMainCamera(&mainCamera);
 }

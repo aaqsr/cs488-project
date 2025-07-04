@@ -2,8 +2,10 @@
 
 #include "logger.hpp"
 #include "mesh.hpp"
+#include "quaternion.hpp"
 
 #include <filesystem>
+#include <linalg.h>
 #include <utility>
 #include <vector>
 
@@ -16,6 +18,18 @@ class Model
     std::filesystem::path objPath;
     std::vector<Mesh> meshes;
     std::unordered_map<std::string, std::shared_ptr<Material>> materials;
+
+    // Model matrix = translate * rotate * scale
+    linalg::aliases::float4x4 modelMatrix;
+
+    // TEMPORARILY PUBLIC FOR TESTING ONLY
+  public:
+    linalg::aliases::float3 worldPos = {0.0F, 0.0F, 0.0F};
+    linalg::aliases::float3 scale = {1.0F, 1.0F, 1.0F};
+    Quaternion rotation{};
+
+  private:
+    void updateModelMatrix();
 
     void loadModel();
     void loadMaterials(const std::filesystem::path& mtlPath);
@@ -37,5 +51,5 @@ class Model
     ~Model() = default;
 
     // USER MUST BIND SHADER
-    void draw(Shader::BindObject& shader) const;
+    void updateModelMatrixAndDraw(Shader::BindObject& shader);
 };
