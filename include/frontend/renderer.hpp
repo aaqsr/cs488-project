@@ -52,8 +52,8 @@ class Renderer : public Singleton<Renderer>
       std::filesystem::path{"shaders/fragment/blinnPhongTextureShader.glsl"},
       // TODO: surely there's a better way than listing ALL of these sjsjsjs
       // TODO: oh god arrays...oh god...i REALLY need a better way for this
-      {"projection", "view", "model", "material.isDiffuseTextured",
-                            "material.isSpecularTextured", "material.diffuse", "material.specular",
+      {"projection", "view", "model",
+                            "material.diffuse", "material.specular",
                             "material.Kd", "material.Ks", "material.Ns", "viewPos",
                             "lights[0].position", "lights[0].ambient", "lights[0].diffuse",
                             "lights[0].specular", "lights[0].constantFalloff",

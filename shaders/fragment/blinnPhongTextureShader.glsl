@@ -62,7 +62,7 @@ vec3 calcLight(Light light, vec3 normal, vec3 viewDir)
     float distance = length(light.position - worldPos);
     // instead of using a purely quadratic fall-off as in PBR,
     // to get less harsh fall-off we use this
-    float falloff = 1.0 / (light.linearFalloff + light.linearFalloff * distance + light.quadraticFalloff * (distance * distance));
+    float falloff = 1.0 / (light.constantFalloff + light.linearFalloff * distance + light.quadraticFalloff * (distance * distance));
 
     // ambient
     vec3 ambient = light.ambient * getDiffuseColour();
