@@ -4,7 +4,7 @@
     "major": 3,
     "minor": 19,
     "patch": 0
-   },
+  },
   "configurePresets": [
     {
       "name": "debug",
@@ -12,18 +12,58 @@
       "displayName": "Debug Build",
       "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_FLAGS_DEBUG": "-g -O0 -Wall -Wextra -DDEBUG"
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
       }
     },
     {
       "name": "release",
       "hidden": false,
       "displayName": "Release Build",
-      "binaryDir": "build/release",
+      "binaryDir": "${sourceDir}/build/release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG -Wall"
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "hidden": false,
+      "displayName": "Windows Debug Build",
+      "binaryDir": "${sourceDir}/build/windows-debug",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-release",
+      "hidden": false,
+      "displayName": "Windows Release Build",
+      "binaryDir": "${sourceDir}/build/windows-release",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
       }
     }
   ],
@@ -35,7 +75,16 @@
     {
       "name": "release",
       "configurePreset": "release"
+    },
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release",
+      "configuration": "Release"
     }
   ]
 }
-

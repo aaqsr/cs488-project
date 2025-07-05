@@ -1,10 +1,10 @@
 #pragma once
 
-#include "quaternion.hpp"
 #include "shader.hpp"
+#include "util/quaternion.hpp"
 #include "window.hpp"
 
-#include <linalg.h>
+#include "linalg.h"
 
 class Camera
 {

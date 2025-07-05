@@ -1,6 +1,6 @@
-#include "shader.hpp"
-#include "error.hpp"
-#include "logger.hpp"
+#include "frontend/shader.hpp"
+#include "util/error.hpp"
+#include "util/logger.hpp"
 
 #include <fstream>
 #include <sstream>

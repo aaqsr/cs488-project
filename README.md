@@ -1,23 +1,47 @@
+# Installing Dependencies
+
+When the repo is first pulled down, you must pull down the relevant git submodules of dependency libraries.
+To do so, execute,
+```sh
+git submodule update --init --recursive
+```
+
 # Compilation
 
 If you have not built the project yet, or if you add/remove source or header files, first run,
 ```sh
+# for windows
+cmake --preset windows-debug   # for debug mode
+cmake --preset windows-release # for release mode
+
+# for everyone else
 cmake --preset debug   # for debug mode
 cmake --preset release # for release mode
 ```
-Skip the first step if you have already built the project once and have not added/removed source or header files.
+This generates the actual build files for your compilation setup.
+
+Skip the first step if you have already built the project once and have not added/removed source or header files nor edited cmake build files.
+In this instance, you don't need new build files.
 
 Then to actually build the project run,
 ```sh
-cmake --build --preset debug --parellel   # for debug build
-cmake --build --preset release --parallel # for debug build ```
+# for windows
+cmake --build --preset windows-debug -j 8   # for debug build
+cmake --build --preset windows-release -j 8 # for release build
 
-This will compile an executable in `./build/debug` or `./build/release`.
-To execute the program, run
-```sh
-./build/debug/CS488   # for debug mode
-./build/release/CS488 # for release mode
+# for everyone else
+cmake --build --preset debug -j 8   # for debug build
+cmake --build --preset release -j 8 # for release build
 ```
+
+# Run
+
+Once built run the `CS488` executable to launch the program.
+
+For Windows, the executable should be `build/windows-debug/Debug/CS488.exe` or `build/windows-release/Release/CS488.exe`.
+Please make sure to run from the build directory to ensure assets/shaders are found correctly.
+
+Otherwise, the executable should be `build/debug/CS488` or `build/release/CS488`.
 
 # TODO
 

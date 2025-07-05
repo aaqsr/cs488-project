@@ -1,11 +1,11 @@
 #pragma once
 
-#include "logger.hpp"
 #include "mesh.hpp"
-#include "quaternion.hpp"
+#include "util/logger.hpp"
+#include "util/quaternion.hpp"
 
+#include "linalg.h"
 #include <filesystem>
-#include <linalg.h>
 #include <utility>
 #include <vector>
 

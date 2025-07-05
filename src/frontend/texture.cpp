@@ -1,10 +1,10 @@
-#include "texture.hpp"
+#include "frontend/texture.hpp"
 #include "stb_image.h"
 
-#include <GL/glew.h>
+#include "GL/glew.h"
 #include <cmath>
 
-#include "error.hpp"
+#include "util/error.hpp"
 
 namespace
 {

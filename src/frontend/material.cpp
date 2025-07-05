@@ -1,5 +1,5 @@
-#include "material.hpp"
-#include "logger.hpp"
+#include "frontend/material.hpp"
+#include "util/logger.hpp"
 #include <string>
 
 void Material::setName(const std::string& n)

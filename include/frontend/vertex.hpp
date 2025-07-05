@@ -1,6 +1,6 @@
 #pragma once
 
-#include <linalg.h>
+#include "linalg.h"
 
 // TODO: Do we want struct of arrays instead for CPU cache locality when doing
 // computations on one attribute only?

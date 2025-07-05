@@ -1,6 +1,6 @@
 #pragma once
 
-#include "singleton.hpp"
+#include "util/singleton.hpp"
 
 struct GLFWwindow;
 

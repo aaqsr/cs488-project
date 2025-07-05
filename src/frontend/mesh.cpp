@@ -1,9 +1,9 @@
-#include "mesh.hpp"
+#include "frontend/mesh.hpp"
 
-#include "error.hpp"
-#include "vertex.hpp"
+#include "frontend/vertex.hpp"
+#include "util/error.hpp"
 
-#include <GL/glew.h>
+#include "GL/glew.h"
 
 void Mesh::setVertices(const std::vector<Vertex>& v)
 {
