@@ -1,5 +1,5 @@
-#include "camera.hpp"
-#include <linalg.h>
+#include "frontend/camera.hpp"
+#include "linalg.h"
 #include <numbers>
 
 namespace

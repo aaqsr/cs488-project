@@ -1,7 +1,7 @@
 #pragma once
 
+#include "linalg.h"
 #include "texture.hpp"
-#include <linalg.h>
 #include <string>
 
 class Shader;

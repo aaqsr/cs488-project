@@ -1,5 +1,5 @@
-#include "window.hpp"
-#include "error.hpp"
+#include "frontend/window.hpp"
+#include "util/error.hpp"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>

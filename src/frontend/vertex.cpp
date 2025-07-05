@@ -1,6 +1,6 @@
-#include "vertex.hpp"
+#include "frontend/vertex.hpp"
 
-#include <GL/glew.h>
+#include "GL/glew.h"
 
 // TODO: can we somehow generate this boilerplate?
 void Vertex::setupVertexAttributes()

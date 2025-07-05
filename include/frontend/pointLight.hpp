@@ -1,7 +1,7 @@
 #pragma once
 
+#include "linalg.h"
 #include "shader.hpp"
-#include <linalg.h>
 #include <string>
 
 // Does not use PBR (irradiance, wattage, etc.) because Phong lighting was

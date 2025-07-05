@@ -1,7 +1,7 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <linalg.h>
+#include "GL/glew.h"
+#include "linalg.h"
 
 #include <filesystem>
 #include <string>

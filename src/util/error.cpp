@@ -1,5 +1,5 @@
-#include "error.hpp"
-#include "logger.hpp"
+#include "util/error.hpp"
+#include "util/logger.hpp"
 
 IrrecoverableError::IrrecoverableError(std::string msg) : msg{std::move(msg)}
 {

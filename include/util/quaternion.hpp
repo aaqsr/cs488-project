@@ -1,5 +1,5 @@
 #pragma once
-#include <linalg.h>
+#include "linalg.h"
 
 class Quaternion
 {

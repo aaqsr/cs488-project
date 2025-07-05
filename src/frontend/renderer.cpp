@@ -1,8 +1,8 @@
-#include "renderer.hpp"
-#include "debugShapes.hpp"
-#include "pointLight.hpp"
-#include "quaternion.hpp"
-#include "shader.hpp"
+#include "frontend/renderer.hpp"
+#include "frontend/debugShapes.hpp"
+#include "frontend/pointLight.hpp"
+#include "frontend/shader.hpp"
+#include "util/quaternion.hpp"
 #include <numbers>
 
 void Renderer::init()

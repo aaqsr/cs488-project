@@ -1,7 +1,7 @@
 #pragma once
 
 #include "camera.hpp"
-#include "singleton.hpp"
+#include "util/singleton.hpp"
 
 struct GLFWwindow;
 

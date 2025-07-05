@@ -1,7 +1,7 @@
-#include "controller.hpp"
-#include "window.hpp"
+#include "frontend/controller.hpp"
+#include "frontend/window.hpp"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 Controller::Controller() : window{Window::GetInstance().getWindow()}
 {

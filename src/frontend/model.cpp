@@ -1,11 +1,11 @@
-#include "model.hpp"
-#include "error.hpp"
-#include "logger.hpp"
-#include "material.hpp"
-#include "mesh.hpp"
-#include "shader.hpp"
+#include "frontend/model.hpp"
+#include "frontend/material.hpp"
+#include "frontend/mesh.hpp"
+#include "frontend/shader.hpp"
+#include "util/error.hpp"
+#include "util/logger.hpp"
 
-#include <linalg.h>
+#include "linalg.h"
 
 #include <algorithm>
 #include <fstream>

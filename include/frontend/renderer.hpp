@@ -1,11 +1,11 @@
 #include "controller.hpp"
-#include "logger.hpp"
 #include "model.hpp"
 #include "pointLight.hpp"
-#include "singleton.hpp"
+#include "util/logger.hpp"
+#include "util/singleton.hpp"
 #include "window.hpp"
 
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 class Renderer : public Singleton<Renderer>
 {
