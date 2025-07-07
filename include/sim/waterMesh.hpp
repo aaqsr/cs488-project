@@ -21,7 +21,7 @@ class WaterMesh
     uint32_t heightVBO{0};
     uint32_t indexBuffer{0};
 
-    constexpr static float cellSize = 1.0F;
+    constexpr static float cellSize = 0.05F;
 
     std::array<linalg::aliases::float2,
                numRows * numCols>
@@ -54,8 +54,8 @@ inline WaterMesh<numRows, numCols>::WaterMesh(
               static_cast<float>(j) * cellSize};
         }
     }
-    Logger::GetInstance().log("Static positions,", staticPositions, numRows,
-                              numCols);
+    // Logger::GetInstance().log("Static positions,", staticPositions, numRows,
+    //                           numCols);
 
     int indexPos = 0;
     for (int j = 0; j < numRows - 1; ++j) {
@@ -72,7 +72,7 @@ inline WaterMesh<numRows, numCols>::WaterMesh(
             indices[indexPos++] = (topLeft);
         }
     }
-    Logger::GetInstance().log("Indices,", indices);
+    // Logger::GetInstance().log("Indices,", indices);
 
     // OpenGL buffer setup
     glGenVertexArrays(1, &VAO);
