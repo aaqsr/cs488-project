@@ -24,12 +24,12 @@ void Renderer::update()
     // all calls to it
     // TODO: should be less easy to forget to do this correctly
 
-    {
-        Shader::BindObject boundShader = shader.bind();
-        mainCamera.setUniforms(boundShader);
-        light.setUniforms(boundShader, 0);
-        mainModel.updateModelMatrixAndDraw(boundShader);
-    }
+    // {
+    //     Shader::BindObject boundShader = shader.bind();
+    //     mainCamera.setUniforms(boundShader);
+    //     light.setUniforms(boundShader, 0);
+    //     mainModel.updateModelMatrixAndDraw(boundShader);
+    // }
 
     // {
     //     Shader::BindObject boundShader = shader.bind();
@@ -38,23 +38,24 @@ void Renderer::update()
     //     mainModel.updateModelMatrixAndDraw(boundShader);
     // }
     //
-    {
-        Shader::BindObject boundShader = flatShader.bind();
-        teaPot2.updateModelMatrixAndDraw(boundShader);
-        mainCamera.setUniforms(boundShader);
-        static Model lcube = DebugShape::createCubeWithDefaultModelMatrix(light.getPos(), 0.1F);
-        lcube.updateModelMatrixAndDraw(boundShader);
-    }
+    // {
+    //     Shader::BindObject boundShader = flatShader.bind();
+    //     teaPot2.updateModelMatrixAndDraw(boundShader);
+    //     mainCamera.setUniforms(boundShader);
+    //     static Model lcube =
+    //     DebugShape::createCubeWithDefaultModelMatrix(light.getPos(), 0.1F);
+    //     lcube.updateModelMatrixAndDraw(boundShader);
+    // }
 
     {
         Shader::BindObject boundShader = flatShader.bind();
-        // mainCamera.setUniforms(boundShader);
+        mainCamera.setUniforms(boundShader);
         // light.setUniforms(boundShader, 0);
         //
         // const double velocity = 3.0 * deltaTime;
         //
         static Model lcube = DebugShape::createCube();
-        lcube.worldPos = {2.0F, 0.0F, 0.0F};
+        lcube.worldPos = {-2.0F, 0.0F, 0.0F};
         lcube.updateModelMatrixAndDraw(boundShader);
         //
         //     static Model lcubeScale = DebugShape::createCube();
@@ -80,6 +81,14 @@ void Renderer::update()
         //       Quaternion::fromAxisAngle(rotationAxis, velocity);
         //     lcubeRot.rotation = (incrementalRotation *
         //     lcubeRot.rotation).normalized();
+    }
+
+    {
+        Shader::BindObject boundShader = waterShader.bind();
+        mainCamera.setUniforms(boundShader);
+        waterMesh.draw(boundShader);
+        waterGrid.updateGrid(deltaTime);
+        waterMesh.updateMesh(waterGrid.getWaterHeights());
     }
 }
 
@@ -128,6 +137,9 @@ Renderer::Renderer()
     glDepthMask(GL_TRUE); // allow writing to depth buffer
     glDepthRange(0.0, 1.0);
     glClearDepth(1.0); // clear depth buffer to 1.0 (far plane)
+
+    // glEnable(GL_PROGRAM_POINT_SIZE);
+    glPointSize(5.0F);
 
     // Disable VSync for them FPS wooooo (TODO: good idea??)
     glfwSwapInterval(0);

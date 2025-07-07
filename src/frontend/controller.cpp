@@ -1,7 +1,8 @@
 #include "frontend/controller.hpp"
 #include "frontend/window.hpp"
+#include "util/quaternion.hpp"
 
-#include "GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 Controller::Controller() : window{Window::GetInstance().getWindow()}
 {
@@ -88,9 +89,13 @@ void Controller::mouseCallback(GLFWwindow* window, double xpos, double ypos)
     float pitchDelta = static_cast<float>(yoffset) * 0.0174533F;
 
     // Apply rotations
-    controller->camera->rotateAroundAxis({0.0F, 1.0F, 0.0F},
+    Camera* camera = controller->camera;
+    camera->rotateAroundAxis({0.0F, 1.0F, 0.0F},
                                          -yawDelta); // Yaw (Y-axis)
-    controller->camera->rotateAroundAxis(
+
+     camera->getOrientation().rotate({0,0,-1});
+
+    camera->rotateAroundAxis(
       controller->camera->getRight(),
       -pitchDelta); // Pitch (local right axis)
 }
