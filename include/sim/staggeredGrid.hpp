@@ -34,8 +34,8 @@ class StaggeredGrid
         // TODO: temporary plz
         for (int i = 0; i < numRows; ++i) {
             for (int j = 0; j < numCols; ++j) {
-                float x = (i - (numRows * 0.5F)) * 0.1F;
-                float y = (j - (numCols * 0.5F)) * 0.1F;
+                float x = (i - (numRows * 0.5F)) * 0.05F;
+                float y = (j - (numCols * 0.5F)) * 0.05F;
                 waterHeight[(i * numCols) + j] = fn(x, y);
             }
         }
@@ -50,8 +50,8 @@ class StaggeredGrid
         phase += 2.0F * deltaTime;
         for (int i = 0; i < numRows; ++i) {
             for (int j = 0; j < numCols; ++j) {
-                float x = (i - (numRows * 0.5F)) * 0.1F;
-                float y = (j - (numCols * 0.5F)) * 0.1F;
+                float x = (i - (numRows * 0.5F) + 0.5F) * 0.05F;
+                float y = (j - (numCols * 0.5F) + 0.5F) * 0.05F;
                 waterHeight[(i * numCols) + j] = fn(x, y, phase);
             }
         }

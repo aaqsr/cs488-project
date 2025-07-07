@@ -75,8 +75,8 @@ class Renderer : public Singleton<Renderer>
       {"projection", "view", "model"}
     };
 
-    StaggeredGrid<2, 2> waterGrid;
-    WaterMesh<2, 2> waterMesh{waterGrid.getWaterHeights()};
+    StaggeredGrid<200, 200> waterGrid;
+    WaterMesh<200, 200> waterMesh{waterGrid.getWaterHeights()};
 
     PointLight light;
 
