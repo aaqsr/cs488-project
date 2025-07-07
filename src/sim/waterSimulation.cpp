@@ -16,11 +16,10 @@ void WaterSimulation::update(double deltaTime)
             grid.getWaterHeight(i, j) = fn(x, y, phase);
         }
     }
-    mesh.updateMesh(grid.getWaterHeights());
 }
 
 void WaterSimulation::draw(Shader::BindObject& shader)
 {
+    mesh.updateMesh(grid.getWaterHeights());
     mesh.draw(shader);
 }
-
