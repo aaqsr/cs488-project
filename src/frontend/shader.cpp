@@ -1,6 +1,5 @@
 #include "frontend/shader.hpp"
 #include "util/error.hpp"
-#include "util/logger.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -56,14 +55,22 @@ Shader::Shader(const std::string& vertexSource,
                const std::string& fragmentSource,
                const std::vector<std::string>& requiredUniforms)
 {
-    loadFromSource(vertexSource, fragmentSource, requiredUniforms);
+    loadFromSource(vertexSource, "", fragmentSource, requiredUniforms);
 }
 
 Shader::Shader(const std::filesystem::path& vertexPath,
                const std::filesystem::path& fragmentPath,
                const std::vector<std::string>& requiredUniforms)
 {
-    loadFromFile(vertexPath, fragmentPath, requiredUniforms);
+    loadFromFile(vertexPath, "", fragmentPath, requiredUniforms);
+}
+
+Shader::Shader(const std::filesystem::path& vertexPath,
+               const std::filesystem::path& geoPath,
+               const std::filesystem::path& fragmentPath,
+               const std::vector<std::string>& requiredUniforms)
+{
+    loadFromFile(vertexPath, geoPath, fragmentPath, requiredUniforms);
 }
 
 Shader::~Shader()
@@ -74,6 +81,7 @@ Shader::~Shader()
 }
 
 void Shader::loadFromSource(const std::string& vertexSource,
+                            const std::string& geoSource,
                             const std::string& fragmentSource,
                             const std::vector<std::string>& requiredUniforms)
 {
@@ -82,14 +90,23 @@ void Shader::loadFromSource(const std::string& vertexSource,
         throw IrrecoverableError{"Vertex shader failed to compile"};
     }
 
+    GLuint geoShader = 0;
+    if (!geoSource.empty()) {
+        geoShader = compileShader(geoSource, GL_GEOMETRY_SHADER);
+        if (geoShader == 0) {
+            glDeleteShader(geoShader);
+            throw IrrecoverableError{"Geo shader failed to compile"};
+        }
+    }
+
     GLuint fragmentShader = compileShader(fragmentSource, GL_FRAGMENT_SHADER);
     if (fragmentShader == 0) {
-        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
         throw IrrecoverableError{"Fragment shader failed to compile"};
     }
 
     try {
-        linkProgram(vertexShader, fragmentShader);
+        linkProgram(vertexShader, geoShader, fragmentShader);
         validateUniforms(requiredUniforms);
     } catch (IrrecoverableError& e) {
         glDeleteShader(vertexShader);
@@ -106,6 +123,7 @@ void Shader::loadFromSource(const std::string& vertexSource,
 }
 
 void Shader::loadFromFile(const std::filesystem::path& vertexPath,
+                          const std::filesystem::path& geoPath,
                           const std::filesystem::path& fragmentPath,
                           const std::vector<std::string>& requiredUniforms)
 {
@@ -116,7 +134,15 @@ void Shader::loadFromFile(const std::filesystem::path& vertexPath,
         throw IrrecoverableError{"Failed to read shader file"};
     }
 
-    loadFromSource(vertexSource, fragmentSource, requiredUniforms);
+    std::string geoSource;
+    if (!geoPath.empty()) {
+        geoSource = readFile(geoPath);
+        if (geoSource.empty()) {
+            throw IrrecoverableError{"Failed to read shader file"};
+        }
+    }
+
+    loadFromSource(vertexSource, geoSource, fragmentSource, requiredUniforms);
 }
 
 Shader::BindObject Shader::bind()
@@ -130,12 +156,19 @@ Shader::BindObject Shader::bind()
     return BindObject{programId, *this};
 }
 
-void Shader::linkProgram(GLuint vertexShader, GLuint fragmentShader)
+void Shader::linkProgram(GLuint vertexShader, GLuint geoShader,
+                         GLuint fragmentShader)
 {
     programId = glCreateProgram();
 
     glAttachShader(programId, vertexShader);
+
+    if (geoShader != 0) {
+        glAttachShader(programId, geoShader);
+    }
+
     glAttachShader(programId, fragmentShader);
+
     glLinkProgram(programId);
 
     GLint success = 0;

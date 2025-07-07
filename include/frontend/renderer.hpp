@@ -1,11 +1,14 @@
 #include "controller.hpp"
 #include "model.hpp"
 #include "pointLight.hpp"
+#include "sim/staggeredGrid.hpp"
+#include "sim/waterMesh.hpp"
 #include "util/logger.hpp"
 #include "util/singleton.hpp"
 #include "window.hpp"
 
 #include "GLFW/glfw3.h"
+#include <filesystem>
 
 class Renderer : public Singleton<Renderer>
 {
@@ -52,8 +55,7 @@ class Renderer : public Singleton<Renderer>
       std::filesystem::path{"shaders/fragment/blinnPhongTextureShader.glsl"},
       // TODO: surely there's a better way than listing ALL of these sjsjsjs
       // TODO: oh god arrays...oh god...i REALLY need a better way for this
-      {"projection", "view", "model",
-                            "material.diffuse", "material.specular",
+      {"projection", "view", "model", "material.diffuse", "material.specular",
                             "material.Kd", "material.Ks", "material.Ns", "viewPos",
                             "lights[0].position", "lights[0].ambient", "lights[0].diffuse",
                             "lights[0].specular", "lights[0].constantFalloff",
@@ -66,10 +68,22 @@ class Renderer : public Singleton<Renderer>
       {"projection", "view", "model"}
     };
 
+    Shader waterShader{
+      std::filesystem::path{"shaders/vertex/waterSurface.glsl"},
+      std::filesystem::path{"shaders/geometry/waterSurface.glsl"},
+      std::filesystem::path{"shaders/fragment/simpleWaterSurface.glsl"},
+      {"projection", "view", "model"}
+    };
+
+    StaggeredGrid<2, 2> waterGrid;
+    WaterMesh<2, 2> waterMesh{waterGrid.getWaterHeights()};
+
     PointLight light;
 
-    Model mainModel{std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}};
-    Model teaPot2{std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
+    Model mainModel{
+      std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}};
+    Model teaPot2{
+      std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
 
     void update();
 
