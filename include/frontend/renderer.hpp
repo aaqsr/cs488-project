@@ -3,6 +3,7 @@
 #include "pointLight.hpp"
 #include "sim/staggeredGrid.hpp"
 #include "sim/waterMesh.hpp"
+#include "sim/waterSimulation.hpp"
 #include "util/logger.hpp"
 #include "util/singleton.hpp"
 #include "window.hpp"
@@ -75,8 +76,7 @@ class Renderer : public Singleton<Renderer>
       {"projection", "view", "model"}
     };
 
-    StaggeredGrid<200, 200> waterGrid;
-    WaterMesh<200, 200> waterMesh{waterGrid.getWaterHeights()};
+    WaterSimulation sim;
 
     PointLight light;
 
