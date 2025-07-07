@@ -86,9 +86,8 @@ void Renderer::update()
     {
         Shader::BindObject boundShader = waterShader.bind();
         mainCamera.setUniforms(boundShader);
-        waterMesh.draw(boundShader);
-        waterGrid.updateGrid(deltaTime);
-        waterMesh.updateMesh(waterGrid.getWaterHeights());
+        sim.update(deltaTime);
+        sim.draw(boundShader);
     }
 }
 
