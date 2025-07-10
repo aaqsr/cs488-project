@@ -1,5 +1,8 @@
 #include "frontend/controller.hpp"
+
+#include "frontend/camera.hpp"
 #include "frontend/window.hpp"
+#include "sim/waterSimulation.hpp"
 #include "util/quaternion.hpp"
 
 #include <GLFW/glfw3.h>
@@ -91,19 +94,18 @@ void Controller::mouseCallback(GLFWwindow* window, double xpos, double ypos)
     // Apply rotations
     Camera* camera = controller->camera;
     camera->rotateAroundAxis({0.0F, 1.0F, 0.0F},
-                                         -yawDelta); // Yaw (Y-axis)
+                             -yawDelta); // Yaw (Y-axis)
 
-     camera->getOrientation().rotate({0,0,-1});
+    camera->getOrientation().rotate({0, 0, -1});
 
-    camera->rotateAroundAxis(
-      controller->camera->getRight(),
-      -pitchDelta); // Pitch (local right axis)
+    camera->rotateAroundAxis(controller->camera->getRight(),
+                             -pitchDelta); // Pitch (local right axis)
 }
 
 void Controller::mouseButtonCallback(GLFWwindow* window, int button, int action,
                                      int mods)
 {
-    Controller* controller =
+    auto* controller =
       static_cast<Controller*>(glfwGetWindowUserPointer(window));
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
@@ -111,13 +113,31 @@ void Controller::mouseButtonCallback(GLFWwindow* window, int button, int action,
     }
 }
 
+// To detect only single pulses resulting from presses.
+// To do behaviour with held down key, see Controller::update
 void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
                              int action, int mods)
 {
-    Controller* controller =
+    auto* controller =
       static_cast<Controller*>(glfwGetWindowUserPointer(window));
 
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        controller->releaseMouse();
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_ESCAPE: controller->releaseMouse(); break;
+            case GLFW_KEY_P:
+                if (WaterSimulation* sim = controller->waterSim) {
+                    sim->togglePlay();
+                }
+            default: break;
+        }
     }
+}
+void Controller::setMainCamera(Camera* cam)
+{
+    camera = cam;
+}
+
+void Controller::setSim(WaterSimulation* sim)
+{
+    waterSim = sim;
 }

@@ -86,7 +86,7 @@ void Renderer::update()
     {
         Shader::BindObject boundShader = waterShader.bind();
         mainCamera.setUniforms(boundShader);
-        sim.update(deltaTime);
+        sim.update();
         sim.draw(boundShader);
     }
 }
@@ -147,4 +147,5 @@ Renderer::Renderer()
     // Setting up sub-classes
     //
     controller.setMainCamera(&mainCamera);
+    controller.setSim(&sim);
 }
