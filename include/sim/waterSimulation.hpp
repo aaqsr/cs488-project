@@ -9,10 +9,10 @@ class WaterSimulation
 {
   public:
     // TODO: come up with actual numbers
-    constexpr static size_t numRows = 50;
-    constexpr static size_t numCols = 30;
+    constexpr static size_t numRows = 100;
+    constexpr static size_t numCols = 80;
 
-    constexpr static float cellSize = 0.2F;
+    constexpr static float cellSize = 0.1F;
 
     constexpr static float gravitationalAcceleration = 9.80665F;
 
@@ -22,7 +22,8 @@ class WaterSimulation
 
     // TODO: actually use this to bound the depth maybe...
     // TODO: the paper suggests a better maxDepth in section 2.1.5
-    constexpr static float maxDepth = 1.0F;
+    // TODO: this maxDepth is definitely wrong
+    constexpr static float maxDepth = 0.5F;
 
     // bound suggested in Fluid Simulation for Computer Graphics by R. Bridson
     // in section 12.3.
@@ -30,9 +31,18 @@ class WaterSimulation
       cellSize / CS488Math::sqrt(gravitationalAcceleration * maxDepth);
 
     // to ensure fixed deltaT is bounded above by the...bound given above, we
-    // use a fractional value of the bound (again as suggested by Fluid
-    // Simulation for Computer Graphics by R. Bridson in section 12.3)
-    constexpr static float deltaT = deltaTBoundAbove * 0.07F;
+    // use a fractional value of the bound (0.2 is suggested by Fluid
+    // Simulation for Computer Graphics by R. Bridson in section 12.3).
+    // We use the current value discovered via trial and error.
+    constexpr static float deltaT = deltaTBoundAbove * 0.5F;
+    // Other bounds on deltaT:
+    // - t_n + deltaT < t_frame  [SCG by R.B. section 2.3]
+    // -
+
+    constexpr static float maxSpeedClamp = ([]() {
+        constexpr float alpha = 0.5F;
+        return alpha * cellSize / deltaT;
+    })();
 
   private:
     StaggeredGrid<numRows, numCols> grid;
@@ -54,9 +64,6 @@ class WaterSimulation
     // std::unique_ptr<StaggeredGrid<numRows, numCols>>
     void advectVelocities(const StaggeredGrid<numRows, numCols>& currentGrid,
                           float deltaTime);
-
-    [[nodiscard]]
-    static float getMaxSpeedClamp(float deltaTime);
 
     bool isPlaying = false;
 

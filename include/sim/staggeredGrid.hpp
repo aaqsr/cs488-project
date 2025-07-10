@@ -29,6 +29,9 @@ class StaggeredGrid
     StaggeredGrid& operator=(StaggeredGrid&&) = delete;
     ~StaggeredGrid() = default;
 
+    constexpr static size_t m_numRows = numRows;
+    constexpr static size_t m_numCols = numCols;
+
     const std::array<float, numRows*(numCols + 1)>& getUVelocities() const
     {
         return u_velocity;

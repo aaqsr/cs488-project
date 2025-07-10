@@ -111,3 +111,14 @@ void Camera::setUniforms(Shader::BindObject& shader) const
     shader.setUniform("view", viewMatrix);
     shader.setUniform("viewPos", position);
 }
+void Camera::updatePerspectiveMatrix()
+{
+    perspectiveMatrix =
+      computePerspectiveMatrix(fov, aspectRatio, nearPlane, farPlane);
+}
+
+void Camera::updateAspectRatio(int width, int height)
+{
+    aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    updatePerspectiveMatrix();
+}

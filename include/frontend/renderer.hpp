@@ -13,6 +13,7 @@
 class Renderer : public Singleton<Renderer>
 {
     friend class Singleton<Renderer>;
+    friend class Window; // for the resize callback
 
     // DO NOT REORDER THESE
     Window& window = Window::GetInstance();
