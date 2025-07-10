@@ -29,15 +29,35 @@ class StaggeredGrid
     StaggeredGrid& operator=(StaggeredGrid&&) = delete;
     ~StaggeredGrid() = default;
 
-    [[nodiscard]]
-    float& getWaterHeight(size_t i, size_t j)
+    const std::array<float, numRows*(numCols + 1)>& getUVelocities() const
     {
-        return waterHeight[(i * numCols) + j];
+        return u_velocity;
     }
+
+    const std::array<float, (numRows + 1) * numCols>& getWVelocities() const
+    {
+        return w_velocity;
+    }
+
     [[nodiscard]]
     float getWaterHeight(size_t i, size_t j) const
     {
         return waterHeight[(i * numCols) + j];
+    }
+
+    void setWaterHeight(size_t i, size_t j, float val)
+    {
+        // water height always clamped to >= 0
+        // TODO: any instance where we could accidentally read a value < 0?
+        waterHeight[(i * numCols) + j] = std::max(val, 0.0F);
+    }
+
+    void addToWaterHeight(size_t i, size_t j, float val)
+    {
+        // water height always clamped to >= 0
+        // TODO: any instance where we could accidentally read a value < 0?
+        const float result = getWaterHeight(i, j) + val;
+        setWaterHeight(i, j, result);
     }
 
     // float getTerrainHeight(int i, int j)
@@ -52,31 +72,46 @@ class StaggeredGrid
     }
 
     [[nodiscard]]
-    float getEta(int i, int j)
+    float getEta(size_t i, size_t j) const
     {
         // return getWaterHeight(i, j) + getTerrainHeight(i, j);
         return getWaterHeight(i, j);
     }
 
     [[nodiscard]]
-    float& getVelocity_u_i_plus_half_j(int i, int j)
+    float getVelocity_u_i_plus_half_j(size_t i, size_t j) const
     {
         return u_velocity[(i * (numCols + 1)) + j];
     }
-    [[nodiscard]]
-    float getVelocity_u_i_plus_half_j(int i, int j) const
+    // maxSpeedClamp used to clamp values. See section 2.1.5.
+    void setVelocity_u_i_plus_half_j(size_t i, size_t j, float val,
+                                     float maxSpeedClamp)
     {
-        return u_velocity[(i * (numCols + 1)) + j];
+        // TODO: technically this is less than or equal to, and the paper
+        // suggests just less than. But ah well...
+        u_velocity[(i * (numCols + 1)) + j] = std::min(val, maxSpeedClamp);
+    }
+    void addToVelocity_u_i_plus_half_j(size_t i, size_t j, float val,
+                                       float maxSpeedClamp)
+    {
+        const float result = getVelocity_u_i_plus_half_j(i, j) + val;
+        setVelocity_u_i_plus_half_j(i, j, result, maxSpeedClamp);
     }
 
     [[nodiscard]]
-    float& getVelocity_w_i_j_plus_half(int i, int j)
+    float getVelocity_w_i_j_plus_half(size_t i, size_t j) const
     {
         return w_velocity[(i * numCols) + j];
     }
-    [[nodiscard]]
-    float getVelocity_w_i_j_plus_half(int i, int j) const
+    void setVelocity_w_i_j_plus_half(size_t i, size_t j, float val,
+                                     float maxSpeedClamp)
     {
-        return w_velocity[(i * numCols) + j];
+        w_velocity[(i * numCols) + j] = std::min(val, maxSpeedClamp);
+    }
+    void addToVelocity_w_i_j_plus_half(size_t i, size_t j, float val,
+                                       float maxSpeedClamp)
+    {
+        const float result = getVelocity_w_i_j_plus_half(i, j) + val;
+        setVelocity_w_i_j_plus_half(i, j, result, maxSpeedClamp);
     }
 };

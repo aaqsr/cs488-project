@@ -1,9 +1,10 @@
 #pragma once
 
-#include "camera.hpp"
 #include "util/singleton.hpp"
 
 struct GLFWwindow;
+class WaterSimulation;
+class Camera;
 
 class Controller : public Singleton<Controller>
 {
@@ -12,6 +13,7 @@ class Controller : public Singleton<Controller>
     GLFWwindow* window;
     // TODO: Make this safe for use after free...
     Camera* camera = nullptr;
+    WaterSimulation* waterSim = nullptr;
 
     // Mouse state
     bool inputCaptured = false;
@@ -35,10 +37,8 @@ class Controller : public Singleton<Controller>
   public:
     ~Controller() override = default;
 
-    void setMainCamera(Camera* cam)
-    {
-        camera = cam;
-    }
+    void setMainCamera(Camera* cam);
+    void setSim(WaterSimulation* sim);
     void update(double deltaTime);
     void captureMouse();
     void releaseMouse();
