@@ -1,4 +1,5 @@
 #include "frontend/window.hpp"
+#include "frontend/renderer.hpp"
 #include "util/error.hpp"
 
 #include <GL/glew.h>
@@ -11,7 +12,8 @@ Window::Window()
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    // The resize callback is in the Renderer ctor
+    // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // for apple
@@ -32,9 +34,12 @@ Window::Window()
     }
 
     // Callback when window resizes
-    // glfwSetFramebufferSizeCallback(
-    //   window, [](GLFWwindow* window, int width, int height) {
-    //   });
+    glfwSetFramebufferSizeCallback(
+      window, [](GLFWwindow*, int width, int height) {
+          Window::width = width;
+          Window::height = height;
+          Renderer::GetInstance().mainCamera.updateAspectRatio(width, height);
+      });
 
     // Use framebuffer size, not window size for viewport.
     // Why? bcs they might differ...sigh (example: on HiDPI or Retina

@@ -1,4 +1,5 @@
 #include "sim/waterSimulation.hpp"
+#include <algorithm>
 #include <array>
 
 namespace
@@ -9,30 +10,40 @@ template <size_t rows, size_t cols>
 float interpolate(const std::array<float, rows * cols>& field,
                   linalg::aliases::float2 pos)
 {
-    // clamp coords to be within the valid grid area. subtract 1 from
-    // dimensions because we need 4 points for interpolation.
-    pos.x = std::max(0.0F, std::min(pos.x, static_cast<float>(cols - 1.0001F)));
-    // why subtracting 1.0001??
-    pos.y = std::max(0.0F, std::min(pos.y, static_cast<float>(rows - 1.0001F)));
+    // Boundary Conditions:
+    auto getFieldValue = [&field](int i, int j) -> float {
+        // reflection
+        i = std::max(i, 0);
+        j = std::max(j, 0);
 
-    const int i0 = static_cast<int>(pos.x);
-    const int j0 = static_cast<int>(pos.y);
+        if (i >= static_cast<int>(cols)) {
+            i = cols - 1;
+        }
+        if (j >= static_cast<int>(rows)) {
+            j = rows - 1;
+        }
+
+        return field[(j * cols) + i];
+    };
+
+    const int i0 = static_cast<int>(std::floor(pos.x));
+    const int j0 = static_cast<int>(std::floor(pos.y));
     const int i1 = i0 + 1;
     const int j1 = j0 + 1;
 
     const float tx = pos.x - static_cast<float>(i0);
     const float ty = pos.y - static_cast<float>(j0);
 
-    const float v00 = field[(j0 * cols) + i0];
-    const float v10 = field[(j0 * cols) + i1];
-    const float v01 = field[(j1 * cols) + i0];
-    const float v11 = field[(j1 * cols) + i1];
+    const float v00 = getFieldValue(i0, j0);
+    const float v10 = getFieldValue(i1, j0);
+    const float v01 = getFieldValue(i0, j1);
+    const float v11 = getFieldValue(i1, j1);
 
-    // Linear interpolation in x
+    // linear interp in x
     const float lerpX1 = v00 + ((v10 - v00) * tx);
     const float lerpX2 = v01 + ((v11 - v01) * tx);
 
-    // Linear interpolation in y
+    // linear interp in y
     return lerpX1 + ((lerpX2 - lerpX1) * ty);
 }
 
@@ -40,24 +51,36 @@ float interpolate(const std::array<float, rows * cols>& field,
 
 WaterSimulation::WaterSimulation() : grid{}, mesh{grid.getWaterHeights()}
 {
-    // Initial Conditions
+    // initial Conditions
     constexpr static auto fn = [](float x, float y, float phase = 0.0F) {
-        return std::cos(std::sqrtf((x * x) + (y * y)) + phase) * 1.0F;
-        // return std::cos(x + phase) * 1.0F;
+        // Gaussian hump function
+        const float sigma = 0.5F;     // width of the hump
+        const float amplitude = 0.5F; // height of the hump
+        float r_squared = (x * x) + (y * y);
+        return amplitude * std::exp(-r_squared / (2.0F * sigma * sigma));
     };
 
     const float phase = 0.0F;
 
-    // speed is 2.0F
     for (size_t i = 0; i < WaterSimulation::numRows; ++i) {
         for (size_t j = 0; j < WaterSimulation::numCols; ++j) {
-            float x = (static_cast<float>(i) -
-                       (WaterSimulation::numRows * 0.5F) + 0.5F) *
-                      cellSize;
-            float y = (static_cast<float>(j) -
-                       (WaterSimulation::numCols * 0.5F) + 0.5F) *
-                      cellSize;
-            grid.setWaterHeight(i, j, (0.5F * fn(x, y, phase)) + 1.0F);
+            if (((i >= WaterSimulation::numRows / 4) &&
+                 (i < (3 * WaterSimulation::numRows) / 4)) &&
+                ((j >= WaterSimulation::numCols / 4) &&
+                 (j < (3 * WaterSimulation::numCols) / 4)))
+            {
+                float x = (static_cast<float>(i) -
+                           (WaterSimulation::numRows * 0.5F) + 0.5F) *
+                          cellSize;
+                float y = (static_cast<float>(j) -
+                           (WaterSimulation::numCols * 0.5F) + 0.5F) *
+                          cellSize;
+
+                // add the hump to the base level of 1.0
+                grid.setWaterHeight(i, j, 1.0F + fn(x, y, phase));
+            } else {
+                grid.setWaterHeight(i, j, 1.0F);
+            }
         }
     }
 }
@@ -81,7 +104,6 @@ void WaterSimulation::update()
 
     for (size_t i = 0; i < numRows; ++i) {
         for (size_t j = 0; j < numCols; ++j) {
-            const float maxSpeedClamp = getMaxSpeedClamp(deltaTime);
             const linalg::aliases::float2 velChange =
               calcVelocityChangeIntegration(i, j, deltaTime);
             grid.addToVelocity_u_i_plus_half_j(i, j, velChange.x,
@@ -91,11 +113,23 @@ void WaterSimulation::update()
         }
     }
 
-    // static int numTimes = 0;
-    // if (numTimes < 5) {
-    //   ++numTimes;
-    //
-    // }
+    // Boundary Conditions:
+    // paper suggests setting boundary velocites to 0 at end of time step.
+    // Why at the end and not before when we are already iterating through the
+    // grid? idk but i am not about to tempt fate here...
+    for (size_t j = 0; j < numCols; ++j) {
+        // top wall
+        grid.setVelocity_w_i_j_plus_half(0, j, 0.0F, maxSpeedClamp);
+        // bottom wall
+        grid.setVelocity_w_i_j_plus_half(numRows, j, 0.0F, maxSpeedClamp);
+    }
+
+    for (size_t i = 0; i < numRows; ++i) {
+        // left wall
+        grid.setVelocity_u_i_plus_half_j(i, 0, 0.0F, maxSpeedClamp);
+        // right wall
+        grid.setVelocity_u_i_plus_half_j(i, numCols, 0.0F, maxSpeedClamp);
+    }
 }
 
 void WaterSimulation::draw(Shader::BindObject& shader)
@@ -110,12 +144,21 @@ float WaterSimulation::calcHeightChangeIntegral(size_t i, size_t j,
     // Both evaluated in the upwind direction
     const auto hBar_i_plus_half_j = [](const decltype(grid)& grid, size_t i,
                                        size_t j) -> float {
+        // Boundary conditions:
+        // if at right edge, use current cell height
+        if (i + 1 >= grid.m_numRows) {
+            return grid.getWaterHeight(i, j);
+        }
+
         return (grid.getVelocity_u_i_plus_half_j(i, j) <= 0)
                  ? grid.getWaterHeight(i + 1, j)
                  : grid.getWaterHeight(i, j);
     };
     const auto hBar_i_j_plus_half = [](const decltype(grid)& grid, size_t i,
                                        size_t j) -> float {
+        if (j + 1 >= grid.m_numCols) {
+            return grid.getWaterHeight(i, j);
+        }
         return (grid.getVelocity_w_i_j_plus_half(i, j) <= 0)
                  ? grid.getWaterHeight(i, j + 1)
                  : grid.getWaterHeight(i, j);
@@ -126,20 +169,29 @@ float WaterSimulation::calcHeightChangeIntegral(size_t i, size_t j,
     // const float h_avgmax = (beta * deltaX) / (gravitationalAcceleration *
     // deltaTime);
 
-    // TODO: Within bounds?
-    // Also TODO: size_t overflow if less than zero and we are subtracting
-    // one here
-    const float uDirectionNumerator =
-      (hBar_i_plus_half_j(grid, i, j) *
-       grid.getVelocity_u_i_plus_half_j(i, j)) -
-      (hBar_i_plus_half_j(grid, i - 1, j) *
-       grid.getVelocity_u_i_plus_half_j(i - 1, j));
+    // Boundary conditions: left boundary
+    float uDirectionNumerator = 0.0F;
+    if (i > 0) {
+        uDirectionNumerator = (hBar_i_plus_half_j(grid, i, j) *
+                               grid.getVelocity_u_i_plus_half_j(i, j)) -
+                              (hBar_i_plus_half_j(grid, i - 1, j) *
+                               grid.getVelocity_u_i_plus_half_j(i - 1, j));
+    } else {
+        uDirectionNumerator = hBar_i_plus_half_j(grid, i, j) *
+                              grid.getVelocity_u_i_plus_half_j(i, j);
+    }
 
-    const float wDirectionNumerator =
-      (hBar_i_j_plus_half(grid, i, j) *
-       grid.getVelocity_w_i_j_plus_half(i, j)) -
-      (hBar_i_j_plus_half(grid, i, j - 1) *
-       grid.getVelocity_w_i_j_plus_half(i, j - 1));
+    // Boundary conditions: top boundary
+    float wDirectionNumerator = 0.0F;
+    if (j > 0) {
+        wDirectionNumerator = (hBar_i_j_plus_half(grid, i, j) *
+                               grid.getVelocity_w_i_j_plus_half(i, j)) -
+                              (hBar_i_j_plus_half(grid, i, j - 1) *
+                               grid.getVelocity_w_i_j_plus_half(i, j - 1));
+    } else {
+        wDirectionNumerator = hBar_i_j_plus_half(grid, i, j) *
+                              grid.getVelocity_w_i_j_plus_half(i, j);
+    }
 
     constexpr float invDeltaX = 1.0F / deltaX;
 
@@ -156,12 +208,24 @@ linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
     const float eta_ij = grid.getEta(i, j);
     constexpr float g_over_deltaX = -gravitationalAcceleration * deltaX;
 
+    // Boundary conditions:
+    // right boundary
+    float eta_i_plus_1_j = eta_ij; // current cell (reflective)
+    if (i + 1 < numRows) {
+        eta_i_plus_1_j = grid.getEta(i + 1, j);
+    }
+
+    // Boundary conditions:
+    // bottom boundary
+    float eta_i_j_plus_1 = eta_ij; // current cell (reflective)
+    if (j + 1 < numCols) {
+        eta_i_j_plus_1 = grid.getEta(i, j + 1);
+    }
+
     const float delta_u_i_plus_half_j =
-      (g_over_deltaX * (grid.getEta(i + 1, j) - eta_ij) + accelExt.x) *
-      deltaTime;
+      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) * deltaTime;
     const float delta_w_i_j_plus_half =
-      (g_over_deltaX * (grid.getEta(i, j + 1) - eta_ij) + accelExt.z) *
-      deltaTime;
+      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) * deltaTime;
 
     return {delta_u_i_plus_half_j, delta_w_i_j_plus_half};
 }
@@ -174,9 +238,20 @@ void WaterSimulation::advectVelocities(
     // auto nextGrid = std::make_unique<StaggeredGrid<numRows, numCols>>();
     auto& nextGrid = grid;
 
+    // Boundary conditions:
+    // The paper in 2.1.4 suggests ignoring the velocities on the boundary in
+    // advection
+    // TODO: does this work???
+    static constexpr size_t minJ = 1;
+    static constexpr size_t maxJ = numRows - 1;
+    static_assert(minJ < maxJ);
+    static constexpr size_t minI = 1;
+    static constexpr size_t maxI = numCols - 1;
+    static_assert(minI < maxI);
+
     // Advect u
-    for (size_t j = 0; j < numRows; ++j) {
-        for (size_t i = 0; i < numCols + 1; ++i) {
+    for (size_t j = minJ; j < maxJ; ++j) {
+        for (size_t i = minI; i < maxI + 1; ++i) {
             // pos of u-velocity component
             linalg::aliases::float2 pos = {(static_cast<float>(i) - 0.5F) *
                                              deltaX,
@@ -208,8 +283,8 @@ void WaterSimulation::advectVelocities(
     }
 
     // Advect w
-    for (size_t j = 0; j < numRows + 1; ++j) {
-        for (size_t i = 0; i < numCols; ++i) {
+    for (size_t j = minJ; j < maxJ + 1; ++j) {
+        for (size_t i = minI; i < maxI; ++i) {
             linalg::aliases::float2 pos = {static_cast<float>(i) * deltaX,
                                            (static_cast<float>(j) - 0.5F) *
                                              deltaX};
@@ -237,11 +312,6 @@ void WaterSimulation::advectVelocities(
     // return nextGrid;
 }
 
-float WaterSimulation::getMaxSpeedClamp(float deltaTime)
-{
-    constexpr float alpha = 0.5F;
-    return alpha * cellSize / deltaTime;
-}
 void WaterSimulation::togglePlay()
 {
     isPlaying = !isPlaying;

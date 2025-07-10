@@ -13,8 +13,9 @@ class Window : public Singleton<Window>
     Window();
 
   public:
-    static constexpr int width = 800;
-    static constexpr int height = 600;
+    inline static int width = 800;
+    inline static int height = 600;
+
     inline static const char* title = "CS488";
 
     Window(const Window&) = delete;
