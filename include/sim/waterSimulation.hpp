@@ -5,8 +5,6 @@
 #include "sim/waterMesh.hpp"
 #include "util/math.hpp"
 
-#include <cmath>
-
 class WaterSimulation
 {
   public:
@@ -23,15 +21,17 @@ class WaterSimulation
     constexpr static float deltaX = cellSize;
 
     // TODO: actually use this to bound the depth maybe...
-    constexpr static float maxDepth = 2.0F;
+    // TODO: the paper suggests a better maxDepth in section 2.1.5
+    constexpr static float maxDepth = 1.0F;
 
     // bound suggested in Fluid Simulation for Computer Graphics by R. Bridson
-    // in section 12.3. a fraction of the maxDepth is suggested, we use 0.7F
+    // in section 12.3.
     constexpr static float deltaTBoundAbove =
-      cellSize / CS488Math::sqrt(gravitationalAcceleration * (maxDepth * 0.7F));
+      cellSize / CS488Math::sqrt(gravitationalAcceleration * maxDepth);
 
     // to ensure fixed deltaT is bounded above by the...bound given above, we
-    // use a fractional value of the bound
+    // use a fractional value of the bound (again as suggested by Fluid
+    // Simulation for Computer Graphics by R. Bridson in section 12.3)
     constexpr static float deltaT = deltaTBoundAbove * 0.07F;
 
   private:
