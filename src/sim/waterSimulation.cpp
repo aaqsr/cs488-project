@@ -101,6 +101,12 @@ void WaterSimulation::update()
             grid.setWaterHeight(i, j, newHeight, maxDepth);
         }
     }
+    // for (size_t i = 0; i < numRows; ++i) {
+    //   grid.setWaterHeight(i, 0, 0.0F, maxDepth);
+    // }
+    // for (size_t j = 0; j < numCols; ++j) {
+    //   grid.setWaterHeight(0, j, 0.0F, maxDepth);
+    // }
 
     for (size_t i = 0; i < numRows; ++i) {
         for (size_t j = 0; j < numCols; ++j) {
