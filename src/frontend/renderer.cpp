@@ -87,6 +87,17 @@ void Renderer::update()
         Shader::BindObject boundShader = waterShader.bind();
         mainCamera.setUniforms(boundShader);
         sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
+        sim.update();
         sim.draw(boundShader);
     }
 }
@@ -141,7 +152,7 @@ Renderer::Renderer()
     glPointSize(5.0F);
 
     // Disable VSync for them FPS wooooo (TODO: good idea??)
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     //
     // Setting up sub-classes
