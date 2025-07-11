@@ -21,6 +21,11 @@ class Controller : public Singleton<Controller>
     double lastMouseY = 0.0;
     bool firstMouse = true;
 
+    // but, but, we used quaternions?? well dear reader, this is here to
+    // prevent you from being able to look around the world. We do dispatch out
+    // to quaternions to still prevent gimbal lock though...
+    float pitch = 0.0F; // in radians
+
     // Movement settings
     float moveSpeed = 3.0F;
     float mouseSensitivity = 0.1F;
