@@ -244,20 +244,20 @@ void WaterSimulation::advectVelocities(float deltaTime)
     // The paper in 2.1.4 suggests ignoring the velocities on the boundary in
     // advection
     // TODO: does this work???
-    static constexpr size_t minJ = 1;
-    static constexpr size_t maxJ = numRows - 1;
-    static_assert(minJ < maxJ);
     static constexpr size_t minI = 1;
-    static constexpr size_t maxI = numCols - 1;
+    static constexpr size_t maxI = numRows - 1;
     static_assert(minI < maxI);
+    static constexpr size_t minJ = 1;
+    static constexpr size_t maxJ = numCols - 1;
+    static_assert(minJ < maxJ);
 
     // Advect u
-    for (size_t j = minJ; j < maxJ; ++j) {
-        for (size_t i = minI; i < maxI + 1; ++i) {
+    for (size_t i = minI; i < maxI; ++i) {
+        for (size_t j = minJ; j < maxJ + 1; ++j) {
             // pos of u-velocity component
-            linalg::aliases::float2 pos = {(static_cast<float>(i) - 0.5F) *
+            linalg::aliases::float2 pos = {(static_cast<float>(j) - 0.5F) *
                                              deltaX,
-                                           static_cast<float>(j) * deltaX};
+                                           static_cast<float>(i) * deltaX};
 
             // interpolate the w-velocity at this position to get a full
             // velocity vector. Grid coordinates for w-field interpolation
@@ -267,7 +267,7 @@ void WaterSimulation::advectVelocities(float deltaTime)
               grid.getWVelocities(), w_pos_grid);
 
             linalg::aliases::float2 vel = {
-              grid.getVelocity_u_i_plus_half_j(j, i), w_interp};
+              grid.getVelocity_u_i_plus_half_j(i, j), w_interp};
 
             // trace back in time
             linalg::aliases::float2 departure_pos = pos - vel * deltaTime;
@@ -279,15 +279,15 @@ void WaterSimulation::advectVelocities(float deltaTime)
             const float new_u = interpolate<numRows, numCols + 1>(
               grid.getUVelocities(), u_pos_grid);
 
-            grid.setVelocity_u_i_plus_half_j(j, i, new_u, maxSpeedClamp);
+            grid.setVelocity_u_i_plus_half_j(i, j, new_u, maxSpeedClamp);
         }
     }
 
     // Advect w
-    for (size_t j = minJ; j < maxJ + 1; ++j) {
-        for (size_t i = minI; i < maxI; ++i) {
-            linalg::aliases::float2 pos = {static_cast<float>(i) * deltaX,
-                                           (static_cast<float>(j) - 0.5F) *
+    for (size_t i = minI; i < maxI + 1; ++i) {
+        for (size_t j = minJ; j < maxJ; ++j) {
+            linalg::aliases::float2 pos = {static_cast<float>(j) * deltaX,
+                                           (static_cast<float>(i) - 0.5F) *
                                              deltaX};
 
             linalg::aliases::float2 u_pos_grid = {(pos.x / deltaX) - 0.5F,
@@ -296,7 +296,7 @@ void WaterSimulation::advectVelocities(float deltaTime)
               grid.getUVelocities(), u_pos_grid);
 
             linalg::aliases::float2 vel = {
-              u_interp, grid.getVelocity_w_i_j_plus_half(j, i)};
+              u_interp, grid.getVelocity_w_i_j_plus_half(i, j)};
 
             linalg::aliases::float2 departure_pos = pos - vel * deltaTime;
 
@@ -305,7 +305,7 @@ void WaterSimulation::advectVelocities(float deltaTime)
             const float new_w = interpolate<numRows + 1, numCols>(
               grid.getWVelocities(), w_pos_grid);
 
-            grid.setVelocity_w_i_j_plus_half(j, i, new_w, maxSpeedClamp);
+            grid.setVelocity_w_i_j_plus_half(i, j, new_w, maxSpeedClamp);
         }
     }
 
