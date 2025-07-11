@@ -47,6 +47,7 @@ Otherwise, the executable should be `build/debug/CS488` or `build/release/CS488`
 
 ## sim
 
+- [ ] Multi-threaded double-buffering
 - [ ] Boundary conditions need to handle corners!! Right now corner just gets set to neighbouring cell in the boundary instead of diagonal cell. Sometimes this is done in the wrong order and you get weirdness in the corners.
 - [ ] add some sort of dampening to the waves so that they don't just go on forever
     - Maybe a minimum wave size?

@@ -1,4 +1,5 @@
 #include "sim/waterSimulation.hpp"
+#include "linalg.h"
 #include <algorithm>
 #include <array>
 
@@ -52,15 +53,13 @@ float interpolate(const std::array<float, rows * cols>& field,
 WaterSimulation::WaterSimulation() : grid{}, mesh{grid.getWaterHeights()}
 {
     // initial Conditions
-    constexpr static auto fn = [](float x, float y, float phase = 0.0F) {
+    constexpr static auto fn = [](float x, float y) {
         // Gaussian hump function
-        const float sigma = 0.5F;     // width of the hump
+        const float sigma = 0.25F;    // width of the hump
         const float amplitude = 0.5F; // height of the hump
         float r_squared = (x * x) + (y * y);
         return amplitude * std::exp(-r_squared / (2.0F * sigma * sigma));
     };
-
-    const float phase = 0.0F;
 
     for (size_t i = 0; i < WaterSimulation::numRows; ++i) {
         for (size_t j = 0; j < WaterSimulation::numCols; ++j) {
@@ -77,9 +76,9 @@ WaterSimulation::WaterSimulation() : grid{}, mesh{grid.getWaterHeights()}
                           cellSize;
 
                 // add the hump to the base level of 1.0
-                grid.setWaterHeight(i, j, 1.0F + fn(x, y, phase));
+                grid.setWaterHeight(i, j, 1.0F + fn(x, y), maxDepth);
             } else {
-                grid.setWaterHeight(i, j, 1.0F);
+                grid.setWaterHeight(i, j, 1.0F, maxDepth);
             }
         }
     }
@@ -93,23 +92,30 @@ void WaterSimulation::update()
 
     const float deltaTime = deltaT;
 
-    advectVelocities(grid, deltaTime);
+    advectVelocities(deltaTime);
 
     for (size_t i = 0; i < numRows; ++i) {
         for (size_t j = 0; j < numCols; ++j) {
-            grid.addToWaterHeight(i, j,
-                                  calcHeightChangeIntegral(i, j, deltaTime));
+            const float newHeight = grid.getWaterHeight(i, j) +
+                                    calcHeightChangeIntegral(i, j, deltaTime);
+            grid.setWaterHeight(i, j, newHeight, maxDepth);
         }
     }
 
     for (size_t i = 0; i < numRows; ++i) {
         for (size_t j = 0; j < numCols; ++j) {
-            const linalg::aliases::float2 velChange =
+            const auto& [deltaU, deltaW] =
               calcVelocityChangeIntegration(i, j, deltaTime);
-            grid.addToVelocity_u_i_plus_half_j(i, j, velChange.x,
-                                               maxSpeedClamp);
-            grid.addToVelocity_w_i_j_plus_half(i, j, velChange.y,
-                                               maxSpeedClamp);
+
+            constexpr float dissipationConstant = 0.9999F;
+
+            const float newU = grid.getVelocity_u_i_plus_half_j(i, j) + deltaU;
+            grid.setVelocity_u_i_plus_half_j(i, j, dissipationConstant * newU,
+                                             maxSpeedClamp);
+
+            const float newW = grid.getVelocity_w_i_j_plus_half(i, j) + deltaW;
+            grid.setVelocity_w_i_j_plus_half(i, j, dissipationConstant * newW,
+                                             maxSpeedClamp);
         }
     }
 
@@ -232,12 +238,8 @@ linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
 
 // std::unique_ptr<
 //   StaggeredGrid<WaterSimulation::numRows, WaterSimulation::numCols>>
-void WaterSimulation::advectVelocities(
-  const StaggeredGrid<numRows, numCols>& currentGrid, float deltaTime)
+void WaterSimulation::advectVelocities(float deltaTime)
 {
-    // auto nextGrid = std::make_unique<StaggeredGrid<numRows, numCols>>();
-    auto& nextGrid = grid;
-
     // Boundary conditions:
     // The paper in 2.1.4 suggests ignoring the velocities on the boundary in
     // advection
@@ -262,10 +264,10 @@ void WaterSimulation::advectVelocities(
             linalg::aliases::float2 w_pos_grid = {pos.x / deltaX,
                                                   (pos.y / deltaX) - 0.5F};
             const float w_interp = interpolate<numRows + 1, numCols>(
-              currentGrid.getWVelocities(), w_pos_grid);
+              grid.getWVelocities(), w_pos_grid);
 
             linalg::aliases::float2 vel = {
-              currentGrid.getVelocity_u_i_plus_half_j(j, i), w_interp};
+              grid.getVelocity_u_i_plus_half_j(j, i), w_interp};
 
             // trace back in time
             linalg::aliases::float2 departure_pos = pos - vel * deltaTime;
@@ -275,10 +277,9 @@ void WaterSimulation::advectVelocities(
             linalg::aliases::float2 u_pos_grid = {
               (departure_pos.x / deltaX) + 0.5F, departure_pos.y / deltaX};
             const float new_u = interpolate<numRows, numCols + 1>(
-              currentGrid.getUVelocities(), u_pos_grid);
+              grid.getUVelocities(), u_pos_grid);
 
-            nextGrid.setVelocity_u_i_plus_half_j(j, i, new_u,
-                                                 100.0F /*max speed clamp*/);
+            grid.setVelocity_u_i_plus_half_j(j, i, new_u, maxSpeedClamp);
         }
     }
 
@@ -292,20 +293,19 @@ void WaterSimulation::advectVelocities(
             linalg::aliases::float2 u_pos_grid = {(pos.x / deltaX) - 0.5F,
                                                   pos.y / deltaX};
             const float u_interp = interpolate<numRows, numCols + 1>(
-              currentGrid.getUVelocities(), u_pos_grid);
+              grid.getUVelocities(), u_pos_grid);
 
             linalg::aliases::float2 vel = {
-              u_interp, currentGrid.getVelocity_w_i_j_plus_half(j, i)};
+              u_interp, grid.getVelocity_w_i_j_plus_half(j, i)};
 
             linalg::aliases::float2 departure_pos = pos - vel * deltaTime;
 
             linalg::aliases::float2 w_pos_grid = {
               departure_pos.x / deltaX, (departure_pos.y / deltaX) + 0.5F};
             const float new_w = interpolate<numRows + 1, numCols>(
-              currentGrid.getWVelocities(), w_pos_grid);
+              grid.getWVelocities(), w_pos_grid);
 
-            nextGrid.setVelocity_w_i_j_plus_half(j, i, new_w,
-                                                 100.0F /*max speed clamp*/);
+            grid.setVelocity_w_i_j_plus_half(j, i, new_w, maxSpeedClamp);
         }
     }
 

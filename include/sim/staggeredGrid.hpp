@@ -48,19 +48,11 @@ class StaggeredGrid
         return waterHeight[(i * numCols) + j];
     }
 
-    void setWaterHeight(size_t i, size_t j, float val)
+    void setWaterHeight(size_t i, size_t j, float val, float maxHeightClamp)
     {
         // water height always clamped to >= 0
         // TODO: any instance where we could accidentally read a value < 0?
-        waterHeight[(i * numCols) + j] = std::max(val, 0.0F);
-    }
-
-    void addToWaterHeight(size_t i, size_t j, float val)
-    {
-        // water height always clamped to >= 0
-        // TODO: any instance where we could accidentally read a value < 0?
-        const float result = getWaterHeight(i, j) + val;
-        setWaterHeight(i, j, result);
+        waterHeight[(i * numCols) + j] = std::clamp(val, 0.0F, maxHeightClamp);
     }
 
     // float getTerrainHeight(int i, int j)
@@ -94,12 +86,6 @@ class StaggeredGrid
         // suggests just less than. But ah well...
         u_velocity[(i * (numCols + 1)) + j] = std::min(val, maxSpeedClamp);
     }
-    void addToVelocity_u_i_plus_half_j(size_t i, size_t j, float val,
-                                       float maxSpeedClamp)
-    {
-        const float result = getVelocity_u_i_plus_half_j(i, j) + val;
-        setVelocity_u_i_plus_half_j(i, j, result, maxSpeedClamp);
-    }
 
     [[nodiscard]]
     float getVelocity_w_i_j_plus_half(size_t i, size_t j) const
@@ -110,11 +96,5 @@ class StaggeredGrid
                                      float maxSpeedClamp)
     {
         w_velocity[(i * numCols) + j] = std::min(val, maxSpeedClamp);
-    }
-    void addToVelocity_w_i_j_plus_half(size_t i, size_t j, float val,
-                                       float maxSpeedClamp)
-    {
-        const float result = getVelocity_w_i_j_plus_half(i, j) + val;
-        setVelocity_w_i_j_plus_half(i, j, result, maxSpeedClamp);
     }
 };
