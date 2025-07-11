@@ -22,6 +22,7 @@ class WaterMesh
     uint32_t VAO{0};
     uint32_t positionVBO{0};
     uint32_t heightVBO{0};
+    uint32_t normalVBO{0};
     uint32_t indexBuffer{0};
 
     std::array<linalg::aliases::float2,
@@ -29,6 +30,43 @@ class WaterMesh
       staticPositions; // x, z positions
 
     std::array<uint32_t, (numRows - 1) * (numCols - 1) * 4> indices;
+
+    std::array<linalg::aliases::float3, numRows * numCols> normals;
+
+    void computeNormals(const std::array<float, numRows * numCols>& heights)
+    {
+        const auto getPos =
+          [this, &heights](size_t i, size_t j) -> linalg::aliases::float3 {
+            return linalg::aliases::float3{
+              staticPositions[(i * numCols) + j].x, heights[(i * numCols) + j],
+              staticPositions[(i * numCols) + j].y};
+        };
+
+        for (size_t i = 0; i < numRows; ++i) {
+            for (size_t j = 0; j < numCols; ++j) {
+                // Compute the normal as equal to
+                //  ((i+1,j) - (i,j)) x ((i,j+1) - (i+1,j))
+                // normalised when not on boundary.
+                //    i.e. cross of vector facing x direction and vector facing
+                //         z direction
+                // For boundary, we get x and z directions with previous vertex
+                const linalg::aliases::float3 Pij = getPos(i, j);
+
+                const linalg::aliases::float3 xDir = (i == numRows - 1)
+                                                       ? Pij - getPos(i - 1, j)
+                                                       : getPos(i + 1, j) - Pij;
+
+                const linalg::aliases::float3 zDir = (j == numCols - 1)
+                                                       ? Pij - getPos(i, j - 1)
+                                                       : getPos(i, j + 1) - Pij;
+
+                const linalg::aliases::float3 normal =
+                  linalg::normalize(linalg::cross(xDir, zDir));
+
+                normals[(i * numCols) + j] = normal;
+            }
+        }
+    }
 
   public:
     WaterMesh(const std::array<float, numRows * numCols>& initHeights);
@@ -74,7 +112,20 @@ template <size_t numRows, size_t numCols, float cellSize>
 inline void WaterMesh<numRows, numCols, cellSize>::updateMesh(
   const std::array<float, numRows * numCols>& heights)
 {
-    // upload only the height data
+    computeNormals(heights);
+
+    // upload the normals
+    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+
+    // orphan old buffer so that we don't have to wait for the GPU to be
+    // done with it GPU *should* clean up the old buffer for us/
+    // TODO: is this implementation correct...
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * 3 * sizeof(float), nullptr,
+                 GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, normals.size() * 3 * sizeof(float),
+                    normals.data());
+
+    // now upload the height data
     glBindBuffer(GL_ARRAY_BUFFER, heightVBO);
 
     // orphan old buffer so that we don't have to wait for the GPU to be
@@ -93,6 +144,7 @@ inline WaterMesh<numRows, numCols, cellSize>::~WaterMesh()
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &positionVBO);
         glDeleteBuffers(1, &heightVBO);
+        glDeleteBuffers(1, &normalVBO);
         glDeleteBuffers(1, &indexBuffer);
     }
 }
@@ -102,8 +154,8 @@ inline WaterMesh<numRows, numCols, cellSize>::WaterMesh(
   const std::array<float, numRows * numCols>& initHeights)
 {
     // Static positions
-    for (int j = 0; j < numRows; ++j) {
-        for (int i = 0; i < numCols; ++i) {
+    for (size_t j = 0; j < numRows; ++j) {
+        for (size_t i = 0; i < numCols; ++i) {
             // Store x,z positions (these never change)
             staticPositions[(j * numCols) + i] = {
               static_cast<float>(i) * cellSize,
@@ -115,8 +167,8 @@ inline WaterMesh<numRows, numCols, cellSize>::WaterMesh(
     //                           numCols);
 
     int indexPos = 0;
-    for (int j = 0; j < numRows - 1; ++j) {
-        for (int i = 0; i < numCols - 1; ++i) {
+    for (int j = 0; j < static_cast<int>(numRows) - 1; ++j) {
+        for (int i = 0; i < static_cast<int>(numCols) - 1; ++i) {
             // vertices in counter-clockwise order
             int topLeft = (j * numCols) + i;
             int topRight = (j * numCols) + (i + 1);
@@ -135,6 +187,7 @@ inline WaterMesh<numRows, numCols, cellSize>::WaterMesh(
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &positionVBO);
     glGenBuffers(1, &heightVBO);
+    glGenBuffers(1, &normalVBO);
     glGenBuffers(1, &indexBuffer);
 
     glBindVertexArray(VAO);
@@ -152,6 +205,13 @@ inline WaterMesh<numRows, numCols, cellSize>::WaterMesh(
                  initHeights.data(), GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
+
+    // setup dynamic normals buffer
+    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+    glBufferData(GL_ARRAY_BUFFER, (numRows * numCols) * 3 * sizeof(float),
+                 normals.data(), GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
 
     // setup index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
