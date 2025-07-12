@@ -48,15 +48,16 @@ void Renderer::update()
     // }
 
     {
-        Shader::BindObject boundShader = flatShader.bind();
-        mainCamera.setUniforms(boundShader);
+        // Shader::BindObject boundShader = flatShader.bind();
+        // mainCamera.setUniforms(boundShader);
+        // static Model lcube = DebugShape::createCube();
+        // lcube.worldPos = {-2.0F, 0.0F, 0.0F};
+        // lcube.updateModelMatrixAndDraw(boundShader);
+
         // light.setUniforms(boundShader, 0);
         //
         // const double velocity = 3.0 * deltaTime;
         //
-        static Model lcube = DebugShape::createCube();
-        lcube.worldPos = {-2.0F, 0.0F, 0.0F};
-        lcube.updateModelMatrixAndDraw(boundShader);
         //
         //     static Model lcubeScale = DebugShape::createCube();
         //     static float scaleParam = 0.0F;
@@ -83,21 +84,22 @@ void Renderer::update()
         //     lcubeRot.rotation).normalized();
     }
 
+    // Should be second last thing drawn
+    {
+        skybox.setUniformsAndDraw(mainCamera);
+    }
+
+    // Should be last thing drawn
     {
         Shader::BindObject boundShader = waterShader.bind();
         mainCamera.setUniforms(boundShader);
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
-        sim.update();
+
+        // TODO: better decouple the simulation from the renderer.
+        // For not though, just step multiple times
+        for (int i = 0; i < 12; ++i) {
+            sim.update();
+        }
+
         sim.draw(boundShader);
     }
 }
