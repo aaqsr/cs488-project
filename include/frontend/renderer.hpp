@@ -1,5 +1,6 @@
 #include "controller.hpp"
 #include "frontend/camera.hpp"
+#include "frontend/skybox.hpp"
 #include "model.hpp"
 #include "pointLight.hpp"
 #include "sim/waterSimulation.hpp"
@@ -84,6 +85,8 @@ class Renderer : public Singleton<Renderer>
       std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}};
     Model teaPot2{
       std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
+
+    Skybox skybox;
 
     void update();
 
