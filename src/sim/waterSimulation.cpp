@@ -144,8 +144,10 @@ void WaterSimulation::update()
     }
 }
 
-void WaterSimulation::draw(Shader::BindObject& shader)
+void WaterSimulation::draw(Shader::BindObject& shader,
+                           const linalg::aliases::float3& cameraPos)
 {
+    shader.setUniform("cameraPos", cameraPos);
     mesh.updateMesh(grid.getWaterHeights());
     mesh.draw(shader);
 }

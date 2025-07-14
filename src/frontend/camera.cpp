@@ -44,8 +44,7 @@ float4x4 computeViewMatrix(const float3& position,
 } // namespace
 
 Camera::Camera()
-  : orientation{Quaternion::identity()},
-    perspectiveMatrix{
+  : perspectiveMatrix{
       computePerspectiveMatrix(fov, aspectRatio, nearPlane, farPlane)}
 // init with identity quaternion
 {

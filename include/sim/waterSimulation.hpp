@@ -69,6 +69,7 @@ class WaterSimulation
     WaterSimulation();
 
     void update();
-    void draw(Shader::BindObject& shader);
+    void draw(Shader::BindObject& shader,
+              const linalg::aliases::float3& cameraPos);
     void togglePlay();
 };

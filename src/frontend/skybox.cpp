@@ -104,7 +104,7 @@ Skybox::Skybox()
 
     {
         Shader::BindObject boundShader = skyboxShader.bind();
-        boundShader.setUniformInt("skybox", 0);
+        setSkyboxSamplerUniform(boundShader);
     }
 }
 
@@ -118,6 +118,11 @@ Skybox::~Skybox()
     if (textureId != 0) {
         glDeleteTextures(1, &textureId);
     }
+}
+
+void Skybox::setSkyboxSamplerUniform(Shader::BindObject& shader)
+{
+    shader.setUniformInt("skybox", 0);
 }
 
 void Skybox::setUniformsAndDraw(const Camera& mainCamera)

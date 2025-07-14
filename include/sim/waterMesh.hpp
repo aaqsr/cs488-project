@@ -1,9 +1,11 @@
 #pragma once
 
+#include "frontend/model.hpp"
 #include "frontend/shader.hpp"
 #include "util/logger.hpp"
 
 #include <GL/glew.h>
+#include <format>
 #include <linalg.h>
 
 #include <cstdint>
@@ -158,13 +160,16 @@ inline WaterMesh<numRows, numCols, cellSize>::WaterMesh(
         for (size_t i = 0; i < numCols; ++i) {
             // Store x,z positions (these never change)
             staticPositions[(j * numCols) + i] = {
-              static_cast<float>(i) * cellSize,
-              static_cast<float>(j) * cellSize};
+              static_cast<float>(i) * cellSize + 0.025F,
+              static_cast<float>(j) * cellSize + 0.025F};
         }
     }
-    // Logger::GetInstance().log("Static positions,", staticPositions,
-    // numRows,
-    //                           numCols);
+    Logger::GetInstance().log(
+      std::format("Static Positions, numRows = {}, numCols = {}. "
+                  "From ({:.2f}, {:.2f}) to ({:.2f}, {:.2f})",
+                  numRows, numCols, staticPositions[0].x, staticPositions[0].y,
+                  staticPositions[staticPositions.size() - 1].x,
+                  staticPositions[staticPositions.size() - 1].y));
 
     int indexPos = 0;
     for (int j = 0; j < static_cast<int>(numRows) - 1; ++j) {

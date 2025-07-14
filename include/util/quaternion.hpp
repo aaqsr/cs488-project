@@ -38,6 +38,8 @@ class Quaternion
         linalg::aliases::float4x4 rotationInverse;
     };
     [[nodiscard]] RotationMaterices toMatrix4x4AndInverse() const;
+    // this method is quite expensive
+    [[nodiscard]] linalg::aliases::float3 toEulerAngles() const;
 
     // axis and angle
     [[nodiscard]] linalg::aliases::float3 axis() const;
