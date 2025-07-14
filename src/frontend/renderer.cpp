@@ -7,12 +7,17 @@
 
 void Renderer::init()
 {
-    mainModel.rotation =
-      Quaternion::fromEulerAngles(-std::numbers::pi / 2, 0.0F, 0.0F);
-    mainModel.scale = {0.03F, 0.03F, 0.03F};
-    mainModel.worldPos = {0.0F, -0.22F, 0.0F};
+    // mainModel.rotation =
+    //   Quaternion::fromEulerAngles(-std::numbers::pi / 2, 0.0F, 0.0F);
+    // mainModel.scale = {0.03F, 0.03F, 0.03F};
+    // mainModel.worldPos = {0.0F, -0.22F, 0.0F};
 
-    teaPot2.worldPos = {-2.0F, 0.0F, 0.0F};
+    // teaPot2.worldPos = {-2.0F, 0.0F, 0.0F};
+
+    {
+        Shader::BindObject shader = waterShader.bind();
+        skybox.setSkyboxSamplerUniform(shader);
+    }
 }
 
 void Renderer::update()
@@ -84,6 +89,12 @@ void Renderer::update()
         //     lcubeRot.rotation).normalized();
     }
 
+    {
+        Shader::BindObject boundShader = flatShader.bind();
+        mainCamera.setUniforms(boundShader);
+        pool.updateModelMatrixAndDraw(boundShader);
+    }
+
     // Should be second last thing drawn
     {
         skybox.setUniformsAndDraw(mainCamera);
@@ -96,11 +107,11 @@ void Renderer::update()
 
         // TODO: better decouple the simulation from the renderer.
         // For not though, just step multiple times
-        for (int i = 0; i < 12; ++i) {
+        for (int i = 0; i < 20; ++i) {
             sim.update();
         }
 
-        sim.draw(boundShader);
+        sim.draw(boundShader, mainCamera.getPosition());
     }
 }
 

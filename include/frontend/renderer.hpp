@@ -70,21 +70,37 @@ class Renderer : public Singleton<Renderer>
       {"projection", "view", "model"}
     };
 
+    // Shader sunShader{
+    //   std::filesystem::path{"shaders/vertex/modelLightPerspTextureShader.glsl"},
+    //   std::filesystem::path{"shaders/fragment/sunBlinnPhongTextureShader.glsl"},
+    //   {"projection", "view", "model", "material.diffuse", "material.specular",
+    //                         "material.Kd", "material.Ks", "material.Ns", "viewPos"}
+    // };
+
     Shader waterShader{
       std::filesystem::path{"shaders/vertex/waterSurface.glsl"},
       std::filesystem::path{"shaders/geometry/waterSurface.glsl"},
       std::filesystem::path{"shaders/fragment/simpleWaterSurface.glsl"},
-      {"projection", "view", "model"}
+      // std::filesystem::path{"shaders/fragment/reflectiveWaterSurface.glsl"},
+      // std::filesystem::path{"shaders/fragment/pbrWaterSurface.glsl"},
+      // std::filesystem::path{"shaders/fragment/opaqueWaterSurface.glsl"},
+      // std::filesystem::path{"shaders/fragment/cartoonyReflectiveWaterSurface.glsl"},
+      // std::filesystem::path{"shaders/fragment/fastReflectiveWaterSurface.glsl"},
+      {
+                            "projection", "view", "model",
+                            // "cameraPos", "skybox"
+      }
     };
 
     WaterSimulation sim;
 
     PointLight light;
 
-    Model mainModel{
-      std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}};
-    Model teaPot2{
-      std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
+    // Model mainModel{
+    //   std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}};
+    // Model teaPot2{
+    //   std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
+    Model pool{std::filesystem::path{"assets/models/pool/pool.obj"}};
 
     Skybox skybox;
 

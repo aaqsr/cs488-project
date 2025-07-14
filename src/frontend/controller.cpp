@@ -6,6 +6,8 @@
 #include "util/quaternion.hpp"
 
 #include <GLFW/glfw3.h>
+#include <sstream>
+#include <string>
 
 Controller::Controller() : window{Window::GetInstance().getWindow()}
 {
@@ -162,6 +164,19 @@ void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
                 if (WaterSimulation* sim = controller->waterSim) {
                     sim->togglePlay();
                 }
+            case GLFW_KEY_I:
+                if (controller->camera != nullptr) {
+                    std::stringstream ss;
+                    const auto& camPos = controller->camera->getPosition();
+                    const auto& camOri =
+                      controller->camera->getOrientation().data();
+                    ss << "Camera pos " << camPos.x << ", " << camPos.y << ", "
+                       << camPos.z << "\n"
+                       << "Camera orientation quat. " << camOri.x << " + "
+                       << camOri.y << "i + " << camOri.z << "j + " << camOri.w
+                       << "k\n";
+                    Logger::GetInstance().log(ss.str());
+                }
             default: break;
         }
     }
@@ -169,6 +184,7 @@ void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
 void Controller::setMainCamera(Camera* cam)
 {
     camera = cam;
+    pitch = cam->getOrientation().toEulerAngles().z;
 }
 
 void Controller::setSim(WaterSimulation* sim)

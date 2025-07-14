@@ -65,5 +65,6 @@ class Skybox
     Skybox& operator=(Skybox&&) = delete;
     ~Skybox();
 
+    void setSkyboxSamplerUniform(Shader::BindObject& shader);
     void setUniformsAndDraw(const Camera& mainCamera);
 };

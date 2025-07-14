@@ -119,6 +119,26 @@ Quaternion::RotationMaterices Quaternion::toMatrix4x4AndInverse() const
             toHomogenousMatrix(inhomogenousRotationInverse)};
 }
 
+linalg::aliases::float3 Quaternion::toEulerAngles() const
+{
+    float q2sqr = q.z * q.z;
+    const float t0 = (-2.0F * (q2sqr + q.w * q.w)) + 1.0F;
+    const float t1 = +2.0F * (q.y * q.z + q.x * q.w);
+    const float t3 = +2.0F * (q.z * q.w + q.x * q.y);
+    const float t4 = (-2.0F * (q.y * q.y + q2sqr)) + 1.0F;
+
+    float t2 = -2.0F * (q.y * q.w - q.x * q.z);
+
+    t2 = t2 > 1.0F ? 1.0F : t2;
+    t2 = t2 < -1.0F ? -1.0F : t2;
+
+    const float roll = atan2(t3, t4);
+    const float pitch = asin(t2);
+    const float yaw = atan2(t1, t0);
+
+    return {roll, pitch, yaw};
+}
+
 float3 Quaternion::axis() const
 {
     return linalg::qaxis(q);
