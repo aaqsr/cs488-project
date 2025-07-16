@@ -51,6 +51,60 @@ float interpolate(const std::array<float, rows * cols>& field,
     return lerpX1 + ((lerpX2 - lerpX1) * ty);
 }
 
+// float calculateAdjustedHeight(
+//   size_t i, size_t j,
+//   const HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>&
+//     heightGrid,
+//   float baseHeight)
+// {
+//     // Stability enhancement from section 2.1.5
+//     // hadj = max(0, (h_i+1,j + h_i-1,j + h_i,j+1 + h_i,j-1)/4 - havgmax)
+//     // havgmax = β * Δx / (g * Δt)
+//
+//     constexpr float beta = 2.0F;
+//     constexpr float havgmax =
+//       beta * WaterSimulation::deltaX /
+//       (WaterSimulation::gravitationalAcceleration * WaterSimulation::deltaT);
+//
+//     // Calculate average height of neighbors
+//     float neighborSum = 0.0F;
+//     int neighborCount = 0;
+//
+//     // Right neighbor (i+1, j)
+//     if (i + 1 < WaterSimulation::numRows) {
+//         neighborSum += heightGrid.getWaterHeight(i + 1, j);
+//         neighborCount++;
+//     }
+//
+//     // Left neighbor (i-1, j)
+//     if (i > 0) {
+//         neighborSum += heightGrid.getWaterHeight(i - 1, j);
+//         neighborCount++;
+//     }
+//
+//     // Bottom neighbor (i, j+1)
+//     if (j + 1 < WaterSimulation::numCols) {
+//         neighborSum += heightGrid.getWaterHeight(i, j + 1);
+//         neighborCount++;
+//     }
+//
+//     // Top neighbor (i, j-1)
+//     if (j > 0) {
+//         neighborSum += heightGrid.getWaterHeight(i, j - 1);
+//         neighborCount++;
+//     }
+//
+//     // For boundary cells, use available neighbors
+//     float avgNeighborHeight =
+//       (neighborCount > 0) ? neighborSum / neighborCount : baseHeight;
+//
+//     // Calculate hadj
+//     float hadj = std::max(0.0F, avgNeighborHeight - havgmax);
+//
+//     // Return adjusted height: h_bar - hadj
+//     return baseHeight - hadj;
+// }
+
 void setInitConditions(
   HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heightGrid)
 {
@@ -205,6 +259,7 @@ float WaterSimulation::calcHeightChangeIntegral(
           (hBar_i_plus_half_j(velocityGrid, i - 1, j) *
            velocityGrid.getVelocity_u_i_plus_half_j(i - 1, j));
     } else {
+        // TODO: boundary conditions are kinda sus ngl
         uDirectionNumerator = hBar_i_plus_half_j(velocityGrid, i, j) *
                               velocityGrid.getVelocity_u_i_plus_half_j(i, j);
     }
@@ -235,7 +290,7 @@ linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
   const linalg::aliases::float3& accelExt) const
 {
     const float eta_ij = heightGrid.getEta(i, j);
-    constexpr float g_over_deltaX = -gravitationalAcceleration * deltaX;
+    constexpr float g_over_deltaX = -gravitationalAcceleration / deltaX;
 
     // Boundary conditions:
     // right boundary

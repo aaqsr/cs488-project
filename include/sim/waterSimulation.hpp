@@ -34,7 +34,7 @@ class WaterSimulation
     // use a fractional value of the bound (0.2 is suggested by Fluid
     // Simulation for Computer Graphics by R. Bridson in section 12.3).
     // We use the current value discovered via trial and error.
-    constexpr static float deltaT = deltaTBoundAbove * 0.1F;
+    constexpr static float deltaT = deltaTBoundAbove * 0.01F;
     // Other bounds on deltaT:
     // - t_n + deltaT < t_frame  [SCG by R.B. section 2.3]
     // -
