@@ -130,17 +130,15 @@ void WaterSimulation::update()
                 const auto& [deltaU, deltaW] =
                   calcVelocityChangeIntegration(i, j, prevHeightGrid);
 
-                constexpr float dissipationConstant = 0.9999F;
-
                 const float newU =
                   velocityGrid.getVelocity_u_i_plus_half_j(i, j) + deltaU;
                 velocityGrid.setVelocity_u_i_plus_half_j(
-                  i, j, dissipationConstant * newU);
+                  i, j, velocityComponentDissipationConstant * newU);
 
                 const float newW =
                   velocityGrid.getVelocity_w_i_j_plus_half(i, j) + deltaW;
                 velocityGrid.setVelocity_w_i_j_plus_half(
-                  i, j, dissipationConstant * newW);
+                  i, j, velocityComponentDissipationConstant * newW);
             }
         }
     }

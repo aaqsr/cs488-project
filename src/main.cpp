@@ -42,7 +42,7 @@ void run()
           // I'm not sure. See section 2.3 of R. Bridson for more
           // We also more importantly want it so that the simulation frames that take longer 
           // For now this is an *arbitrary* amount.
-          const auto targetFrameTime = std::chrono::microseconds(350);
+          const auto targetFrameTime = std::chrono::microseconds(190);
 
           while (!appShouldExit.load()) {
               auto frameStart = std::chrono::high_resolution_clock::now();
