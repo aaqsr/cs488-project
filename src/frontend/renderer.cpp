@@ -1,9 +1,8 @@
 #include "frontend/renderer.hpp"
-#include "frontend/debugShapes.hpp"
-#include "frontend/pointLight.hpp"
 #include "frontend/shader.hpp"
-#include "util/quaternion.hpp"
-#include <numbers>
+#include "sim/waterHeightGrid.hpp"
+#include "sim/waterSimulation.hpp"
+#include "util/channel.hpp"
 
 void Renderer::init()
 {
@@ -105,13 +104,12 @@ void Renderer::update()
         Shader::BindObject boundShader = waterShader.bind();
         mainCamera.setUniforms(boundShader);
 
-        // TODO: better decouple the simulation from the renderer.
-        // For not though, just step multiple times
-        for (int i = 0; i < 20; ++i) {
-            sim.update();
+        if (channel->isMessageReady()) {
+            auto message = channel->receive();
+            waterMesh.updateMesh(message.getBuffer().getWaterHeights());
         }
 
-        sim.draw(boundShader, mainCamera.getPosition());
+        waterMesh.draw(boundShader, mainCamera.getPosition());
     }
 }
 
@@ -171,5 +169,10 @@ Renderer::Renderer()
     // Setting up sub-classes
     //
     controller.setMainCamera(&mainCamera);
-    controller.setSim(&sim);
+}
+
+void Renderer::attachReceiverChannel(
+  Receiver<HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>>* r)
+{
+    channel = r;
 }

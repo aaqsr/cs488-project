@@ -161,9 +161,10 @@ void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
         switch (key) {
             case GLFW_KEY_ESCAPE: controller->releaseMouse(); break;
             case GLFW_KEY_P:
-                if (WaterSimulation* sim = controller->waterSim) {
+                if (WaterSimulation* sim = controller->waterSim.load()) {
                     sim->togglePlay();
                 }
+                break;
             case GLFW_KEY_I:
                 if (controller->camera != nullptr) {
                     std::stringstream ss;
@@ -177,6 +178,7 @@ void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
                        << "k\n";
                     Logger::GetInstance().log(ss.str());
                 }
+                break;
             default: break;
         }
     }
@@ -189,5 +191,5 @@ void Controller::setMainCamera(Camera* cam)
 
 void Controller::setSim(WaterSimulation* sim)
 {
-    waterSim = sim;
+    waterSim.store(sim);
 }

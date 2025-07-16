@@ -2,7 +2,8 @@
 
 #include "linalg.h"
 #include "sim/staggeredGrid.hpp"
-#include "sim/waterMesh.hpp"
+#include "sim/waterHeightGrid.hpp"
+#include "util/channel.hpp"
 #include "util/math.hpp"
 
 class WaterSimulation
@@ -38,38 +39,49 @@ class WaterSimulation
     // - t_n + deltaT < t_frame  [SCG by R.B. section 2.3]
     // -
 
-    constexpr static float maxSpeedClamp = ([]() {
+    // TODO: HOW TO BOUND THE WAVE SIZE AAAAA
+    // TODO: come up with an actual min speed value if we even want this
+    constexpr static float minSpeedComponent = 0.0F;
+
+    constexpr static float maxSpeedComponent = ([]() {
         constexpr float alpha = 0.5F;
         return alpha * cellSize / deltaT;
     })();
 
   private:
-    StaggeredGrid<numRows, numCols> grid;
-    WaterMesh<numRows, numCols, cellSize> mesh;
+    StaggeredVelocityGrid<numRows, numCols> velocityGrid{minSpeedComponent,
+                                                         maxSpeedComponent};
 
     // Add this to h_{i,j} each tick
     [[nodiscard]]
-    float calcHeightChangeIntegral(size_t i, size_t j, float deltaTime) const;
+    float calcHeightChangeIntegral(
+      size_t i, size_t j, const HeightGrid<numRows, numCols>& heightGrid) const;
 
+    // TODO: could be static!
     // Returns (u_{u+1/2, j}, w_{i,j+1/2})
     [[nodiscard]]
     linalg::aliases::float2 calcVelocityChangeIntegration(
-      size_t i, size_t j, float deltaTime,
+      size_t i, size_t j, const HeightGrid<numRows, numCols>& heightGrid,
       const linalg::aliases::float3& accelExt = {0.0F, 0.0F, 0.0F}) const;
 
-    // TODO: make deltaTime a fixed value. And pick that value...
     // TODO: make all these functions static and operate on an inputed grid
     // [[nodiscard]]
     // std::unique_ptr<StaggeredGrid<numRows, numCols>>
-    void advectVelocities(float deltaTime);
+    void advectVelocities();
 
-    bool isPlaying = false;
+    std::atomic<bool> isPlaying{false};
+
+    Sender<HeightGrid<numRows, numCols>>* channel = nullptr;
 
   public:
     WaterSimulation();
 
+    WaterSimulation(const WaterSimulation&) = delete;
+    WaterSimulation(WaterSimulation&&) = delete;
+    WaterSimulation& operator=(const WaterSimulation&) = delete;
+    WaterSimulation& operator=(WaterSimulation&&) = delete;
+
     void update();
-    void draw(Shader::BindObject& shader,
-              const linalg::aliases::float3& cameraPos);
     void togglePlay();
+    void attachSenderChannel(Sender<HeightGrid<numRows, numCols>>* s);
 };
