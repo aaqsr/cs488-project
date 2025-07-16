@@ -3,7 +3,9 @@
 #include "frontend/skybox.hpp"
 #include "model.hpp"
 #include "pointLight.hpp"
+#include "sim/waterMesh.hpp"
 #include "sim/waterSimulation.hpp"
+#include "util/channel.hpp"
 #include "util/logger.hpp"
 #include "util/singleton.hpp"
 #include "window.hpp"
@@ -48,6 +50,13 @@ class Renderer : public Singleton<Renderer>
 
     Renderer();
 
+    Receiver<HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>>*
+      channel = nullptr;
+
+    WaterMesh<WaterSimulation::numRows, WaterSimulation::numCols,
+              WaterSimulation::cellSize>
+      waterMesh;
+
     // TODO: Make it easier for user to change the shader and model without
     // having to come in here and poke about
     // Maybe can have a list of models and shaders, and some datastructure can
@@ -73,8 +82,10 @@ class Renderer : public Singleton<Renderer>
     // Shader sunShader{
     //   std::filesystem::path{"shaders/vertex/modelLightPerspTextureShader.glsl"},
     //   std::filesystem::path{"shaders/fragment/sunBlinnPhongTextureShader.glsl"},
-    //   {"projection", "view", "model", "material.diffuse", "material.specular",
-    //                         "material.Kd", "material.Ks", "material.Ns", "viewPos"}
+    //   {"projection", "view", "model", "material.diffuse",
+    //   "material.specular",
+    //                         "material.Kd", "material.Ks", "material.Ns",
+    //                         "viewPos"}
     // };
 
     Shader waterShader{
@@ -91,8 +102,6 @@ class Renderer : public Singleton<Renderer>
                             // "cameraPos", "skybox"
       }
     };
-
-    WaterSimulation sim;
 
     PointLight light;
 
@@ -119,4 +128,7 @@ class Renderer : public Singleton<Renderer>
     // shaders, buffers, etcetera)
     // Minimize number of individual draw calls per frame
     void loop();
+
+    void attachReceiverChannel(Receiver<HeightGrid<WaterSimulation::numRows,
+                                                   WaterSimulation::numCols>>*);
 };

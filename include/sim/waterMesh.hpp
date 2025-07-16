@@ -35,43 +35,10 @@ class WaterMesh
 
     std::array<linalg::aliases::float3, numRows * numCols> normals;
 
-    void computeNormals(const std::array<float, numRows * numCols>& heights)
-    {
-        const auto getPos =
-          [this, &heights](size_t i, size_t j) -> linalg::aliases::float3 {
-            return linalg::aliases::float3{
-              staticPositions[(i * numCols) + j].x, heights[(i * numCols) + j],
-              staticPositions[(i * numCols) + j].y};
-        };
-
-        for (size_t i = 0; i < numRows; ++i) {
-            for (size_t j = 0; j < numCols; ++j) {
-                // Compute the normal as equal to
-                //  ((i+1,j) - (i,j)) x ((i,j+1) - (i+1,j))
-                // normalised when not on boundary.
-                //    i.e. cross of vector facing x direction and vector facing
-                //         z direction
-                // For boundary, we get x and z directions with previous vertex
-                const linalg::aliases::float3 Pij = getPos(i, j);
-
-                const linalg::aliases::float3 xDir = (i == numRows - 1)
-                                                       ? Pij - getPos(i - 1, j)
-                                                       : getPos(i + 1, j) - Pij;
-
-                const linalg::aliases::float3 zDir = (j == numCols - 1)
-                                                       ? Pij - getPos(i, j - 1)
-                                                       : getPos(i, j + 1) - Pij;
-
-                const linalg::aliases::float3 normal =
-                  linalg::normalize(linalg::cross(xDir, zDir));
-
-                normals[(i * numCols) + j] = normal;
-            }
-        }
-    }
+    void computeNormals(const std::array<float, numRows * numCols>& heights);
 
   public:
-    WaterMesh(const std::array<float, numRows * numCols>& initHeights);
+    explicit WaterMesh();
 
     WaterMesh(const WaterMesh&) = delete;
     WaterMesh(WaterMesh&&) = delete;
@@ -83,85 +50,22 @@ class WaterMesh
     // Warning: Update does not draw!
     void updateMesh(const std::array<float, numRows * numCols>& heights);
 
-    void draw(Shader::BindObject& shader) const;
+    void draw(Shader::BindObject& shader,
+              const linalg::aliases::float3& cameraPos) const;
 };
 
 template <size_t numRows, size_t numCols, float cellSize>
-inline void
-WaterMesh<numRows, numCols, cellSize>::draw(Shader::BindObject& shader) const
+inline WaterMesh<numRows, numCols, cellSize>::WaterMesh()
 {
-    // TODO: integrate this into the Model class and not here??
-    shader.setUniform("model", linalg::aliases::float4x4(linalg::identity));
+    const std::array<float, numRows * numCols> initHeights{1.0F};
 
-    glBindVertexArray(VAO);
-
-    // transparency??
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // TODO: maybe have an actual material stored on the mesh that is drawn
-
-    // If using patches (needs OpenGL 4.1)
-    // glPatchParameteri(GL_PATCH_VERTICES, 4);
-    glDrawElements(GL_LINES_ADJACENCY, indices.size(), GL_UNSIGNED_INT, 0);
-
-    // do we have to disable it?
-    glDisable(GL_BLEND);
-    glBindVertexArray(0);
-}
-
-template <size_t numRows, size_t numCols, float cellSize>
-inline void WaterMesh<numRows, numCols, cellSize>::updateMesh(
-  const std::array<float, numRows * numCols>& heights)
-{
-    computeNormals(heights);
-
-    // upload the normals
-    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
-
-    // orphan old buffer so that we don't have to wait for the GPU to be
-    // done with it GPU *should* clean up the old buffer for us/
-    // TODO: is this implementation correct...
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * 3 * sizeof(float), nullptr,
-                 GL_DYNAMIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, normals.size() * 3 * sizeof(float),
-                    normals.data());
-
-    // now upload the height data
-    glBindBuffer(GL_ARRAY_BUFFER, heightVBO);
-
-    // orphan old buffer so that we don't have to wait for the GPU to be
-    // done with it GPU *should* clean up the old buffer for us/
-    // TODO: is this implementation correct...
-    glBufferData(GL_ARRAY_BUFFER, heights.size() * sizeof(float), nullptr,
-                 GL_DYNAMIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, heights.size() * sizeof(float),
-                    heights.data());
-}
-
-template <size_t numRows, size_t numCols, float cellSize>
-inline WaterMesh<numRows, numCols, cellSize>::~WaterMesh()
-{
-    if (VAO != 0) {
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &positionVBO);
-        glDeleteBuffers(1, &heightVBO);
-        glDeleteBuffers(1, &normalVBO);
-        glDeleteBuffers(1, &indexBuffer);
-    }
-}
-
-template <size_t numRows, size_t numCols, float cellSize>
-inline WaterMesh<numRows, numCols, cellSize>::WaterMesh(
-  const std::array<float, numRows * numCols>& initHeights)
-{
     // Static positions
     for (size_t j = 0; j < numRows; ++j) {
         for (size_t i = 0; i < numCols; ++i) {
             // Store x,z positions (these never change)
             staticPositions[(j * numCols) + i] = {
-              static_cast<float>(i) * cellSize + 0.025F,
-              static_cast<float>(j) * cellSize + 0.025F};
+              (static_cast<float>(i) * cellSize) + 0.025F,
+              (static_cast<float>(j) * cellSize) + 0.025F};
         }
     }
     Logger::GetInstance().log(
@@ -232,4 +136,107 @@ inline WaterMesh<numRows, numCols, cellSize>::WaterMesh(
     //       " -> pos (" + std::to_string(staticPositions[idx].x) + ", 0," +
     //       std::to_string(staticPositions[idx].y) + ")");
     // }
+}
+
+template <size_t numRows, size_t numCols, float cellSize>
+inline void WaterMesh<numRows, numCols, cellSize>::computeNormals(
+  const std::array<float, numRows * numCols>& heights)
+{
+    const auto getPos = [this, &heights](size_t i,
+                                         size_t j) -> linalg::aliases::float3 {
+        return linalg::aliases::float3{staticPositions[(i * numCols) + j].x,
+                                       heights[(i * numCols) + j],
+                                       staticPositions[(i * numCols) + j].y};
+    };
+
+    for (size_t i = 0; i < numRows; ++i) {
+        for (size_t j = 0; j < numCols; ++j) {
+            // Compute the normal as equal to
+            //  ((i+1,j) - (i,j)) x ((i,j+1) - (i+1,j))
+            // normalised when not on boundary.
+            //    i.e. cross of vector facing x direction and vector facing
+            //         z direction
+            // For boundary, we get x and z directions with previous vertex
+            const linalg::aliases::float3 Pij = getPos(i, j);
+
+            const linalg::aliases::float3 xDir = (i == numRows - 1)
+                                                   ? Pij - getPos(i - 1, j)
+                                                   : getPos(i + 1, j) - Pij;
+
+            const linalg::aliases::float3 zDir = (j == numCols - 1)
+                                                   ? Pij - getPos(i, j - 1)
+                                                   : getPos(i, j + 1) - Pij;
+
+            const linalg::aliases::float3 normal =
+              linalg::normalize(linalg::cross(xDir, zDir));
+
+            normals[(i * numCols) + j] = normal;
+        }
+    }
+}
+
+template <size_t numRows, size_t numCols, float cellSize>
+inline void WaterMesh<numRows, numCols, cellSize>::draw(
+  Shader::BindObject& shader, const linalg::aliases::float3& cameraPos) const
+{
+    // TODO: integrate this into the Model class and not here??
+    shader.setUniform("model", linalg::aliases::float4x4(linalg::identity));
+    shader.setUniform("cameraPos", cameraPos);
+
+    glBindVertexArray(VAO);
+
+    // transparency??
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // TODO: maybe have an actual material stored on the mesh that is drawn
+
+    // If using patches (needs OpenGL 4.1)
+    // glPatchParameteri(GL_PATCH_VERTICES, 4);
+    glDrawElements(GL_LINES_ADJACENCY, indices.size(), GL_UNSIGNED_INT, 0);
+
+    // do we have to disable it?
+    glDisable(GL_BLEND);
+    glBindVertexArray(0);
+}
+
+template <size_t numRows, size_t numCols, float cellSize>
+inline void WaterMesh<numRows, numCols, cellSize>::updateMesh(
+  const std::array<float, numRows * numCols>& heights)
+{
+    computeNormals(heights);
+
+    // upload the normals
+    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+
+    // orphan old buffer so that we don't have to wait for the GPU to be
+    // done with it GPU *should* clean up the old buffer for us/
+    // TODO: is this implementation correct...
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * 3 * sizeof(float), nullptr,
+                 GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, normals.size() * 3 * sizeof(float),
+                    normals.data());
+
+    // now upload the height data
+    glBindBuffer(GL_ARRAY_BUFFER, heightVBO);
+
+    // orphan old buffer so that we don't have to wait for the GPU to be
+    // done with it GPU *should* clean up the old buffer for us/
+    // TODO: is this implementation correct...
+    glBufferData(GL_ARRAY_BUFFER, heights.size() * sizeof(float), nullptr,
+                 GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, heights.size() * sizeof(float),
+                    heights.data());
+}
+
+template <size_t numRows, size_t numCols, float cellSize>
+inline WaterMesh<numRows, numCols, cellSize>::~WaterMesh()
+{
+    if (VAO != 0) {
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &positionVBO);
+        glDeleteBuffers(1, &heightVBO);
+        glDeleteBuffers(1, &normalVBO);
+        glDeleteBuffers(1, &indexBuffer);
+    }
 }

@@ -13,7 +13,7 @@ class Controller : public Singleton<Controller>
     GLFWwindow* window;
     // TODO: Make this safe for use after free...
     Camera* camera = nullptr;
-    WaterSimulation* waterSim = nullptr;
+    std::atomic<WaterSimulation*> waterSim{nullptr};
 
     // Mouse state
     bool inputCaptured = false;
