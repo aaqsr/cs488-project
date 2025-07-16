@@ -1,5 +1,7 @@
 #include "controller.hpp"
+#include "debugShapes.hpp"
 #include "model.hpp"
+#include "physicsobject.hpp"
 #include "pointLight.hpp"
 #include "util/logger.hpp"
 #include "util/singleton.hpp"
@@ -7,6 +9,7 @@
 
 #include "GLFW/glfw3.h"
 
+#include <vector>
 class Renderer : public Singleton<Renderer>
 {
     friend class Singleton<Renderer>;
@@ -15,6 +18,7 @@ class Renderer : public Singleton<Renderer>
     Window& window = Window::GetInstance();
     Controller& controller = Controller::GetInstance();
     Camera mainCamera;
+    std::vector<PhysicsObj> physicsObjects;
 
     double lastFrameTime = glfwGetTime();
     double currentFrameTime = 0.0;
@@ -70,6 +74,7 @@ class Renderer : public Singleton<Renderer>
 
     Model mainModel{std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}};
     Model teaPot2{std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
+    Model physTest = DebugShape::createCube();
 
     void update();
 

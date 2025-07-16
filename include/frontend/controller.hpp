@@ -33,6 +33,9 @@ class Controller : public Singleton<Controller>
     Controller();
 
   public:
+
+    bool physFlag = false;
+    
     ~Controller() override = default;
 
     void setMainCamera(Camera* cam)

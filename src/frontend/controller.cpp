@@ -115,4 +115,5 @@ void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         controller->releaseMouse();
     }
+    if (key == (GLFW_KEY_U) && action == GLFW_PRESS) controller->physFlag = !controller->physFlag;
 }

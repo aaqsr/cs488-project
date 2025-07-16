@@ -13,6 +13,8 @@ void Renderer::init()
     mainModel.worldPos = {0.0F, -0.22F, 0.0F};
 
     teaPot2.worldPos = {-2.0F, 0.0F, 0.0F};
+    physicsObjects.emplace_back(physTest);
+    physicsObjects[0].getInitVelocity() = {4.1103F, 7.0F, 0.0F};
 }
 
 void Renderer::update()
@@ -24,12 +26,12 @@ void Renderer::update()
     // all calls to it
     // TODO: should be less easy to forget to do this correctly
 
-    {
-        Shader::BindObject boundShader = shader.bind();
-        mainCamera.setUniforms(boundShader);
-        light.setUniforms(boundShader, 0);
-        mainModel.updateModelMatrixAndDraw(boundShader);
-    }
+    // {
+    //     Shader::BindObject boundShader = shader.bind();
+    //     mainCamera.setUniforms(boundShader);
+    //     light.setUniforms(boundShader, 0);
+    //     mainModel.updateModelMatrixAndDraw(boundShader);
+    // }
 
     // {
     //     Shader::BindObject boundShader = shader.bind();
@@ -38,48 +40,56 @@ void Renderer::update()
     //     mainModel.updateModelMatrixAndDraw(boundShader);
     // }
     //
-    {
-        Shader::BindObject boundShader = flatShader.bind();
-        teaPot2.updateModelMatrixAndDraw(boundShader);
-        mainCamera.setUniforms(boundShader);
-        static Model lcube = DebugShape::createCubeWithDefaultModelMatrix(light.getPos(), 0.1F);
-        lcube.updateModelMatrixAndDraw(boundShader);
-    }
+    // {
+    //     Shader::BindObject boundShader = flatShader.bind();
+    //     teaPot2.updateModelMatrixAndDraw(boundShader);
+    //     mainCamera.setUniforms(boundShader);
+    //     static Model lcube = DebugShape::createCubeWithDefaultModelMatrix(light.getPos(), 0.1F);
+    //     lcube.updateModelMatrixAndDraw(boundShader);
+    // }
 
+    // {
+    //     Shader::BindObject boundShader = flatShader.bind();
+    //     // mainCamera.setUniforms(boundShader);
+    //     // light.setUniforms(boundShader, 0);
+    //     //
+    //     // const double velocity = 3.0 * deltaTime;
+    //     //
+    //     static Model lcube = DebugShape::createCube();
+    //     lcube.worldPos = {2.0F, 0.0F, 0.0F};
+    //     lcube.updateModelMatrixAndDraw(boundShader);
+    //     //
+    //     //     static Model lcubeScale = DebugShape::createCube();
+    //     //     static float scaleParam = 0.0F;
+    //     //     lcubeScale.worldPos = {1.0F, 0.0F, -2.0F};
+    //     //     lcubeScale.scale = {0.5F * sin(scaleParam) + 1.0F, 1.0F, 0.5F *
+    //     //     cos(scaleParam) + 1.0F}; scaleParam += velocity;
+    //     //     lcubeScale.updateModelMatrixAndDraw(boundShader);
+    //     //
+    //     //     static Model lcubeRot = DebugShape::createCube();
+    //     //
+    //     //     lcubeRot.updateModelMatrixAndDraw(boundShader);
+    //     //
+    //     //     static float Xscale = 0.0F;
+    //     //     static float Zscale = 0.0F;
+    //     //
+    //     //     static float rotAxParam = 0.0F;
+    //     //     linalg::aliases::float3 rotationAxis = {sin(rotAxParam),
+    //     //     cos(rotAxParam), 0.0F};
+    //     //
+    //     //     rotAxParam += velocity;
+    //     //     Quaternion incrementalRotation =
+    //     //       Quaternion::fromAxisAngle(rotationAxis, velocity);
+    //     //     lcubeRot.rotation = (incrementalRotation *
+    //     //     lcubeRot.rotation).normalized();
+    // }
     {
-        Shader::BindObject boundShader = flatShader.bind();
-        // mainCamera.setUniforms(boundShader);
-        // light.setUniforms(boundShader, 0);
-        //
-        // const double velocity = 3.0 * deltaTime;
-        //
-        static Model lcube = DebugShape::createCube();
-        lcube.worldPos = {2.0F, 0.0F, 0.0F};
-        lcube.updateModelMatrixAndDraw(boundShader);
-        //
-        //     static Model lcubeScale = DebugShape::createCube();
-        //     static float scaleParam = 0.0F;
-        //     lcubeScale.worldPos = {1.0F, 0.0F, -2.0F};
-        //     lcubeScale.scale = {0.5F * sin(scaleParam) + 1.0F, 1.0F, 0.5F *
-        //     cos(scaleParam) + 1.0F}; scaleParam += velocity;
-        //     lcubeScale.updateModelMatrixAndDraw(boundShader);
-        //
-        //     static Model lcubeRot = DebugShape::createCube();
-        //
-        //     lcubeRot.updateModelMatrixAndDraw(boundShader);
-        //
-        //     static float Xscale = 0.0F;
-        //     static float Zscale = 0.0F;
-        //
-        //     static float rotAxParam = 0.0F;
-        //     linalg::aliases::float3 rotationAxis = {sin(rotAxParam),
-        //     cos(rotAxParam), 0.0F};
-        //
-        //     rotAxParam += velocity;
-        //     Quaternion incrementalRotation =
-        //       Quaternion::fromAxisAngle(rotationAxis, velocity);
-        //     lcubeRot.rotation = (incrementalRotation *
-        //     lcubeRot.rotation).normalized();
+        for (PhysicsObj &o : physicsObjects) {
+            if (controller.physFlag) o.update(deltaTime);
+            Shader::BindObject boundShader = flatShader.bind();
+            mainCamera.setUniforms(boundShader);
+            o.getModel().updateModelMatrixAndDraw(boundShader);
+        }
     }
 }
 
