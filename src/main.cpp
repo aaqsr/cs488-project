@@ -2,7 +2,9 @@
 #include "frontend/renderer.hpp"
 #include "sim/waterSimulation.hpp"
 #include "util/channel.hpp"
+#include "util/perf.hpp"
 #include "util/error.hpp"
+#include "util/tripleBufferedChannel.hpp"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -32,13 +34,16 @@ void physicsAndSimulationThread(Sender<BridgeChannelData>& channel,
     // I'm not sure. See section 2.3 of R. Bridson for more
     // We also more importantly want it so that the simulation frames that take
     // longer For now this is an *arbitrary* amount.
-    const auto targetFrameTime = std::chrono::microseconds(50);
+    constexpr auto targetFrameTime = std::chrono::microseconds(50);
+
+    IterationsPerSecondCounter msPerUpdate{ "UPS", "update"};
 
     while (!appShouldExit.load()) {
         auto frameStart = std::chrono::high_resolution_clock::now();
 
         // TODO: Should be condition variable rather than polling? ehhhhh
         if (isPlaying) {
+            msPerUpdate.tick();
             auto msg = channel.createMessage();
 
             // Must be in this order:

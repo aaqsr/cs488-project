@@ -7,13 +7,14 @@
 #include "sim/waterSimulation.hpp"
 #include "util/channel.hpp"
 #include "util/logger.hpp"
+#include "util/perf.hpp"
 #include "util/singleton.hpp"
 #include "window.hpp"
 
 #include "GLFW/glfw3.h"
 #include <filesystem>
 
-class BridgeChannelData;
+struct BridgeChannelData;
 
 class Renderer : public Singleton<Renderer>
 {
@@ -29,26 +30,7 @@ class Renderer : public Singleton<Renderer>
     double currentFrameTime = 0.0;
     double deltaTime = 0.0;
 
-    class MsPerFrameCounter
-    {
-        uint32_t numFrames = 0;
-        double timeOfLastPrint;
-
-      public:
-        void tick(double currentFrameTime)
-        {
-            numFrames++;
-            if (currentFrameTime - timeOfLastPrint >= 1.0F) {
-                Logger::GetInstance().log(
-                  std::format("{:<6}FPS\t{:<9.5f}ms/frame", numFrames,
-                              1000.0 / double(numFrames)));
-                numFrames = 0;
-                timeOfLastPrint = currentFrameTime;
-            }
-        }
-        MsPerFrameCounter(double timeOfLastPrint)
-          : timeOfLastPrint{timeOfLastPrint} { };
-    } msPerFrame{lastFrameTime};
+    IterationsPerSecondCounter msPerFrame{"FPS", "frame"};
 
     Renderer();
 

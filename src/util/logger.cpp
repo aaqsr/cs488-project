@@ -1,52 +1,46 @@
 #include "util/logger.hpp"
+#include "util/queueChannel.hpp"
 
 #include <iostream>
+#include <string>
+
+Logger::Logger()
+{
+    loggingThread = std::thread([this]() { this->processMessages(); });
+}
 
 void Logger::processMessages()
 {
-    std::unique_lock lock(queueMutex);
+    MPSCQueueChannel<std::string>::ChannelReceiver& receiver =
+      logChannel.getReceiver();
 
-    // so wake me up when it's all over
-    // when i'm wiser & i'm older etc.
-    condVar.wait(lock, [this] { return exitFlag || !messageQueue.empty(); });
+    while (!logChannel.isShutdownRequested()) {
 
-    while (true) {
-        while (!messageQueue.empty()) {
-            auto msg = std::move(messageQueue.front());
-            messageQueue.pop();
-            // unlock while printing to reduce contention for expensive
-            // operation
-            lock.unlock();
-            std::cout << msg << '\n';
-            lock.lock();
+        if (!receiver.isMessageReadyElseSleep()) {
+            continue;
         }
 
-        if (exitFlag) {
-            // bye bye!
-            break;
+        const auto& messages = receiver.getBuffer();
+
+        if (messages.empty()) {
+            continue;
         }
 
-        condVar.wait(lock,
-                     [this] { return exitFlag || !messageQueue.empty(); });
+        for (const auto& message : messages) {
+            std::cout << message << "\n";
+        }
     }
 }
 
 Logger::~Logger()
 {
-    {
-        std::lock_guard<std::mutex> lock{queueMutex};
-        exitFlag = true;
+    logChannel.shutdown();
+    if (loggingThread.joinable()) {
+        loggingThread.join();
     }
-    condVar.notify_one();
-    loggingThread.join(); // wait for logging to finish
 }
 
 void Logger::log(std::string str)
 {
-    {
-        std::lock_guard<std::mutex> lock{queueMutex};
-        messageQueue.push(std::move(str));
-    }
-    condVar.notify_one();
+    logChannel.sendSingle(std::move(str));
 }
-

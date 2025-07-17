@@ -1,42 +1,33 @@
 #pragma once
 
-#include "frontend/model.hpp"
-#include "frontend/shader.hpp"
+#include "physics/constants.hpp"
 #include "util/quaternion.hpp"
 
-#include "linalg.h"
+#include <linalg.h>
 
 class PhysicsObj
 {
-    Model model;
+    friend class PhysicsEngine;
 
     float mass = 1.0F;
 
-    linalg::aliases::float3 constantForces = {0.0F, 0.0F, 0.0F};
+    linalg::aliases::float3 constantAcceleration =
+      linalg::aliases::float3{0.0F, 0.0F, 0.0F} +
+      Physics::gravitationalAcceleration;
 
     linalg::aliases::float3 pos = {0.0F, 0.0F, 0.0F};
     linalg::aliases::float3 prevPos = {0.0F, 0.0F, 0.0F};
     Quaternion rotation{0.0F, 0.0F, 0.0F, 1.0F};
 
-  public:
-    PhysicsObj(Model m,
-               const linalg::aliases::float3& initPos = {0.0F, 0.0F, 0.0F},
-               const linalg::aliases::float3& initVel = {0.0F, 0.0F, 0.0F});
-
-    void update();
-    // void addVelocity(linalg::aliases::float3 velocity);
-
-    void move(const linalg::aliases::float3& displacement);
-    [[nodiscard]] const Quaternion& getRotation() const;
-    // void setRotation(const Quaternion& quat);
-    // void rotate(const Quaternion& deltaRotation);
-    // void rotateAroundAxis(const linalg::aliases::float3& axis,
-    //                       float angleRadians);
-
-    [[nodiscard]] const linalg::aliases::float3& getPosition() const;
-
-    [[nodiscard]] const linalg::aliases::float3& getConstForce() const;
     void setConstForce(const linalg::aliases::float3& force);
 
-    void draw(Shader::BindObject& shader);
+  public:
+    PhysicsObj(const linalg::aliases::float3& initPos = {0.0F, 0.0F, 0.0F},
+               const linalg::aliases::float3& initVel = {0.0F, 0.0F, 0.0F});
+
+    [[nodiscard]] const linalg::aliases::float3& getPosition() const;
+    [[nodiscard]] const linalg::aliases::float3& getPrevPosition() const;
+
+    [[nodiscard]] const linalg::aliases::float3& getConstAccel() const;
 };
+

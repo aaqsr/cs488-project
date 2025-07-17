@@ -2,10 +2,10 @@
 
 #include "linalg.h"
 #include "singleton.hpp"
+#include "util/queueChannel.hpp"
 
 #include <array>
 #include <ostream>
-#include <queue>
 #include <string>
 #include <thread>
 
@@ -13,18 +13,13 @@ class Logger : public Singleton<Logger>
 {
     friend class Singleton<Logger>;
 
-    // TODO: I am not brave enough to test my lock-free queue implementation in
-    // practice... but it's tempting...
-    std::queue<std::string> messageQueue;
-    std::mutex queueMutex;
-    std::condition_variable condVar;
-    std::atomic<bool> exitFlag = false;
-    std::thread loggingThread{[this]() {
-        this->processMessages();
-    }};
+    // rather awkwardly, this *must* be constructed before the thread below, else
+    // it will never exit...
+    MPSCQueueChannel<std::string> logChannel;
 
-    Logger() = default;
+    std::thread loggingThread;
 
+    Logger();
     void processMessages();
 
   public:
@@ -38,11 +33,12 @@ class Logger : public Singleton<Logger>
     void log(std::string str);
 
     template <typename T, size_t sz>
-    void log(const std::string& msg, const std::array<T, sz>& grid, int numRows = 1,
-             int numCols = sz);
+    void log(const std::string& msg, const std::array<T, sz>& grid,
+             int numRows = 1, int numCols = sz);
 };
 
-inline std::ostream& operator<<(std::ostream& s, const linalg::aliases::float2& vec)
+inline std::ostream& operator<<(std::ostream& s,
+                                const linalg::aliases::float2& vec)
 {
     s << "[" << vec.x << ", " << vec.y << "]";
     return s;

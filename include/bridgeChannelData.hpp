@@ -1,6 +1,8 @@
 #pragma once
 
+#include "physics/physicsObj.hpp"
 #include "sim/waterSimulation.hpp"
+#include <vector>
 
 // This struct outlines data that the physics thread writes to and the render
 // thread reads from.
@@ -8,4 +10,5 @@
 struct BridgeChannelData
 {
     HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols> waterHeights;
+    std::vector<PhysicsObj> physicsObjects;
 };

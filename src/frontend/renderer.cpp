@@ -61,7 +61,7 @@ void Renderer::loop()
         lastFrameTime = currentFrameTime;
 
         // performance metrics
-        msPerFrame.tick(currentFrameTime);
+        msPerFrame.tick();
 
         controller.update(deltaTime);
 
