@@ -1,10 +1,10 @@
 #include "sim/waterSimulation.hpp"
 #include "linalg.h"
+#include "physics/constants.hpp"
 #include "sim/waterHeightGrid.hpp"
 #include "util/error.hpp"
 #include <algorithm>
 #include <array>
-#include <iterator>
 
 namespace
 {
@@ -105,7 +105,14 @@ float interpolate(const std::array<float, rows * cols>& field,
 //     return baseHeight - hadj;
 // }
 
-void setInitConditions(
+} // namespace
+
+WaterSimulation::WaterSimulation()
+  : velocityGrid{Physics::waterSimulationMaxSpeedComponent}
+{
+}
+
+void WaterSimulation::setInitConditions(
   HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heightGrid)
 {
     constexpr static auto fn = [](float x, float y) {
@@ -141,59 +148,48 @@ void setInitConditions(
     }
 }
 
-} // namespace
-
-WaterSimulation::WaterSimulation() = default;
-
-void WaterSimulation::update()
+void WaterSimulation::update(HeightGrid<numRows, numCols>& newHeightGrid,
+                             const HeightGrid<numRows, numCols>& prevHeightGrid)
 {
-    if (!isPlaying) {
-        return;
-    }
-
-    if (channel == nullptr) {
-        throw IrrecoverableError{
-          "Channel is nullptr in WaterSimulation::update()"};
-    }
-
     advectVelocities();
 
-    {
-        // message auto sends at end of scope
-        auto message = channel->createMessage();
-        auto& newHeightGrid = message.getWriteBuffer();
-        const auto& prevHeightGrid = message.getPreviousWriteBuffer();
-
-        for (size_t i = 0; i < numRows; ++i) {
-            for (size_t j = 0; j < numCols; ++j) {
-                const float newHeight =
-                  prevHeightGrid.getWaterHeight(i, j) +
-                  calcHeightChangeIntegral(i, j, prevHeightGrid);
-                newHeightGrid.setWaterHeight(i, j, newHeight, maxDepth);
-            }
+    for (size_t i = 0; i < numRows; ++i) {
+        for (size_t j = 0; j < numCols; ++j) {
+            const float newHeight =
+              prevHeightGrid.getWaterHeight(i, j) +
+              calcHeightChangeIntegral(i, j, prevHeightGrid);
+            newHeightGrid.setWaterHeight(i, j, newHeight, maxDepth);
         }
-        // for (size_t i = 0; i < numRows; ++i) {
-        //   grid.setWaterHeight(i, 0, 0.0F, maxDepth);
-        // }
-        // for (size_t j = 0; j < numCols; ++j) {
-        //   grid.setWaterHeight(0, j, 0.0F, maxDepth);
-        // }
+    }
 
-        for (size_t i = 0; i < numRows; ++i) {
-            for (size_t j = 0; j < numCols; ++j) {
-                const auto& [deltaU, deltaW] =
-                  calcVelocityChangeIntegration(i, j, prevHeightGrid);
+    {
+        // corner boundary condition to prevent corner (0, 0) from getting
+        // stuck to init height throughout simulation
+        // TODO: THIS IS A HACK. Impl properly?
+        newHeightGrid.setWaterHeight(0, 0, newHeightGrid.getWaterHeight(0, 1),
+                                     maxDepth);
+    }
+    // for (size_t i = 0; i < numRows; ++i) {
+    //   grid.setWaterHeight(i, 0, 0.0F, maxDepth);
+    // }
+    // for (size_t j = 0; j < numCols; ++j) {
+    //   grid.setWaterHeight(0, j, 0.0F, maxDepth);
+    // }
 
-                const float newU =
-                  velocityGrid.getVelocity_u_i_plus_half_j(i, j) + deltaU;
-                velocityGrid.setVelocity_u_i_plus_half_j(
-                  i, j, velocityComponentDissipationConstant * newU);
+    for (size_t i = 0; i < numRows; ++i) {
+        for (size_t j = 0; j < numCols; ++j) {
+            const auto& [deltaU, deltaW] =
+              calcVelocityChangeIntegration(i, j, prevHeightGrid);
 
-                const float newW =
-                  velocityGrid.getVelocity_w_i_j_plus_half(i, j) + deltaW;
-                velocityGrid.setVelocity_w_i_j_plus_half(
-                  i, j, velocityComponentDissipationConstant * newW);
-            }
+            const float newU =
+              velocityGrid.getVelocity_u_i_plus_half_j(i, j) + deltaU;
+            velocityGrid.setVelocity_u_i_plus_half_j(
+              i, j, velocityComponentDissipationConstant * newU);
+
+            const float newW =
+              velocityGrid.getVelocity_w_i_j_plus_half(i, j) + deltaW;
+            velocityGrid.setVelocity_w_i_j_plus_half(
+              i, j, velocityComponentDissipationConstant * newW);
         }
     }
 
@@ -282,7 +278,7 @@ float WaterSimulation::calcHeightChangeIntegral(
     const float delH_delT =
       -(uDirectionNumerator + wDirectionNumerator) * invDeltaX;
 
-    return delH_delT * deltaT;
+    return delH_delT * Physics::deltaT;
 }
 
 linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
@@ -290,7 +286,8 @@ linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
   const linalg::aliases::float3& accelExt) const
 {
     const float eta_ij = heightGrid.getEta(i, j);
-    constexpr float g_over_deltaX = -gravitationalAcceleration / deltaX;
+    constexpr float g_over_deltaX =
+      -Physics::gravitationalAccelerationMagnitude / deltaX;
 
     // Boundary conditions:
     // right boundary
@@ -307,9 +304,11 @@ linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
     }
 
     const float delta_u_i_plus_half_j =
-      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) * deltaT;
+      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) *
+      Physics::deltaT;
     const float delta_w_i_j_plus_half =
-      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) * deltaT;
+      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) *
+      Physics::deltaT;
 
     return {delta_u_i_plus_half_j, delta_w_i_j_plus_half};
 }
@@ -348,7 +347,7 @@ void WaterSimulation::advectVelocities()
               velocityGrid.getVelocity_u_i_plus_half_j(i, j), w_interp};
 
             // trace back in time
-            linalg::aliases::float2 departure_pos = pos - vel * deltaT;
+            linalg::aliases::float2 departure_pos = pos - vel * Physics::deltaT;
 
             // sample old u-velocity field at departure point.
             // convert departure point in to a u-field grid coords
@@ -376,7 +375,7 @@ void WaterSimulation::advectVelocities()
             linalg::aliases::float2 vel = {
               u_interp, velocityGrid.getVelocity_w_i_j_plus_half(i, j)};
 
-            linalg::aliases::float2 departure_pos = pos - vel * deltaT;
+            linalg::aliases::float2 departure_pos = pos - vel * Physics::deltaT;
 
             linalg::aliases::float2 w_pos_grid = {
               departure_pos.x / deltaX, (departure_pos.y / deltaX) + 0.5F};
@@ -388,25 +387,4 @@ void WaterSimulation::advectVelocities()
     }
 
     // return nextGrid;
-}
-
-void WaterSimulation::togglePlay()
-{
-    isPlaying = !isPlaying;
-}
-
-void WaterSimulation::attachSenderChannel(
-  Sender<HeightGrid<numRows, numCols>>* s)
-{
-    if (s == nullptr) {
-        throw IrrecoverableError{
-          "Channel is nullptr in WaterSimulation::attachSenderChannel()"};
-    }
-
-    channel = s;
-
-    {
-        auto msg = channel->createMessage();
-        setInitConditions(msg.getWriteBuffer());
-    }
 }

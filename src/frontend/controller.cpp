@@ -2,12 +2,12 @@
 
 #include "frontend/camera.hpp"
 #include "frontend/window.hpp"
-#include "sim/waterSimulation.hpp"
+#include "util/logger.hpp"
 #include "util/quaternion.hpp"
 
 #include <GLFW/glfw3.h>
+#include <atomic>
 #include <sstream>
-#include <string>
 
 Controller::Controller() : window{Window::GetInstance().getWindow()}
 {
@@ -160,11 +160,7 @@ void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
     if (action == GLFW_PRESS) {
         switch (key) {
             case GLFW_KEY_ESCAPE: controller->releaseMouse(); break;
-            case GLFW_KEY_P:
-                if (WaterSimulation* sim = controller->waterSim.load()) {
-                    sim->togglePlay();
-                }
-                break;
+            case GLFW_KEY_P: controller->toggleIsPlaying(); break;
             case GLFW_KEY_I:
                 if (controller->camera != nullptr) {
                     std::stringstream ss;
@@ -189,7 +185,22 @@ void Controller::setMainCamera(Camera* cam)
     pitch = cam->getOrientation().toEulerAngles().z;
 }
 
-void Controller::setSim(WaterSimulation* sim)
+void Controller::setIsPlayingBoolPtr(std::atomic<bool>* isPlayingBool_ptr)
 {
-    waterSim.store(sim);
+    isPlaying_ptr.store(isPlayingBool_ptr);
+}
+
+void Controller::toggleIsPlaying()
+{
+    std::atomic<bool>* ptr = isPlaying_ptr.load(std::memory_order_acquire);
+    if (ptr != nullptr) {
+        bool old = ptr->load(std::memory_order_relaxed);
+        bool desired = !old;
+
+        // WHYY CPP STANDARD DOES NOT DEFINE FETCH_XOR FOR BOOLEANS WHEN IT DOES
+        // FOR ALL OTHER INTEGRAL TYPES
+        while (!ptr->compare_exchange_strong(old, desired)) {
+            desired = !old;
+        }
+    }
 }

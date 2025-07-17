@@ -20,16 +20,20 @@ class Model
     std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 
     // Model matrix = translate * rotate * scale
-    linalg::aliases::float4x4 modelMatrix;
+    linalg::aliases::float4x4 modelMatrix = linalg::identity;
 
     // TEMPORARILY PUBLIC FOR TESTING ONLY
-  public:
-    linalg::aliases::float3 worldPos = {0.0F, 0.0F, 0.0F};
-    linalg::aliases::float3 scale = {1.0F, 1.0F, 1.0F};
-    Quaternion rotation{};
+    // public:
+    //   linalg::aliases::float3 worldPos = {0.0F, 0.0F, 0.0F};
+    //   linalg::aliases::float3 scale = {1.0F, 1.0F, 1.0F};
+    //   Quaternion rotation{};
 
-  private:
-    void updateModelMatrix();
+    // private:
+
+    void updateModelMatrix(const linalg::aliases::float3& worldPos,
+                           const Quaternion& rotation,
+                           const linalg::aliases::float3& scale = {1.0F, 1.0F,
+                                                                   1.0F});
 
     void loadModel();
     void loadMaterials(const std::filesystem::path& mtlPath);

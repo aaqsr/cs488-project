@@ -13,6 +13,8 @@
 #include "GLFW/glfw3.h"
 #include <filesystem>
 
+class BridgeChannelData;
+
 class Renderer : public Singleton<Renderer>
 {
     friend class Singleton<Renderer>;
@@ -50,8 +52,7 @@ class Renderer : public Singleton<Renderer>
 
     Renderer();
 
-    Receiver<HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>>*
-      channel = nullptr;
+    Receiver<BridgeChannelData>* channel = nullptr;
 
     WaterMesh<WaterSimulation::numRows, WaterSimulation::numCols,
               WaterSimulation::cellSize>
@@ -129,6 +130,5 @@ class Renderer : public Singleton<Renderer>
     // Minimize number of individual draw calls per frame
     void loop();
 
-    void attachReceiverChannel(Receiver<HeightGrid<WaterSimulation::numRows,
-                                                   WaterSimulation::numCols>>*);
+    void attachReceiverChannel(Receiver<BridgeChannelData>*);
 };

@@ -16,18 +16,14 @@ class StaggeredVelocityGrid
     std::array<float, (numRows + 1) * numCols>
       w_velocity; // We store w_{i, j+1/2}
 
-    float minSpeedComponent;
     float maxSpeedComponent;
 
   public:
-    StaggeredVelocityGrid(float minSpeedClamp, float maxSpeedClamp)
-      : minSpeedComponent{minSpeedClamp}, maxSpeedComponent{maxSpeedClamp}
+    explicit StaggeredVelocityGrid(float maxSpeedClamp)
+      : maxSpeedComponent{maxSpeedClamp}
     {
-        if (minSpeedClamp < 0 || maxSpeedClamp < 0) {
+        if (maxSpeedClamp < 0) {
             throw IrrecoverableError{"Speed should be unsigned magnitude"};
-        }
-        if (minSpeedClamp > maxSpeedClamp) {
-            throw IrrecoverableError{"Min Speed larger than max speed"};
         }
     }
     StaggeredVelocityGrid(const StaggeredVelocityGrid&) = delete;
@@ -58,11 +54,6 @@ class StaggeredVelocityGrid
     float clampVelocity(float velocity)
     {
         float magnitude = std::abs(velocity);
-
-        if (magnitude < minSpeedComponent) {
-            return 0.0F;
-        }
-
         float clampedMagnitude = std::min(magnitude, maxSpeedComponent);
         return std::copysign(clampedMagnitude, velocity);
     }

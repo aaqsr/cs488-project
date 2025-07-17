@@ -19,7 +19,9 @@ Model::Model(std::filesystem::path objPath) : objPath{std::move(objPath)}
     loadModel();
 }
 
-void Model::updateModelMatrix()
+void Model::updateModelMatrix(const linalg::aliases::float3& worldPos,
+                              const Quaternion& rotation,
+                              const linalg::aliases::float3& scale)
 {
     modelMatrix = linalg::mul(
       linalg::mul(linalg::translation_matrix(worldPos), rotation.toMatrix4x4()),
@@ -28,9 +30,6 @@ void Model::updateModelMatrix()
 
 void Model::updateModelMatrixAndDraw(Shader::BindObject& shader)
 {
-    // TODO: Model matrix probably does not need to be recomputed every frame,
-    // only when something changes. Add a way to cache values.
-    updateModelMatrix();
     shader.setUniform("model", modelMatrix);
 
     for (const auto& mesh : meshes) {

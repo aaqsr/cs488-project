@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util/singleton.hpp"
+#include <atomic>
 
 struct GLFWwindow;
 class WaterSimulation;
@@ -13,7 +14,7 @@ class Controller : public Singleton<Controller>
     GLFWwindow* window;
     // TODO: Make this safe for use after free...
     Camera* camera = nullptr;
-    std::atomic<WaterSimulation*> waterSim{nullptr};
+    std::atomic<std::atomic<bool>*> isPlaying_ptr;
 
     // Mouse state
     bool inputCaptured = false;
@@ -43,8 +44,12 @@ class Controller : public Singleton<Controller>
     ~Controller() override = default;
 
     void setMainCamera(Camera* cam);
-    void setSim(WaterSimulation* sim);
-    void update(double deltaTime);
+    void setIsPlayingBoolPtr(std::atomic<bool>* isPlayingBool_ptr);
+
+    void toggleIsPlaying();
+
     void captureMouse();
     void releaseMouse();
+
+    void update(double deltaTime);
 };
