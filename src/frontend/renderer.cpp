@@ -22,7 +22,7 @@ void Renderer::init()
     }
 }
 
-void Renderer::update()
+void Renderer::update() 
 {
     // TODO: should be easier to do than one object
     // TODO: should be easier to do different shaders without everyone assigning
@@ -95,6 +95,7 @@ void Renderer::update()
             mainCamera.setUniforms(boundShader);
             o.getModel().updateModelMatrixAndDraw(boundShader);
         }
+    }
     // {
     //     Shader::BindObject boundShader = flatShader.bind();
     //     teaPot2.updateModelMatrixAndDraw(boundShader);

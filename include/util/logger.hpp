@@ -7,6 +7,7 @@
 #include <ostream>
 #include <queue>
 #include <string>
+#include <sstream>
 #include <thread>
 
 class Logger : public Singleton<Logger>
