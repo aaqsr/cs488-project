@@ -1,9 +1,10 @@
 #pragma once
 
-#include "camera.hpp"
 #include "util/singleton.hpp"
 
 struct GLFWwindow;
+class WaterSimulation;
+class Camera;
 
 class Controller : public Singleton<Controller>
 {
@@ -12,12 +13,18 @@ class Controller : public Singleton<Controller>
     GLFWwindow* window;
     // TODO: Make this safe for use after free...
     Camera* camera = nullptr;
+    WaterSimulation* waterSim = nullptr;
 
     // Mouse state
     bool inputCaptured = false;
     double lastMouseX = 0.0;
     double lastMouseY = 0.0;
     bool firstMouse = true;
+
+    // but, but, we used quaternions?? well dear reader, this is here to
+    // prevent you from being able to look around the world. We do dispatch out
+    // to quaternions to still prevent gimbal lock though...
+    float pitch = 0.0F; // in radians
 
     // Movement settings
     float moveSpeed = 3.0F;
@@ -38,10 +45,8 @@ class Controller : public Singleton<Controller>
     
     ~Controller() override = default;
 
-    void setMainCamera(Camera* cam)
-    {
-        camera = cam;
-    }
+    void setMainCamera(Camera* cam);
+    void setSim(WaterSimulation* sim);
     void update(double deltaTime);
     void captureMouse();
     void releaseMouse();

@@ -10,7 +10,7 @@ class Shader
 {
     friend class BindObject;
 
-    void linkProgram(uint32_t vertexShader, uint32_t fragmentShader);
+    void linkProgram(uint32_t vertexShader, uint32_t geoShader, uint32_t fragmentShader);
     void validateUniforms(const std::vector<std::string>& requiredUniforms);
 
     uint32_t programId{};
@@ -29,10 +29,12 @@ class Shader
     std::unordered_map<std::string, UniformInfo> validUniforms;
 
     void loadFromSource(const std::string& vertexSource,
+                        const std::string& geoSource,
                         const std::string& fragmentSource,
                         const std::vector<std::string>& requiredUniforms = {});
 
     void loadFromFile(const std::filesystem::path& vertexPath,
+                      const std::filesystem::path& geoPath,
                       const std::filesystem::path& fragmentPath,
                       const std::vector<std::string>& requiredUniforms = {});
 
@@ -77,6 +79,11 @@ class Shader
            const std::vector<std::string>& requiredUniforms = {});
 
     Shader(const std::filesystem::path& vertexPath,
+           const std::filesystem::path& fragmentPath,
+           const std::vector<std::string>& requiredUniforms = {});
+
+    Shader(const std::filesystem::path& vertexPath,
+           const std::filesystem::path& geoPath,
            const std::filesystem::path& fragmentPath,
            const std::vector<std::string>& requiredUniforms = {});
 

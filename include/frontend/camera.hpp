@@ -8,17 +8,19 @@
 
 class Camera
 {
-    float fov = 45.0F;
+    float fov = 75.0F;
     float aspectRatio = (float)Window::width / (float)Window::height;
 
     // TODO: Should near plane be this close? Or is this far enough? Value
     // stolen from assignment code.
-    float nearPlane = 5e-5F;
+    // float nearPlane = 5e-5F;
+    float nearPlane = 0.01F;
     // float nearPlane = 0.1F;
     float farPlane = 100.0F;
 
-    linalg::aliases::float3 position{0.0F, 0.0F, 2.0F};
-    Quaternion orientation{0.0F, 0.0F, 0.0F, 1.0F};
+    linalg::aliases::float3 position{-1.0F, 3.0F, 2.5F};
+    // Quaternion orientation{0.0F, 0.0F, 0.0F, 1.0F};
+    Quaternion orientation{-0.182693F, -0.684204F, -0.183332F, 0.681819F};
 
     linalg::aliases::float4x4 perspectiveMatrix;
     linalg::aliases::float4x4 viewMatrix;
@@ -31,6 +33,7 @@ class Camera
     mutable linalg::aliases::float3 right{1.0F, 0.0F, 0.0F};
 
     void updateViewMatrix();
+    void updatePerspectiveMatrix();
     void updateDirectionVectors() const;
 
   public:
@@ -42,6 +45,8 @@ class Camera
     void rotate(const Quaternion& deltaRotation);
     void rotateAroundAxis(const linalg::aliases::float3& axis,
                           float angleRadians);
+
+    void updateAspectRatio(int width, int height);
 
     [[nodiscard]] const linalg::aliases::float3& getPosition() const
     {

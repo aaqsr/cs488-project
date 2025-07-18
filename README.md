@@ -45,6 +45,29 @@ Otherwise, the executable should be `build/debug/CS488` or `build/release/CS488`
 
 # TODO
 
+## sim
+
+- [ ] Multi-threaded double-buffering
+- [ ] Boundary conditions need to handle corners!! Right now corner just gets set to neighbouring cell in the boundary instead of diagonal cell. Sometimes this is done in the wrong order and you get weirdness in the corners.
+- [ ] add some sort of dampening to the waves so that they don't just go on forever
+    - Maybe a minimum wave size?
+- [ ] make water surface look like actual actual water
+    - some sort of interpolation to make the triangles less sharp. 
+        Maybe instead of rendering the heightfield's heights as the vertices, interpolate a vertex in the middle of the heights and render that?
+    - better texture and lighting ofc
+    - better transparency
+
+## performance
+
+- [ ] Move Projection View matrix computation to CPU? See vertex shader for comment explaining more
+- [ ] Code sets some uniforms, such as texture uniform each draw loop. Can this lessened?
+
+## aesthetics
+
+- [ ] Gamma correction
+
+## meta
+- [ ] Clean up TODOs around the codebase
 - [ ] Need better abstraction for world objects.
         So currently point Lights are not a `Model`. 
         Makes sense since `Model` is more as a container around meshes and materials that form an object.
@@ -58,10 +81,6 @@ Otherwise, the executable should be `build/debug/CS488` or `build/release/CS488`
 - [ ] Need better abstraction for shaders.
         Checking uniforms is painful to write code for and makes swapping shaders really hard.
         Currently it is more painful than it should be to render something without light shader for example.
-- [ ] Clean up TODOs around the codebase
-- [ ] Move Projection View matrix computation to CPU? See vertex shader for comment explaining more
-- [ ] Code sets some uniforms, such as texture uniform each draw loop. Can this lessened?
-- [ ] Gamma correction
 
 ## Done
 

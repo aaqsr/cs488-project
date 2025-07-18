@@ -80,17 +80,22 @@ inline Model createCube()
 }
 
 // Purposefully doesn't use model matrix to reposition or scale
-inline Model createCubeWithDefaultModelMatrix(linalg::aliases::float3 centre, float scale = 0.1F)
+inline Model
+createCubeWithDefaultModelMatrix(linalg::aliases::float3 centre,
+                                 float scale = 0.1F,
+                                 std::shared_ptr<Material> material = nullptr)
 {
     // Create material
-    auto material = std::make_shared<Material>();
-    material->loadDiffuseMap("assets/textures/container.jpg");
-    material->setName("SimpleCubeMaterial");
-    material->setType(Material::Type::MAT_LAMBERTIAN);
-    material->setAmbient({0.1F, 0.1F, 0.1F});
-    material->setDiffuse({0.8F, 0.8F, 0.8F});
-    material->setSpecular({0.2F, 0.2F, 0.2F});
-    material->setSpecularExponent(32.0F);
+    if (material == nullptr) {
+        material = std::make_shared<Material>();
+        material->loadDiffuseMap("assets/textures/container.jpg");
+        material->setName("SimpleCubeMaterial");
+        material->setType(Material::Type::MAT_LAMBERTIAN);
+        material->setAmbient({0.1F, 0.1F, 0.1F});
+        material->setDiffuse({0.8F, 0.8F, 0.8F});
+        material->setSpecular({0.2F, 0.2F, 0.2F});
+        material->setSpecularExponent(32.0F);
+    }
 
     // Simple cube vertices (unit cube centered at origin)
     std::vector<Vertex> vertices = {

@@ -1,12 +1,18 @@
 #include "frontend/controller.hpp"
-#include "frontend/window.hpp"
 
-#include "GLFW/glfw3.h"
+#include "frontend/camera.hpp"
+#include "frontend/window.hpp"
+#include "sim/waterSimulation.hpp"
+#include "util/quaternion.hpp"
+
+#include <GLFW/glfw3.h>
+#include <sstream>
+#include <string>
 
 Controller::Controller() : window{Window::GetInstance().getWindow()}
 {
-    glfwSetWindowUserPointer(window,
-                             this); // we can get to this class in the callback
+    // we can get to this class in the callback
+    glfwSetWindowUserPointer(window, this);
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetKeyCallback(window, keyCallback);
@@ -14,33 +20,63 @@ Controller::Controller() : window{Window::GetInstance().getWindow()}
 
 void Controller::update(double deltaTime)
 {
-    if (camera == nullptr) {
+    if (!inputCaptured || (camera == nullptr)) {
         return;
     }
 
-    if (!inputCaptured) {
-        return;
-    }
+    const Quaternion& orientation = camera->getOrientation();
+
+    linalg::aliases::float3 forwardOrientation = orientation.forward();
+
+    // Extract yaw from quaternion for horizontal movement
+    float yaw = atan2(forwardOrientation.x, -forwardOrientation.z);
+
+    // Calculate movement direction using yaw rotation
+    linalg::aliases::float3 forward{sin(yaw), 0.0F, -cos(yaw)};
+    linalg::aliases::float3 right{cos(yaw), 0.0F, sin(yaw)};
+    linalg::aliases::float3 up{0.0F, 1.0F, 0.0F};
+
+    bool moveForward = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
+    bool moveBackward = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+    bool moveLeft = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
+    bool moveRight = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+    bool moveUp = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+    bool moveDown = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
 
     float velocity = moveSpeed * deltaTime;
     linalg::aliases::float3 movement{0.0F, 0.0F, 0.0F};
 
-    // movement input. (my god this is terrible, surely I can do
+    // movement input (my god this is terrible, surely I can do
     // better...SURELY)
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        movement += camera->getFront() * velocity;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        movement -= camera->getFront() * velocity;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        movement -= camera->getRight() * velocity;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        movement += camera->getRight() * velocity;
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        movement += camera->getUp() * velocity;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        movement -= camera->getUp() * velocity;
+    if (moveForward) {
+        movement += forward * velocity;
+    }
+    if (moveBackward) {
+        movement -= forward * velocity;
+    }
+    if (moveLeft) {
+        movement -= right * velocity;
+    }
+    if (moveRight) {
+        movement += right * velocity;
+    }
+    if (moveUp) {
+        movement += up * velocity;
+    }
+    if (moveDown) {
+        movement -= up * velocity;
+    }
 
-    if (movement.x != 0.0f || movement.y != 0.0f || movement.z != 0.0f) {
+    // normalise diagonal movement
+    float horizontalMagnitude =
+      ((movement.x * movement.x) + (movement.z * movement.z));
+    if (horizontalMagnitude > velocity * velocity) {
+        float scale = velocity / std::sqrtf(horizontalMagnitude);
+        movement.x *= scale;
+        movement.z *= scale;
+    }
+
+    if (movement.x != 0.0F || movement.y != 0.0F || movement.z != 0.0F) {
         camera->move(movement);
     }
 }
@@ -60,7 +96,7 @@ void Controller::releaseMouse()
 
 void Controller::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    Controller* controller =
+    auto* controller =
       static_cast<Controller*>(glfwGetWindowUserPointer(window));
 
     if (!controller->inputCaptured || (controller->camera == nullptr)) {
@@ -71,6 +107,7 @@ void Controller::mouseCallback(GLFWwindow* window, double xpos, double ypos)
         controller->lastMouseX = xpos;
         controller->lastMouseY = ypos;
         controller->firstMouse = false;
+        return; // skip this frame to prevent choppy look
     }
 
     double xoffset = xpos - controller->lastMouseX;
@@ -82,23 +119,29 @@ void Controller::mouseCallback(GLFWwindow* window, double xpos, double ypos)
     xoffset *= controller->mouseSensitivity;
     yoffset *= controller->mouseSensitivity;
 
-    // Convert to radians
-    float yawDelta =
-      static_cast<float>(xoffset) * 0.0174533F; // degrees to radians
-    float pitchDelta = static_cast<float>(yoffset) * 0.0174533F;
+    constexpr static float degToRadCoeff = 0.0174533F;
+    const float yawDelta =
+      static_cast<float>(xoffset) * degToRadCoeff; // degrees to radians
+    float pitchDelta = static_cast<float>(yoffset) * degToRadCoeff;
 
-    // Apply rotations
-    controller->camera->rotateAroundAxis({0.0F, 1.0F, 0.0F},
-                                         -yawDelta); // Yaw (Y-axis)
-    controller->camera->rotateAroundAxis(
-      controller->camera->getRight(),
-      -pitchDelta); // Pitch (local right axis)
+    const float oldPitch = controller->pitch;
+    controller->pitch += pitchDelta;
+    controller->pitch = std::clamp(controller->pitch, -89.0F * degToRadCoeff,
+                                   89.0F * degToRadCoeff);
+    // ugly way to move cam only in correct zone
+    pitchDelta = controller->pitch - oldPitch;
+
+    // apply rotations
+    Camera* camera = controller->camera;
+    camera->rotateAroundAxis({0.0F, 1.0F, 0.0F}, -yawDelta);
+
+    camera->rotateAroundAxis(controller->camera->getRight(), -pitchDelta);
 }
 
 void Controller::mouseButtonCallback(GLFWwindow* window, int button, int action,
                                      int mods)
 {
-    Controller* controller =
+    auto* controller =
       static_cast<Controller*>(glfwGetWindowUserPointer(window));
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
@@ -106,14 +149,46 @@ void Controller::mouseButtonCallback(GLFWwindow* window, int button, int action,
     }
 }
 
+// To detect only single pulses resulting from presses.
+// To do behaviour with held down key, see Controller::update
 void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
                              int action, int mods)
 {
-    Controller* controller =
+    auto* controller =
       static_cast<Controller*>(glfwGetWindowUserPointer(window));
 
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        controller->releaseMouse();
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_ESCAPE: controller->releaseMouse(); break;
+            case GLFW_KEY_P:
+                if (WaterSimulation* sim = controller->waterSim) {
+                    sim->togglePlay();
+                }
+            case GLFW_KEY_I:
+                if (controller->camera != nullptr) {
+                    std::stringstream ss;
+                    const auto& camPos = controller->camera->getPosition();
+                    const auto& camOri =
+                      controller->camera->getOrientation().data();
+                    ss << "Camera pos " << camPos.x << ", " << camPos.y << ", "
+                       << camPos.z << "\n"
+                       << "Camera orientation quat. " << camOri.x << " + "
+                       << camOri.y << "i + " << camOri.z << "j + " << camOri.w
+                       << "k\n";
+                    Logger::GetInstance().log(ss.str());
+                }
+            default: break;
+        }
     }
     if (key == (GLFW_KEY_U) && action == GLFW_PRESS) controller->physFlag = !controller->physFlag;
+}
+void Controller::setMainCamera(Camera* cam)
+{
+    camera = cam;
+    pitch = cam->getOrientation().toEulerAngles().z;
+}
+
+void Controller::setSim(WaterSimulation* sim)
+{
+    waterSim = sim;
 }

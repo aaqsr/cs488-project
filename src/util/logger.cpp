@@ -49,3 +49,4 @@ void Logger::log(std::string str)
     }
     condVar.notify_one();
 }
+
