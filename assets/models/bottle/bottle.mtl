@@ -1,2 +1,8 @@
-# Blender 4.5.0 MTL File: 'None'
+# Blender 4.5.0 MTL File: 'bottle.blend'
 # www.blender.org
+
+newmtl TestMaterial
+Ka 0.08700 0.23040 0.04680
+Kd 0.11600 0.30720 0.06240
+Ks 0.00000 0.00000 0.00000
+Ns 5.00000

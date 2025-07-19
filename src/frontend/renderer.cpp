@@ -13,6 +13,7 @@ void Renderer::init()
     // mainModel.worldPos = {0.0F, -0.22F, 0.0F};
 
     // teaPot2.worldPos = {-2.0F, 0.0F, 0.0F};
+    physTest.scale = {0.2F, 0.2F, 0.2F};
     physicsObjects.emplace_back(physTest);
     physicsObjects[0].getInitVelocity() = {4.1103F, 7.0F, 0.0F};
 
@@ -30,13 +31,6 @@ void Renderer::update()
     // TODO: make it so that we can call UseShader on a shader once before
     // all calls to it
     // TODO: should be less easy to forget to do this correctly
-
-    // {
-    //     Shader::BindObject boundShader = shader.bind();
-    //     mainCamera.setUniforms(boundShader);
-    //     light.setUniforms(boundShader, 0);
-    //     mainModel.updateModelMatrixAndDraw(boundShader);
-    // }
 
     // {
     //     Shader::BindObject boundShader = shader.bind();
@@ -91,8 +85,9 @@ void Renderer::update()
     {
         for (PhysicsObj &o : physicsObjects) {
             if (controller.physFlag) o.update(deltaTime);
-            Shader::BindObject boundShader = flatShader.bind();
+            Shader::BindObject boundShader = shader.bind();
             mainCamera.setUniforms(boundShader);
+            light.setUniforms(boundShader, 0);
             o.getModel().updateModelMatrixAndDraw(boundShader);
         }
     }

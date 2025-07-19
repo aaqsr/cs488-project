@@ -104,7 +104,7 @@ class Renderer : public Singleton<Renderer>
     //   std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}};
     // Model teaPot2{
     //   std::filesystem::path{"assets/models/teapot-brick/teapot.obj"}};
-    Model physTest = DebugShape::createCube();
+    Model physTest{std::filesystem::path{"assets/models/bottle/bottle.obj"}};
     Model pool{std::filesystem::path{"assets/models/pool/pool.obj"}};
 
     Skybox skybox;
