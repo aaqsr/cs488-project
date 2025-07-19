@@ -11,7 +11,7 @@
 class PointLight
 {
     // linalg::aliases::float3 worldPof{0.0F, 0.4F, 0.0F};
-    linalg::aliases::float3 worldPos{0.0F, 0.2F, 1.0F};
+    linalg::aliases::float3 worldPos{2.0F, 1.2F, 1.0F};
 
     linalg::aliases::float3 ambientColour{0.1F, 0.1F, 0.1F};
     linalg::aliases::float3 diffuseColour{0.5F, 0.5F, 0.5F};

@@ -43,7 +43,7 @@ vec3 getDiffuseColour()
 {
     // return material.isDiffuseTextured ? material.Kd * pow(texture(material.diffuse, texCoords).rgb, vec3(gamma)) : material.Kd;
     // return material.isDiffuseTextured ? material.Kd * vec3(texture(material.diffuse, texCoords)) : material.Kd;
-    return material.Kd * vec3(texture(material.diffuse, texCoords));
+    return material.Kd * pow(texture(material.diffuse, texCoords).rgb, vec3(gamma));
 }
 
 vec3 getSpecularColour()
@@ -92,6 +92,6 @@ void main()
     }
 
     // Gamma correction howww??? this no work =(
-    // result = pow(result, vec3(1.0 / gamma));
+    result = pow(result, vec3(1.0 / gamma));
     FragColour = vec4(result, 1.0);
 }
