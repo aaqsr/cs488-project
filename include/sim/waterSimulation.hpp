@@ -4,6 +4,8 @@
 #include "sim/staggeredGrid.hpp"
 #include "sim/waterHeightGrid.hpp"
 
+class RigidBody;
+
 class WaterSimulation
 {
   public:
@@ -12,6 +14,8 @@ class WaterSimulation
     constexpr static size_t numCols = 80;
 
     constexpr static float cellSize = 0.05F;
+    constexpr static linalg::aliases::float2 bottomLeftCornerWorldPos_xz{
+      0.025F, 0.025F};
 
     // Grid spacing in meters.
     // Equal to cell size if we assume 1 meter = 1.0F in world space
@@ -61,4 +65,6 @@ class WaterSimulation
 
     void update(HeightGrid<numRows, numCols>& newHeightGrid,
                 const HeightGrid<numRows, numCols>& prevHeightGrid);
+
+    void updateFluidWithRigidBody(const RigidBody& o);
 };

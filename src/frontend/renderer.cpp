@@ -43,8 +43,8 @@ void Renderer::update()
         Shader::BindObject boundShader = waterShader.bind();
         mainCamera.setUniforms(boundShader);
 
-        if (channel->isMessageReady()) {
-            auto message = channel->receive();
+        if (bridgeChannel->isMessageReady()) {
+            auto message = bridgeChannel->receive();
             waterMesh.updateMesh(message.getBuffer().waterHeights.getWaterHeights());
         }
 
@@ -110,7 +110,8 @@ Renderer::Renderer()
     controller.setMainCamera(&mainCamera);
 }
 
-void Renderer::attachReceiverChannel(Receiver<BridgeChannelData>* r)
+void Renderer::attachBridgeChannel(Receiver<BridgeChannelData>* r)
 {
-    channel = r;
+    bridgeChannel = r;
 }
+
