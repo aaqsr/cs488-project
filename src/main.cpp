@@ -2,8 +2,8 @@
 #include "frontend/renderer.hpp"
 #include "sim/waterSimulation.hpp"
 #include "util/channel.hpp"
-#include "util/perf.hpp"
 #include "util/error.hpp"
+#include "util/perf.hpp"
 #include "util/tripleBufferedChannel.hpp"
 
 #include <GL/glew.h>
@@ -36,7 +36,7 @@ void physicsAndSimulationThread(Sender<BridgeChannelData>& channel,
     // longer For now this is an *arbitrary* amount.
     constexpr auto targetFrameTime = std::chrono::microseconds(50);
 
-    IterationsPerSecondCounter msPerUpdate{ "UPS", "update"};
+    IterationsPerSecondCounter msPerUpdate{"UPS", "update"};
 
     while (!appShouldExit.load()) {
         auto frameStart = std::chrono::high_resolution_clock::now();
@@ -44,20 +44,24 @@ void physicsAndSimulationThread(Sender<BridgeChannelData>& channel,
         // TODO: Should be condition variable rather than polling? ehhhhh
         if (isPlaying) {
             msPerUpdate.tick();
-            auto msg = channel.createMessage();
 
-            // Must be in this order:
-            // Heightfield simulation
-            // Solid simulation
-            // Two-way coupling of heightfield and solids
-            // (optional) particle generation & simulation
-            // Rendering (done implicitly once data sent through the channel)
+            {
+                auto msg = channel.createMessage();
 
-            // TODO: split sim.update in half. A function that needs the channel
-            // to be open and one that does not. So we can send message as fast
-            // as possible.
-            sim.update(msg.getWriteBuffer().waterHeights,
-                       msg.getPreviousWriteBuffer().waterHeights);
+                // Must be in this order:
+                // Heightfield simulation
+                // Solid simulation
+                // Two-way coupling of heightfield and solids
+                // (optional) particle generation & simulation
+                // Rendering (done implicitly once data sent through the
+                // channel)
+
+                // TODO: split sim.update in half. A function that needs the
+                // channel to be open and one that does not. So we can send
+                // message as fast as possible.
+                sim.update(msg.getWriteBuffer().waterHeights,
+                           msg.getPreviousWriteBuffer().waterHeights);
+            }
         }
 
         auto frameEnd = std::chrono::high_resolution_clock::now();
@@ -83,14 +87,16 @@ void run()
     Renderer& renderer = Renderer::GetInstance();
 
     // Attach channels
-    TripleBufferedChannel<BridgeChannelData> channel; // very heavy class yum!
-    renderer.attachReceiverChannel(&(channel.getReceiver()));
+    TripleBufferedChannel<BridgeChannelData> bridgeChannel; // very heavy class yum!
+    renderer.attachBridgeChannel(&(bridgeChannel.getReceiver()));
+
+    // MPSCQueueChannel<RigidBody> physicsEngineCommandsChannel;
 
     // aaaaaaand awayyyyy we go!
     std::atomic<bool> appShouldExit{false};
 
     std::jthread simulationThread{physicsAndSimulationThread,
-                                  std::ref(channel.getSender()),
+                                  std::ref(bridgeChannel.getSender()),
                                   std::cref(appShouldExit)};
 
     try {

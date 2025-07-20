@@ -15,6 +15,7 @@
 #include <filesystem>
 
 struct BridgeChannelData;
+class RigidBody;
 
 class Renderer : public Singleton<Renderer>
 {
@@ -34,11 +35,9 @@ class Renderer : public Singleton<Renderer>
 
     Renderer();
 
-    Receiver<BridgeChannelData>* channel = nullptr;
+    Receiver<BridgeChannelData>* bridgeChannel = nullptr;
 
-    WaterMesh<WaterSimulation::numRows, WaterSimulation::numCols,
-              WaterSimulation::cellSize>
-      waterMesh;
+    WaterMesh waterMesh;
 
     // TODO: Make it easier for user to change the shader and model without
     // having to come in here and poke about
@@ -112,5 +111,6 @@ class Renderer : public Singleton<Renderer>
     // Minimize number of individual draw calls per frame
     void loop();
 
-    void attachReceiverChannel(Receiver<BridgeChannelData>*);
+    void attachBridgeChannel(Receiver<BridgeChannelData>*);
+    void attachPhysicsEngineCommandsChannel(Sender<RigidBody>*);
 };

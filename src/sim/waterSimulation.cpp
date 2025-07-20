@@ -388,3 +388,7 @@ void WaterSimulation::advectVelocities()
 
     // return nextGrid;
 }
+
+void WaterSimulation::updateFluidWithRigidBody(const RigidBody& o)
+{
+}

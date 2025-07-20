@@ -2,11 +2,11 @@
 
 #include <vector>
 
-class PhysicsObj;
+class RigidBody;
 
 class PhysicsEngine
 {
   public:
     PhysicsEngine();
-    void update(std::vector<PhysicsObj>& physicsObjects);
+    void updateRigidBodies(std::vector<RigidBody>& rigidBodies);
 };

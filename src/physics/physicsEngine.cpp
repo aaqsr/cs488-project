@@ -1,7 +1,7 @@
 #include "physics/physicsEngine.hpp"
 #include "linalg.h"
 #include "physics/constants.hpp"
-#include "physics/physicsObj.hpp"
+#include "physics/rigidBody.hpp"
 
 namespace
 {
@@ -24,9 +24,14 @@ void verletIntegUpdate(linalg::aliases::float3& prevPos,
 
 PhysicsEngine::PhysicsEngine() = default;
 
-void PhysicsEngine::update(std::vector<PhysicsObj>& objects)
+void PhysicsEngine::updateRigidBodies(std::vector<RigidBody>& objects)
 {
     for (auto& o : objects) {
-        verletIntegUpdate(o.prevPos, o.pos, o.getConstAccel());
+        verletIntegUpdate(o.prevGlobalCentreOfMassPos, o.globalCentreOfMassPos,
+                          o.getTotalAcceleration());
+
+        // physics stuff here
+
+        o.clearAccumulatedForceAndTorque();
     }
 }
