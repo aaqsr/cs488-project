@@ -1,8 +1,9 @@
 #pragma once
 
-#include "linalg.h"
 #include "singleton.hpp"
 #include "util/queueChannel.hpp"
+
+#include <linalg.h>
 
 #include <array>
 #include <ostream>

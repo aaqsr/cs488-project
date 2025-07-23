@@ -1,8 +1,9 @@
 #pragma once
 
-#include "linalg.h"
 #include "sim/staggeredGrid.hpp"
 #include "sim/waterHeightGrid.hpp"
+
+#include <linalg.h>
 
 class RigidBody;
 
@@ -16,6 +17,11 @@ class WaterSimulation
     constexpr static float cellSize = 0.05F;
     constexpr static linalg::aliases::float2 bottomLeftCornerWorldPos_xz{
       0.025F, 0.025F};
+    constexpr static linalg::aliases::float2 topRightCornerWorldPos_xz{
+      (static_cast<float>(numCols - 1) * cellSize) +
+        bottomLeftCornerWorldPos_xz.x,
+      (static_cast<float>(numRows - 1) * cellSize) +
+        bottomLeftCornerWorldPos_xz.y};
 
     // Grid spacing in meters.
     // Equal to cell size if we assume 1 meter = 1.0F in world space
@@ -30,6 +36,15 @@ class WaterSimulation
     constexpr static float velocityComponentDissipationConstant = 0.99985F;
 
     // TODO: Check for volume conservation every N timesteps?
+
+    constexpr static linalg::aliases::float3 upDirection_yHat = {0.0F, 1.0F,
+                                                                 0.0F};
+
+    constexpr static float decayRate_SolidsToFluids = 1.0F;
+    static_assert(decayRate_SolidsToFluids > 0.0F);
+
+    constexpr static float Cdisplacement_SolidsToFluids = 1.0F;
+    constexpr static float Cadapt_SolidsToFluids = 0.2F;
 
   private:
     StaggeredVelocityGrid<numRows, numCols> velocityGrid;
@@ -66,5 +81,15 @@ class WaterSimulation
     void update(HeightGrid<numRows, numCols>& newHeightGrid,
                 const HeightGrid<numRows, numCols>& prevHeightGrid);
 
-    void updateFluidWithRigidBody(const RigidBody& o);
+    [[nodiscard]] static bool doesObjectCollideWithWater(
+      const linalg::aliases::float3& pos,
+      const HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>&
+        heights);
+
+    void updateFluidWithRigidBody(
+      float areaOfTriangle, const linalg::aliases::float3& positionOfCentroid,
+      const linalg::aliases::float3& velocityOfCentroid,
+      const linalg::aliases::float3& relativeVelocityOfCentroidWRTFluid,
+      const linalg::aliases::float3& normalOfCentroid,
+      HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights);
 };

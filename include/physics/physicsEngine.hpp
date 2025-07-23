@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util/queueChannel.hpp"
 #include <vector>
 
 class RigidBody;
