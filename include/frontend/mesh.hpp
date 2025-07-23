@@ -37,4 +37,13 @@ class Mesh
     // CALLER IS EXPECTED TO HAVE BOUND THE SHADER
     // TODO: Does not check if shader is bound!
     void draw(Shader::BindObject& shader) const;
+
+    [[nodiscard]] const Vertex& getVertex(size_t idx) const
+    {
+        return vertices[idx];
+    }
+    [[nodiscard]] const std::vector<uint32_t>& getFaces() const
+    {
+        return indices;
+    }
 };

@@ -10,20 +10,22 @@ class PhysicsObj
 {
     Model &model;
     linalg::aliases::float3 prevPos = {0.0F, 0.0F, 0.0F};
+    linalg::aliases::float3 com = {0.0F, 0.0F, 0.0F};
     linalg::aliases::float3 constantForces = {0.0F, 0.0F, 0.0F};
-    linalg::aliases::float3 initVelocity = {0.0F, 0.0F, 0.0F};
+    linalg::aliases::float3 angularMomentum = {0.0F, 0.0F, 0.0F};
+    linalg::aliases::float3x3 initInvInertia;
+    linalg::aliases::float3 impulse{0.0f};
+    linalg::aliases::float3 torque{0.0f};
     float mass = 1.0f;
-    Quaternion orientation{0.0F, 0.0F, 0.0F, 1.0F};
 
-    // cached for performance for things that need it, hence mutable
-    // (TODO: does this make a difference?)
-    mutable bool vectorsNeedUpdate = true;
+    void calcInertia();
 
   public:
     PhysicsObj(Model& m);
 
     void update(float deltaTime);
     // void addVelocity(linalg::aliases::float3 velocity);
+    void applyForce(linalg::aliases::float3 force, linalg::aliases::float3 contact);
 
     void setPosition(const linalg::aliases::float3& pos);
     void move(const linalg::aliases::float3& displacement);
@@ -42,7 +44,7 @@ class PhysicsObj
     }
     [[nodiscard]] const Quaternion& getOrientation() const
     {
-        return orientation;
+        return model.rotation;
     }
     [[nodiscard]] Model& getModel()
     {
@@ -58,7 +60,7 @@ class PhysicsObj
     }
     [[nodiscard]] linalg::aliases::float3& getInitVelocity()
     {
-        return initVelocity;
+        return impulse;
     }
 
 };

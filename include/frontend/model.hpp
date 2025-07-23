@@ -52,4 +52,9 @@ class Model
 
     // USER MUST BIND SHADER
     void updateModelMatrixAndDraw(Shader::BindObject& shader);
+
+    [[nodiscard]] const std::vector<Mesh>& getMeshes() const
+    {
+        return meshes;
+    }
 };
