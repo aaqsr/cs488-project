@@ -2,9 +2,10 @@
 #include "linalg.h"
 #include "physics/constants.hpp"
 #include "sim/waterHeightGrid.hpp"
-#include "util/error.hpp"
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstdint>
 
 namespace
 {
@@ -12,7 +13,7 @@ namespace
 template <size_t rows, size_t cols>
 [[nodiscard]]
 float interpolate(const std::array<float, rows * cols>& field,
-                  linalg::aliases::float2 pos)
+                  const linalg::aliases::float2& pos)
 {
     // Boundary Conditions:
     auto getFieldValue = [&field](int i, int j) -> float {
@@ -385,10 +386,97 @@ void WaterSimulation::advectVelocities()
             velocityGrid.setVelocity_w_i_j_plus_half(i, j, new_w);
         }
     }
-
-    // return nextGrid;
 }
 
-void WaterSimulation::updateFluidWithRigidBody(const RigidBody& o)
+bool WaterSimulation::doesObjectCollideWithWater(
+  const linalg::aliases::float3& pos,
+  const HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights)
 {
+    const bool withinGrid = (pos.x >= bottomLeftCornerWorldPos_xz.x) &&
+                            (pos.z >= bottomLeftCornerWorldPos_xz.y) &&
+                            (pos.x <= topRightCornerWorldPos_xz.x) &&
+                            (pos.z <= topRightCornerWorldPos_xz.y);
+
+    if (!withinGrid) {
+        return false;
+    }
+
+    const float waterHeight = interpolate<numRows, numCols>(
+      heights.getWaterHeights(), linalg::aliases::float2{pos.x, pos.z});
+
+    return (pos.y <= waterHeight);
+}
+
+static std::pair<int, int> getClosestGridPoint(float x, float z)
+{
+}
+
+void WaterSimulation::updateFluidWithRigidBody(
+  const float areaOfTriangle, const linalg::aliases::float3& positionOfCentroid,
+  const linalg::aliases::float3& velocityOfCentroid,
+  const linalg::aliases::float3& relativeVelocityOfCentroidWRTFluid,
+  const linalg::aliases::float3& normalOfCentroid,
+  HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights)
+{
+    // TODO: unsure if this is meant to be the length
+    // TODO: would definitely be better to use a vector with a 0 in the y pos
+    // instead of this potential catastrophic cancellation??
+    const float horizontalSpeed = linalg::length(
+      velocityOfCentroid - velocityOfCentroid.y * upDirection_yHat);
+    const float numSubstepsLowerBound =
+      std::floor((horizontalSpeed * (Physics::deltaT / deltaX)) + 0.5F);
+    uint32_t numSubsteps =
+      static_cast<uint32_t>(std::max(1.0F, numSubstepsLowerBound));
+
+    const float displacementVolume =
+      linalg::dot(normalOfCentroid, relativeVelocityOfCentroidWRTFluid) *
+      areaOfTriangle * Physics::deltaT;
+
+    const float heightSign = (normalOfCentroid.y > 0) ? 1.0F : -1.0F;
+
+    for (uint32_t q = 1; q < numSubsteps; ++q) {
+        // P_s
+        // TODO: Do they even use this anywhere??
+        const linalg::aliases::float3 newPos =
+          positionOfCentroid + velocityOfCentroid * static_cast<float>(q) *
+                                 Physics::deltaT /
+                                 static_cast<float>(numSubsteps);
+
+        const auto [i, j] =
+          getClosestGridPoint(positionOfCentroid.x, positionOfCentroid.z);
+
+        const float depth = heights.getEta(i, j) - positionOfCentroid.y;
+
+        if (depth > 0) {
+            const float decay = std::expf(decayRate_SolidsToFluids * -depth);
+
+            const float heightChange =
+              Cdisplacement_SolidsToFluids * decay *
+              (displacementVolume / (static_cast<float>(numSubsteps) *
+                                     Physics::deltaT * Physics::deltaT));
+
+            const float currHeight = heights.getWaterHeight(i, j);
+            heights.setWaterHeight(i, j, currHeight + heightChange, maxDepth);
+
+            const float velCoeffUpperBound =
+              decay * Cadapt_SolidsToFluids * (depth / heights.getEta(i, j)) *
+              heightSign * (Physics::deltaT / (deltaX * deltaX)) *
+              areaOfTriangle;
+
+            const float velCoeff = std::min(1.0F, velCoeffUpperBound);
+
+            const float velU_change =
+              velCoeff * (velocityOfCentroid.x -
+                          velocityGrid.getVelocity_u_i_plus_half_j(i, j));
+            const float velW_change =
+              velCoeff * (velocityOfCentroid.z -
+                          velocityGrid.getVelocity_w_i_j_plus_half(i, j));
+
+            const float oldU = velocityGrid.getVelocity_u_i_plus_half_j(i, j);
+            const float oldW = velocityGrid.getVelocity_w_i_j_plus_half(i, j);
+
+            velocityGrid.setVelocity_u_i_plus_half_j(i, j, velU_change + oldU);
+            velocityGrid.setVelocity_w_i_j_plus_half(i, j, velW_change + oldW);
+        }
+    }
 }
