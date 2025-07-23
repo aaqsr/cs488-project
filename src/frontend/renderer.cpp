@@ -13,10 +13,10 @@ void Renderer::init()
     // mainModel.worldPos = {0.0F, -0.22F, 0.0F};
 
     // teaPot2.worldPos = {-2.0F, 0.0F, 0.0F};
-    physTest.scale = {0.2F, 0.2F, 0.2F};
     physicsObjects.emplace_back(physTest);
+    physicsObjects[0].rescale(0.2f);
     // physicsObjects[0].getInitVelocity() = {4.1103F, 7.0F, 0.0F};
-    physicsObjects[0].applyForce({4.1103F, 7.0F, 0.0F}, {-0.4f, -3.4f, -0.5f});
+    physicsObjects[0].applyForce({0.911037F, 1.73011F, 0.711037F}, {-0.4f, 500.1f, -0.5f});
 
     {
         Shader::BindObject shader = waterShader.bind();
