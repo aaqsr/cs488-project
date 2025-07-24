@@ -33,7 +33,7 @@ class PhysicsObj
     Model &model;
     linalg::aliases::float3 prevPos = {0.0F, 0.0F, 0.0F};
     linalg::aliases::float3 com = {0.0F, 0.0F, 0.0F};
-    linalg::aliases::float3 angularMomentum = {0.0F, 20.0F, 0.0F};
+    linalg::aliases::float3 angularMomentum = {0.0F, 0.0F, 0.0F};
     linalg::aliases::float3 constantForces = {0.0F, 0.0F, 0.0F};
 
     linalg::aliases::float3 impulse{0.0f};

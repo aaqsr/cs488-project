@@ -96,6 +96,7 @@ RIGID BODY PHYSICS LOGIC
 **********************************************************/
 
 void PhysicsObj::calcInertia(linalg::aliases::float3 scale) {
+    inertia = Inertia();
     for (const Mesh& mesh: model.getMeshes()) {
         for (size_t face_idx = 2; face_idx < mesh.getFaces().size(); face_idx += 3) {
             const auto v0 = mesh.getVertex(mesh.getFaces()[face_idx-2]);
@@ -142,8 +143,19 @@ void PhysicsObj::update(float deltaTime) {
     angularMomentum += torque * deltaTime;
     torque = {0.0f, 0.0f, 0.0f};
     auto R = model.rotation.toMatrix3x3();
-    auto angular_velocity = mul(mul(mul(R, initInvInertia), linalg::transpose(R)), angularMomentum);
-    rotate(Quaternion::fromAxisAngle(linalg::normalize(angular_velocity), linalg::length(angular_velocity) * deltaTime));
+    auto angularVelocity = mul(mul(mul(R, initInvInertia), linalg::transpose(R)), angularMomentum);
+    float angularSpeed = linalg::length(angularVelocity);
+    // For debugging motion:
+    // printf("L = (%.3f, %.3f, %.3f), w = (%.3f, %.3f, %.3f), |w|*dt = %.3f\n", angularMomentum.x, angularMomentum.y, angularMomentum.z, angularVelocity.x, angularVelocity.y, angularVelocity.z, angularSpeed *deltaTime);
+    // auto euler_angles = model.rotation.toEulerAngles();
+    // printf("Roll = %.3f, Pitch = %.3f, Yaw = %.3f\n", euler_angles.x, euler_angles.y, euler_angles.z);
+    if (angularSpeed > 1e-6F) {
+        // Axis-Angle Method (easier to understand)
+        // rotate(Quaternion::fromAxisAngle(linalg::normalize(angularVelocity), angularSpeed * deltaTime));
+        // Derivative trick method (might be cheaper since no trig functions)
+        model.rotation += Quaternion(linalg::aliases::float4{deltaTime*angularVelocity/2, 0.0f}) * model.rotation;
+        model.rotation.normalize();
+    }
     prevPos = temp;
 }
 
