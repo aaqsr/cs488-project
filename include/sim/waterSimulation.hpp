@@ -5,8 +5,6 @@
 
 #include <linalg.h>
 
-class RigidBody;
-
 class WaterSimulation
 {
   public:

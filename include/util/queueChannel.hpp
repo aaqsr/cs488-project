@@ -61,7 +61,7 @@ class MPSCQueueChannel
         explicit ChannelReceiver(MPSCQueueChannel<T>& ch);
 
       public:
-        const std::vector<T>& getBuffer() override;
+        std::vector<T>& getBuffer() override;
 
         // non-blocking version for polling threads
         bool isMessageReady() override;
@@ -260,7 +260,7 @@ inline bool MPSCQueueChannel<T>::ChannelReceiver::isMessageReady()
 }
 
 template <typename T>
-inline const std::vector<T>& MPSCQueueChannel<T>::ChannelReceiver::getBuffer()
+inline std::vector<T>& MPSCQueueChannel<T>::ChannelReceiver::getBuffer()
 {
     return channel.readBuffer;
 }

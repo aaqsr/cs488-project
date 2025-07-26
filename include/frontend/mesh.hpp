@@ -34,7 +34,14 @@ class Mesh
 
     ~Mesh();
 
-    // CALLER IS EXPECTED TO HAVE BOUND THE SHADER
-    // TODO: Does not check if shader is bound!
     void draw(Shader::BindObject& shader) const;
+
+    [[nodiscard]] uint32_t getNumFaceIndices() const
+    {
+        return indices.size();
+    }
+    [[nodiscard]] const Vertex& getVertexAtFaceIndex(uint32_t i) const
+    {
+        return vertices[indices[i]];
+    }
 };

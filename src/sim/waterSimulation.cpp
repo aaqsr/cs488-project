@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstdint>
 
+using Physics::WaterSim::deltaT;
+
 namespace
 {
 
@@ -109,7 +111,7 @@ float interpolate(const std::array<float, rows * cols>& field,
 } // namespace
 
 WaterSimulation::WaterSimulation()
-  : velocityGrid{Physics::waterSimulationMaxSpeedComponent}
+  : velocityGrid{Physics::WaterSim::waterSimulationMaxSpeedComponent}
 {
 }
 
@@ -279,7 +281,7 @@ float WaterSimulation::calcHeightChangeIntegral(
     const float delH_delT =
       -(uDirectionNumerator + wDirectionNumerator) * invDeltaX;
 
-    return delH_delT * Physics::deltaT;
+    return delH_delT * deltaT;
 }
 
 linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
@@ -305,11 +307,9 @@ linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
     }
 
     const float delta_u_i_plus_half_j =
-      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) *
-      Physics::deltaT;
+      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) * deltaT;
     const float delta_w_i_j_plus_half =
-      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) *
-      Physics::deltaT;
+      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) * deltaT;
 
     return {delta_u_i_plus_half_j, delta_w_i_j_plus_half};
 }
@@ -348,7 +348,7 @@ void WaterSimulation::advectVelocities()
               velocityGrid.getVelocity_u_i_plus_half_j(i, j), w_interp};
 
             // trace back in time
-            linalg::aliases::float2 departure_pos = pos - vel * Physics::deltaT;
+            linalg::aliases::float2 departure_pos = pos - vel * deltaT;
 
             // sample old u-velocity field at departure point.
             // convert departure point in to a u-field grid coords
@@ -376,7 +376,7 @@ void WaterSimulation::advectVelocities()
             linalg::aliases::float2 vel = {
               u_interp, velocityGrid.getVelocity_w_i_j_plus_half(i, j)};
 
-            linalg::aliases::float2 departure_pos = pos - vel * Physics::deltaT;
+            linalg::aliases::float2 departure_pos = pos - vel * deltaT;
 
             linalg::aliases::float2 w_pos_grid = {
               departure_pos.x / deltaX, (departure_pos.y / deltaX) + 0.5F};
@@ -424,13 +424,13 @@ void WaterSimulation::updateFluidWithRigidBody(
     const float horizontalSpeed = linalg::length(
       velocityOfCentroid - velocityOfCentroid.y * upDirection_yHat);
     const float numSubstepsLowerBound =
-      std::floor((horizontalSpeed * (Physics::deltaT / deltaX)) + 0.5F);
+      std::floor((horizontalSpeed * (deltaT / deltaX)) + 0.5F);
     uint32_t numSubsteps =
       static_cast<uint32_t>(std::max(1.0F, numSubstepsLowerBound));
 
     const float displacementVolume =
       linalg::dot(normalOfCentroid, relativeVelocityOfCentroidWRTFluid) *
-      areaOfTriangle * Physics::deltaT;
+      areaOfTriangle * deltaT;
 
     const float heightSign = (normalOfCentroid.y > 0) ? 1.0F : -1.0F;
 
@@ -439,8 +439,7 @@ void WaterSimulation::updateFluidWithRigidBody(
         // TODO: Do they even use this anywhere??
         const linalg::aliases::float3 newPos =
           positionOfCentroid + velocityOfCentroid * static_cast<float>(q) *
-                                 Physics::deltaT /
-                                 static_cast<float>(numSubsteps);
+                                 deltaT / static_cast<float>(numSubsteps);
 
         const auto [i, j] =
           getClosestGridPoint(positionOfCentroid.x, positionOfCentroid.z);
@@ -452,16 +451,15 @@ void WaterSimulation::updateFluidWithRigidBody(
 
             const float heightChange =
               Cdisplacement_SolidsToFluids * decay *
-              (displacementVolume / (static_cast<float>(numSubsteps) *
-                                     Physics::deltaT * Physics::deltaT));
+              (displacementVolume /
+               (static_cast<float>(numSubsteps) * deltaT * deltaT));
 
             const float currHeight = heights.getWaterHeight(i, j);
             heights.setWaterHeight(i, j, currHeight + heightChange, maxDepth);
 
             const float velCoeffUpperBound =
               decay * Cadapt_SolidsToFluids * (depth / heights.getEta(i, j)) *
-              heightSign * (Physics::deltaT / (deltaX * deltaX)) *
-              areaOfTriangle;
+              heightSign * (deltaT / (deltaX * deltaX)) * areaOfTriangle;
 
             const float velCoeff = std::min(1.0F, velCoeffUpperBound);
 

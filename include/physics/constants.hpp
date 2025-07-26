@@ -20,6 +20,9 @@ constexpr static float deltaTBoundAbove =
   CS488Math::sqrt(gravitationalAccelerationMagnitude *
                   WaterSimulation::maxDepth);
 
+namespace WaterSim
+{
+
 // to ensure fixed deltaT is bounded above by the...bound given above, we
 // use a fractional value of the bound (0.2 is suggested by Fluid
 // Simulation for Computer Graphics by R. Bridson in section 12.3).
@@ -33,5 +36,15 @@ constexpr static float waterSimulationMaxSpeedComponent = ([]() {
     constexpr float alpha = 0.5F;
     return alpha * WaterSimulation::cellSize / deltaT;
 })();
+
+} // namespace WaterSim
+
+namespace RigidBody
+{
+
+// A *much* bigger deltaT for physics
+constexpr static float deltaT = deltaTBoundAbove * 0.02F;
+
+} // namespace RigidBody
 
 } // namespace Physics

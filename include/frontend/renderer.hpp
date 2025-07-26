@@ -2,6 +2,7 @@
 #include "frontend/camera.hpp"
 #include "frontend/skybox.hpp"
 #include "model.hpp"
+#include "physics/physicsEngine.hpp"
 #include "pointLight.hpp"
 #include "sim/waterMesh.hpp"
 #include "sim/waterSimulation.hpp"
@@ -15,7 +16,6 @@
 #include <filesystem>
 
 struct BridgeChannelData;
-class RigidBody;
 
 class Renderer : public Singleton<Renderer>
 {
@@ -36,6 +36,7 @@ class Renderer : public Singleton<Renderer>
     Renderer();
 
     Receiver<BridgeChannelData>* bridgeChannel = nullptr;
+    Sender<std::vector<PhysicsEngineReceiverData>>* physCmdChannel = nullptr;
 
     WaterMesh waterMesh;
 
@@ -61,14 +62,15 @@ class Renderer : public Singleton<Renderer>
       {"projection", "view", "model"}
     };
 
-    // Shader sunShader{
-    //   std::filesystem::path{"shaders/vertex/modelLightPerspTextureShader.glsl"},
-    //   std::filesystem::path{"shaders/fragment/sunBlinnPhongTextureShader.glsl"},
-    //   {"projection", "view", "model", "material.diffuse",
-    //   "material.specular",
-    //                         "material.Kd", "material.Ks", "material.Ns",
-    //                         "viewPos"}
-    // };
+    // TODO: NEEDS A LOT OF WORK
+    Shader sunShader{
+      std::filesystem::path{"shaders/vertex/modelLightPerspTextureShader.glsl"},
+      std::filesystem::path{"shaders/fragment/sunBlinnPhongTextureShader.glsl"},
+      {"projection", "view", "model", "material.diffuse",
+      "material.specular",
+                            "material.Kd", "material.Ks", "material.Ns",
+                            "viewPos"}
+    };
 
     Shader waterShader{
       std::filesystem::path{"shaders/vertex/waterSurface.glsl"},
@@ -112,5 +114,6 @@ class Renderer : public Singleton<Renderer>
     void loop();
 
     void attachBridgeChannel(Receiver<BridgeChannelData>*);
-    void attachPhysicsEngineCommandsChannel(Sender<RigidBody>*);
+    void attachPhysicsEngineCommandsChannel(
+      Sender<std::vector<PhysicsEngineReceiverData>>*);
 };

@@ -11,5 +11,5 @@
 struct BridgeChannelData
 {
     HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols> waterHeights;
-    std::vector<RigidBody> physicsObjects;
+    std::vector<RigidBodyData> physicsObjects;
 };

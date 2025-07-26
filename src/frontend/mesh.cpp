@@ -5,6 +5,27 @@
 
 #include "GL/glew.h"
 
+namespace
+{
+void setupVertexAttributes()
+{
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, position));
+    glEnableVertexAttribArray(0);
+
+    // Normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, normal));
+    glEnableVertexAttribArray(1);
+
+    // Texture coords attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          (void*)offsetof(Vertex, texCoords));
+    glEnableVertexAttribArray(2);
+}
+} // namespace
+
 void Mesh::setVertices(const std::vector<Vertex>& v)
 {
     vertices = v;
@@ -38,7 +59,7 @@ void Mesh::setupMesh()
                  static_cast<GLsizeiptr>(indices.size() * sizeof(unsigned int)),
                  indices.data(), GL_STATIC_DRAW);
 
-    Vertex::setupVertexAttributes();
+    setupVertexAttributes();
 
     // Unbind VAO
     glBindVertexArray(0);

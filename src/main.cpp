@@ -1,9 +1,11 @@
 #include "bridgeChannelData.hpp"
 #include "frontend/renderer.hpp"
+#include "physics/physicsEngine.hpp"
 #include "sim/waterSimulation.hpp"
 #include "util/channel.hpp"
 #include "util/error.hpp"
 #include "util/perf.hpp"
+#include "util/queueChannel.hpp"
 #include "util/tripleBufferedChannel.hpp"
 
 #include <GL/glew.h>
@@ -17,15 +19,20 @@
 namespace
 {
 
-void physicsAndSimulationThread(Sender<BridgeChannelData>& channel,
-                                const std::atomic<bool>& appShouldExit)
+void physicsAndSimulationThread(
+  Sender<BridgeChannelData>& bridgeChannel,
+  Receiver<std::vector<PhysicsEngineReceiverData>>& physCmdChannel,
+  const std::atomic<bool>& appShouldExit)
 {
     WaterSimulation sim;
+    PhysicsEngine phys{physCmdChannel};
+
     std::atomic<bool> isPlaying{false};
     Controller::GetInstance().setIsPlayingBoolPtr(&isPlaying);
 
     {
-        auto msg = channel.createMessage();
+        // Initial conditions
+        auto msg = bridgeChannel.createMessage();
         WaterSimulation::setInitConditions(msg.getWriteBuffer().waterHeights);
     }
 
@@ -46,7 +53,7 @@ void physicsAndSimulationThread(Sender<BridgeChannelData>& channel,
             msPerUpdate.tick();
 
             {
-                auto msg = channel.createMessage();
+                auto msg = bridgeChannel.createMessage();
 
                 // Must be in this order:
                 // Heightfield simulation
@@ -61,6 +68,8 @@ void physicsAndSimulationThread(Sender<BridgeChannelData>& channel,
                 // message as fast as possible.
                 sim.update(msg.getWriteBuffer().waterHeights,
                            msg.getPreviousWriteBuffer().waterHeights);
+
+                phys.updateRigidBodies(msg.getWriteBuffer().physicsObjects, msg.getPreviousWriteBuffer().physicsObjects);
             }
         }
 
@@ -87,17 +96,19 @@ void run()
     Renderer& renderer = Renderer::GetInstance();
 
     // Attach channels
-    TripleBufferedChannel<BridgeChannelData> bridgeChannel; // very heavy class yum!
+    TripleBufferedChannel<BridgeChannelData>
+      bridgeChannel; // very heavy class yum!
     renderer.attachBridgeChannel(&(bridgeChannel.getReceiver()));
 
-    // MPSCQueueChannel<RigidBody> physicsEngineCommandsChannel;
+    MPSCQueueChannel<PhysicsEngineReceiverData> physCmdChannel;
+    renderer.attachPhysicsEngineCommandsChannel(&(physCmdChannel.getSender()));
 
     // aaaaaaand awayyyyy we go!
     std::atomic<bool> appShouldExit{false};
 
-    std::jthread simulationThread{physicsAndSimulationThread,
-                                  std::ref(bridgeChannel.getSender()),
-                                  std::cref(appShouldExit)};
+    std::jthread simulationThread{
+      physicsAndSimulationThread, std::ref(bridgeChannel.getSender()),
+      std::ref(physCmdChannel.getReceiver()), std::cref(appShouldExit)};
 
     try {
         renderer.init();

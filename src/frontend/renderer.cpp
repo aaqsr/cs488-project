@@ -1,10 +1,95 @@
 #include "frontend/renderer.hpp"
-#include "frontend/shader.hpp"
 #include "bridgeChannelData.hpp"
+#include "frontend/debugShapes.hpp"
+#include "frontend/shader.hpp"
+#include "linalg.h"
+#include "physics/physicsEngine.hpp"
 #include "util/channel.hpp"
+#include "util/error.hpp"
+#include <memory>
 
 void Renderer::init()
 {
+    if (bridgeChannel == nullptr || physCmdChannel == nullptr) {
+        throw IrrecoverableError{
+          "Render::init() called without setting required channels"};
+    }
+
+    {
+        auto msg = physCmdChannel->createMessage();
+        // Dimensions and density and weight accurate to a real full glass
+        // bottle!
+        PhysicsEngineReceiverData bottle{
+          .model = std::make_unique<Model>(
+            std::filesystem::path{"assets/models/bottle/bottle.obj"}
+            ),
+          .scale = linalg::aliases::float3{0.045F},
+          .initPos = linalg::aliases::float3{0.0F, 2.0F, 0.0F},
+          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .density = 1000.0F
+        };
+        msg.getWriteBuffer().emplace_back(std::move(bottle));
+
+        // Dimensions and density and weight accurate to a real empty glass
+        // bottle!
+        PhysicsEngineReceiverData emptyBottle{
+          .model = std::make_unique<Model>(
+            std::filesystem::path{"assets/models/bottle/bottle.obj"}
+            ),
+          .scale = linalg::aliases::float3{0.045F},
+          .initPos = linalg::aliases::float3{0.0F, 2.0F, 2.0F},
+          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .density = 300.0F
+        };
+        msg.getWriteBuffer().emplace_back(std::move(emptyBottle));
+
+        PhysicsEngineReceiverData emptyPlasticBottle{
+          .model = std::make_unique<Model>(
+            std::filesystem::path{"assets/models/bottle/bottle.obj"}
+            ),
+          .scale = linalg::aliases::float3{0.045F},
+          .initPos = linalg::aliases::float3{0.0F, 2.0F, 4.0F},
+          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .density = 50.0F
+        };
+        msg.getWriteBuffer().emplace_back(std::move(emptyPlasticBottle));
+
+        PhysicsEngineReceiverData spinningBottle{
+          .model = std::make_unique<Model>(
+            std::filesystem::path{"assets/models/bottle/bottle.obj"}
+            ),
+          .scale = linalg::aliases::float3{0.045F},
+          .initPos = linalg::aliases::float3{0.0F, 2.0F, 6.0F},
+          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .density = 20.0F
+        };
+        msg.getWriteBuffer().emplace_back(std::move(spinningBottle));
+
+        PhysicsEngineReceiverData debugCube{
+          .model = std::make_unique<Model>(DebugShape::createCube()),
+          .scale = linalg::aliases::float3{1.0F},
+          .initPos = linalg::aliases::float3{0.0F, 2.0F, 8.0F},
+          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .density = 1.0F
+        };
+        msg.getWriteBuffer().emplace_back(std::move(debugCube));
+
+        PhysicsEngineReceiverData teaPot{
+          .model = std::make_unique<Model>(std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}),
+          .scale = linalg::aliases::float3{0.01F},
+          .initPos = linalg::aliases::float3{0.0F, 2.0F, 10.0F},
+          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .density = 1.0F
+        };
+        msg.getWriteBuffer().emplace_back(std::move(teaPot));
+    }
+
     {
         Shader::BindObject shader = waterShader.bind();
         skybox.setSkyboxSamplerUniform(shader);
@@ -30,30 +115,52 @@ void Renderer::update()
     {
         Shader::BindObject boundShader = flatShader.bind();
         mainCamera.setUniforms(boundShader);
-        pool.updateModelMatrixAndDraw(boundShader);
+        pool.draw(boundShader);
     }
 
-    // Should be second last thing drawn
     {
-        skybox.setUniformsAndDraw(mainCamera);
-    }
+        bool isThisNewData = bridgeChannel->isMessageReady();
+        auto message = bridgeChannel->receive();
 
-    // Should be last thing drawn
-    {
-        Shader::BindObject boundShader = waterShader.bind();
-        mainCamera.setUniforms(boundShader);
-
-        if (bridgeChannel->isMessageReady()) {
-            auto message = bridgeChannel->receive();
-            waterMesh.updateMesh(message.getBuffer().waterHeights.getWaterHeights());
+        {
+            Shader::BindObject boundShader = shader.bind();
+            mainCamera.setUniforms(boundShader);
+            for (const auto& rigidBody : message.getBuffer().physicsObjects) {
+                Model& m = *(rigidBody.getModelPtr());
+                m.updateModelMatrix(rigidBody.getWorldPosition(),
+                                    rigidBody.getOrientation(),
+                                    rigidBody.getScale());
+                m.draw(boundShader);
+            }
         }
 
-        waterMesh.draw(boundShader, mainCamera.getPosition());
+        // Should be second last thing drawn
+        {
+            skybox.setUniformsAndDraw(mainCamera);
+        }
+
+        // Should be last thing drawn
+        {
+            Shader::BindObject boundShader = waterShader.bind();
+            mainCamera.setUniforms(boundShader);
+
+            if (isThisNewData) {
+                waterMesh.updateMesh(
+                  message.getBuffer().waterHeights.getWaterHeights());
+            }
+
+            waterMesh.draw(boundShader, mainCamera.getPosition());
+        }
     }
 }
 
 void Renderer::loop()
 {
+    if (bridgeChannel == nullptr || physCmdChannel == nullptr) {
+        throw IrrecoverableError{
+          "Render::loop() called without setting required channels"};
+    }
+
     while (!window.shouldClose()) {
         //  Calculate delta time
         currentFrameTime = glfwGetTime();
@@ -115,3 +222,8 @@ void Renderer::attachBridgeChannel(Receiver<BridgeChannelData>* r)
     bridgeChannel = r;
 }
 
+void Renderer::attachPhysicsEngineCommandsChannel(
+  Sender<std::vector<PhysicsEngineReceiverData>>* s)
+{
+    physCmdChannel = s;
+}

@@ -28,7 +28,7 @@ void Model::updateModelMatrix(const linalg::aliases::float3& worldPos,
       linalg::scaling_matrix(scale));
 }
 
-void Model::updateModelMatrixAndDraw(Shader::BindObject& shader)
+void Model::draw(Shader::BindObject& shader) const
 {
     shader.setUniform("model", modelMatrix);
 
@@ -206,3 +206,8 @@ void Model::loadMaterials(const std::filesystem::path& mtlPath)
         materials[currentMaterialName] = currentMaterial;
     }
 }
+const std::vector<Mesh>& Model::getMeshes() const
+{
+    return meshes;
+}
+

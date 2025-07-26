@@ -54,7 +54,7 @@ class Receiver
 {
     friend class Message;
 
-    virtual const T& getBuffer() = 0;
+    virtual T& getBuffer() = 0;
 
   public:
     class Message
@@ -73,6 +73,14 @@ class Receiver
         ~Message() = default;
 
         const T& getBuffer()
+        {
+            return receiver.getBuffer();
+        }
+
+        // TODO: no, no, no, no, NO, WHY
+        // (Physics engine wants to move rigid bodies but triple buffer *cannot*
+        // touch the buffer as it is a live buffer not a copy)
+        T& getBuffer_MutableDangerous()
         {
             return receiver.getBuffer();
         }

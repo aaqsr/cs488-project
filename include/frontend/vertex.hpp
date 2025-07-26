@@ -6,12 +6,12 @@
 // computations on one attribute only?
 struct Vertex
 {
-    // If this changes, go update setupVertexAttributes below!
+    // If this changes, go update setupVertexAttributes in mesh.cpp!!!
+    // there is nothing we can do... :(
+    // https://youtu.be/F0Gkr4MBEO0?si=yLd6Qd_I4eD8aRTK
     linalg::aliases::float3 position;
     linalg::aliases::float3 normal;
     linalg::aliases::float2 texCoords;
-
-    static void setupVertexAttributes();
 
     bool operator==(const Vertex& other) const
     {

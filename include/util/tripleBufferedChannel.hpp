@@ -64,7 +64,7 @@ class TripleBufferedChannel
     {
         TripleBufferedChannel<T>& channel;
 
-        const T& getBuffer() override
+        T& getBuffer() override
         {
             return channel.getBuffer();
         }
@@ -113,7 +113,8 @@ class TripleBufferedChannel
     {
     }
 
-    const T& getBuffer()
+    // TODO: should really be const...
+    T& getBuffer()
     {
         bool expected = true;
         if (isNewDataAvailable.compare_exchange_strong(expected, false)) {
