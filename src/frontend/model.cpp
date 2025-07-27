@@ -211,3 +211,8 @@ const std::vector<Mesh>& Model::getMeshes() const
     return meshes;
 }
 
+const linalg::aliases::float4x4& Model::getModelMatrix() const
+{
+    return modelMatrix;
+}
+

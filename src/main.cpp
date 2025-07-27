@@ -69,7 +69,12 @@ void physicsAndSimulationThread(
                 sim.update(msg.getWriteBuffer().waterHeights,
                            msg.getPreviousWriteBuffer().waterHeights);
 
-                phys.updateRigidBodies(msg.getWriteBuffer().physicsObjects, msg.getPreviousWriteBuffer().physicsObjects);
+                phys.updateRigidBodies(
+                  msg.getWriteBuffer().physicsObjects,
+                  msg.getPreviousWriteBuffer().physicsObjects);
+
+                sim.coupleWithRigidBodies(msg.getWriteBuffer().physicsObjects,
+                                          msg.getWriteBuffer().waterHeights);
             }
         }
 

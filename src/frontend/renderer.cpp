@@ -19,17 +19,17 @@ void Renderer::init()
         auto msg = physCmdChannel->createMessage();
         // Dimensions and density and weight accurate to a real full glass
         // bottle!
-        PhysicsEngineReceiverData bottle{
-          .model = std::make_unique<Model>(
-            std::filesystem::path{"assets/models/bottle/bottle.obj"}
-            ),
-          .scale = linalg::aliases::float3{0.045F},
-          .initPos = linalg::aliases::float3{0.0F, 2.0F, 0.0F},
-          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
-          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
-          .density = 1000.0F
-        };
-        msg.getWriteBuffer().emplace_back(std::move(bottle));
+        // PhysicsEngineReceiverData bottle{
+        //   .model = std::make_unique<Model>(
+        //     std::filesystem::path{"assets/models/bottle/bottle.obj"}
+        //     ),
+        //   .scale = linalg::aliases::float3{0.045F},
+        //   .initPos = linalg::aliases::float3{0.0F, 2.0F, 0.0F},
+        //   .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
+        //   .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+        //   .density = 1000.0F
+        // };
+        // msg.getWriteBuffer().emplace_back(std::move(bottle));
 
         // Dimensions and density and weight accurate to a real empty glass
         // bottle!
@@ -38,9 +38,9 @@ void Renderer::init()
             std::filesystem::path{"assets/models/bottle/bottle.obj"}
             ),
           .scale = linalg::aliases::float3{0.045F},
-          .initPos = linalg::aliases::float3{0.0F, 2.0F, 2.0F},
-          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
-          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .initPos = linalg::aliases::float3{1.0F, 1.0F, 1.0F},
+          .initVel = linalg::aliases::float3{3.0F, 2.0F, 3.0F},
+          .initAngVel = linalg::aliases::float3{1.0F, 0.0F, 2.0F},
           .density = 300.0F
         };
         msg.getWriteBuffer().emplace_back(std::move(emptyBottle));
@@ -50,44 +50,46 @@ void Renderer::init()
             std::filesystem::path{"assets/models/bottle/bottle.obj"}
             ),
           .scale = linalg::aliases::float3{0.045F},
-          .initPos = linalg::aliases::float3{0.0F, 2.0F, 4.0F},
-          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
-          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .initPos = linalg::aliases::float3{2.0F, 2.0F, 2.0F},
+          .initVel = linalg::aliases::float3{0.0F, 0.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{3.0F, 0.0F, 0.0F},
           .density = 50.0F
         };
         msg.getWriteBuffer().emplace_back(std::move(emptyPlasticBottle));
 
-        PhysicsEngineReceiverData spinningBottle{
-          .model = std::make_unique<Model>(
-            std::filesystem::path{"assets/models/bottle/bottle.obj"}
-            ),
-          .scale = linalg::aliases::float3{0.045F},
-          .initPos = linalg::aliases::float3{0.0F, 2.0F, 6.0F},
-          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
-          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
-          .density = 20.0F
-        };
-        msg.getWriteBuffer().emplace_back(std::move(spinningBottle));
+        // PhysicsEngineReceiverData spinningBottle{
+        //   .model = std::make_unique<Model>(
+        //     std::filesystem::path{"assets/models/bottle/bottle.obj"}
+        //     ),
+        //   .scale = linalg::aliases::float3{0.045F},
+        //   .initPos = linalg::aliases::float3{1.0F, 1.0F, 0.0F},
+        //   .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
+        //   .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+        //   .density = 20.0F
+        // };
+        // msg.getWriteBuffer().emplace_back(std::move(spinningBottle));
 
         PhysicsEngineReceiverData debugCube{
           .model = std::make_unique<Model>(DebugShape::createCube()),
-          .scale = linalg::aliases::float3{1.0F},
-          .initPos = linalg::aliases::float3{0.0F, 2.0F, 8.0F},
-          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
-          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
+          .scale = linalg::aliases::float3{0.2F},
+          .initPos = linalg::aliases::float3{2.0F, 4.0F, 3.0F},
+          .initVel = linalg::aliases::float3{0.0F, 1.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{2.0F, 0.0F, 1.0F},
           .density = 1.0F
         };
         msg.getWriteBuffer().emplace_back(std::move(debugCube));
 
-        PhysicsEngineReceiverData teaPot{
-          .model = std::make_unique<Model>(std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}),
-          .scale = linalg::aliases::float3{0.01F},
-          .initPos = linalg::aliases::float3{0.0F, 2.0F, 10.0F},
-          .initVel = linalg::aliases::float3{5.0F, 10.0F, 0.0F},
-          .initAngVel = linalg::aliases::float3{5.0F, 0.0F, 0.0F},
-          .density = 1.0F
-        };
-        msg.getWriteBuffer().emplace_back(std::move(teaPot));
+        // PhysicsEngineReceiverData teaPot{
+        //   .model = std::make_unique<Model>(
+        //     std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}
+        //     ),
+        //   .scale = linalg::aliases::float3{0.01F},
+        //   .initPos = linalg::aliases::float3{1.0F, 2.0F, 2.0F},
+        //   // .initVel = linalg::aliases::float3{1.0F, 1.0F, 0.0F},
+        //   .initAngVel = linalg::aliases::float3{5.0F, 2.0F, 0.0F},
+        //   .density = 3.0F
+        // };
+        // msg.getWriteBuffer().emplace_back(std::move(teaPot));
     }
 
     {
@@ -123,7 +125,7 @@ void Renderer::update()
         auto message = bridgeChannel->receive();
 
         {
-            Shader::BindObject boundShader = shader.bind();
+            Shader::BindObject boundShader = sunShader.bind();
             mainCamera.setUniforms(boundShader);
             for (const auto& rigidBody : message.getBuffer().physicsObjects) {
                 Model& m = *(rigidBody.getModelPtr());

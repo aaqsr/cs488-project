@@ -1,10 +1,14 @@
 #include "physics/rigidBody.hpp"
 
 #include "frontend/model.hpp"
-#include "linalg.h"
 #include "physics/constants.hpp"
 #include "physics/inertiaTensor.hpp"
+#include "physics/rigidBodyMesh.hpp"
 #include "util/error.hpp"
+#include "util/logger.hpp"
+
+#include <linalg.h>
+
 #include <algorithm>
 #include <memory>
 #include <utility>
@@ -156,4 +160,120 @@ std::shared_ptr<Model> RigidBodyCharacteristics::getModelPtr() const
 std::shared_ptr<Model> RigidBodyData::getModelPtr() const
 {
     return characteristics->getModelPtr();
+}
+linalg::aliases::float3 RigidBodyData::getLinearVelocity() const
+{
+    return (worldPosition - prevWorldPosition) / Physics::RigidBody::deltaT;
+}
+
+linalg::aliases::float3 RigidBodyData::getAngularVelocity() const
+{
+    // ω = I^(-1) * L
+    auto R = orientation.toMatrix3x3();
+    linalg::aliases::float3x3 worldInvInertia =
+      linalg::mul(linalg::mul(R, characteristics->getInitInvInertia()),
+                  linalg::transpose(R));
+    return linalg::mul(worldInvInertia, angularMomentum);
+}
+
+linalg::aliases::float3 RigidBodyData::getWorldPosOfCenterOfMass() const
+{
+    return worldPosition +
+           characteristics->getInertiaTensor().getCentreOfMass();
+}
+
+linalg::aliases::float3
+RigidBodyData::getPointVelocity(const linalg::aliases::float3& point) const
+{
+    linalg::aliases::float3 linearVel = getLinearVelocity();
+    linalg::aliases::float3 angularVel = getAngularVelocity();
+    linalg::aliases::float3 r = point - getWorldPosOfCenterOfMass();
+    return linearVel + linalg::cross(angularVel, r);
+}
+
+void RigidBodyData::invalidateTriangleCache()
+{
+    trianglesCacheValid = false;
+}
+
+const std::vector<Triangle>& RigidBodyData::getTriangles() const
+{
+    if (trianglesCacheValid) {
+        return cachedTriangles;
+    }
+
+    cachedTriangles.clear();
+
+    std::shared_ptr<Model> model = characteristics->getModelPtr();
+    if (!model) {
+        throw IrrecoverableError{
+          "[RigidBodyData::getTriangles()] WHERE DID THE MODEL GO"};
+    }
+
+    linalg::aliases::float4x4 transformMatrix =
+      linalg::mul(linalg::mul(linalg::translation_matrix(worldPosition),
+                              orientation.toMatrix4x4()),
+                  linalg::scaling_matrix(characteristics->getScale()));
+
+    // TODO: Surely instead of reading them from the mesh every single time I
+    // can just read once and transform each time right? surely right? or
+    // actually i guess this is pretty much just doing that anyways...
+    for (const Mesh& mesh : model->getMeshes()) {
+        uint32_t numIndices = mesh.getNumFaceIndices();
+
+        for (uint32_t i = 0; i < numIndices; i += 3) {
+            if (i + 2 >= numIndices) {
+                break;
+            }
+
+            const Vertex& v0 = mesh.getVertexAtFaceIndex(i);
+            const Vertex& v1 = mesh.getVertexAtFaceIndex(i + 1);
+            const Vertex& v2 = mesh.getVertexAtFaceIndex(i + 2);
+
+            // to world space!
+            linalg::aliases::float4 worldV0 =
+              linalg::mul(transformMatrix,
+                          linalg::aliases::float4{v0.position.x, v0.position.y,
+                                                  v0.position.z, 1.0F});
+            linalg::aliases::float4 worldV1 =
+              linalg::mul(transformMatrix,
+                          linalg::aliases::float4{v1.position.x, v1.position.y,
+                                                  v1.position.z, 1.0F});
+            linalg::aliases::float4 worldV2 =
+              linalg::mul(transformMatrix,
+                          linalg::aliases::float4{v2.position.x, v2.position.y,
+                                                  v2.position.z, 1.0F});
+
+            linalg::aliases::float3 worldPos0{worldV0.x, worldV0.y, worldV0.z};
+            linalg::aliases::float3 worldPos1{worldV1.x, worldV1.y, worldV1.z};
+            linalg::aliases::float3 worldPos2{worldV2.x, worldV2.y, worldV2.z};
+
+            cachedTriangles.emplace_back(worldPos0, worldPos1, worldPos2);
+        }
+    }
+
+    trianglesCacheValid = true;
+    return cachedTriangles;
+}
+
+AABB RigidBodyData::computeAABB() const
+{
+    const std::vector<Triangle>& triangles = getTriangles();
+
+    // fallback to position if no triangles (SHOULD NEVER HAPPEN??)
+    if (triangles.empty()) {
+        Logger::GetInstance().log("WHERE THE TRIANLGES AT");
+        const auto& pos = getWorldPosition();
+        return AABB{pos, pos};
+    }
+
+    AABB aabb{triangles[0].vertices[0], triangles[0].vertices[0]};
+
+    for (const Triangle& triangle : triangles) {
+        for (auto vertex : triangle.vertices) {
+            aabb.expand(vertex);
+        }
+    }
+
+    return aabb;
 }

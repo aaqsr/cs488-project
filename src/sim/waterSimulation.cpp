@@ -1,6 +1,8 @@
 #include "sim/waterSimulation.hpp"
 #include "linalg.h"
 #include "physics/constants.hpp"
+#include "physics/rigidBody.hpp"
+#include "physics/rigidBodyMesh.hpp"
 #include "sim/waterHeightGrid.hpp"
 #include <algorithm>
 #include <array>
@@ -107,6 +109,21 @@ float interpolate(const std::array<float, rows * cols>& field,
 //     // Return adjusted height: h_bar - hadj
 //     return baseHeight - hadj;
 // }
+
+std::pair<int, int> getClosestGridPoint(float x, float z)
+{
+    float gridX = (x - WaterSimulation::bottomLeftCornerWorldPos_xz.x) /
+                  WaterSimulation::cellSize;
+    float gridZ = (z - WaterSimulation::bottomLeftCornerWorldPos_xz.y) /
+                  WaterSimulation::cellSize;
+
+    int i = std::clamp(static_cast<int>(std::round(gridZ)), 0,
+                       static_cast<int>(WaterSimulation::numRows - 1));
+    int j = std::clamp(static_cast<int>(std::round(gridX)), 0,
+                       static_cast<int>(WaterSimulation::numCols - 1));
+
+    return {i, j};
+}
 
 } // namespace
 
@@ -388,7 +405,7 @@ void WaterSimulation::advectVelocities()
     }
 }
 
-bool WaterSimulation::doesObjectCollideWithWater(
+bool WaterSimulation::isPositionInWater(
   const linalg::aliases::float3& pos,
   const HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights)
 {
@@ -402,16 +419,15 @@ bool WaterSimulation::doesObjectCollideWithWater(
     }
 
     const float waterHeight = interpolate<numRows, numCols>(
-      heights.getWaterHeights(), linalg::aliases::float2{pos.x, pos.z});
+      heights.getWaterHeights(),
+      linalg::aliases::float2{
+        (pos.x - bottomLeftCornerWorldPos_xz.x) / cellSize,
+        (pos.z - bottomLeftCornerWorldPos_xz.y) / cellSize});
 
     return (pos.y <= waterHeight);
 }
 
-static std::pair<int, int> getClosestGridPoint(float x, float z)
-{
-}
-
-void WaterSimulation::updateFluidWithRigidBody(
+void WaterSimulation::updateFluidWithTriangle(
   const float areaOfTriangle, const linalg::aliases::float3& positionOfCentroid,
   const linalg::aliases::float3& velocityOfCentroid,
   const linalg::aliases::float3& relativeVelocityOfCentroidWRTFluid,
@@ -423,8 +439,9 @@ void WaterSimulation::updateFluidWithRigidBody(
     // instead of this potential catastrophic cancellation??
     const float horizontalSpeed = linalg::length(
       velocityOfCentroid - velocityOfCentroid.y * upDirection_yHat);
-    const float numSubstepsLowerBound =
-      std::floor((horizontalSpeed * (deltaT / deltaX)) + 0.5F);
+
+    const float numSubstepsLowerBound = std::floor(
+      (horizontalSpeed * (Physics::WaterSim::deltaT / deltaX)) + 0.5F);
     uint32_t numSubsteps =
       static_cast<uint32_t>(std::max(1.0F, numSubstepsLowerBound));
 
@@ -432,30 +449,38 @@ void WaterSimulation::updateFluidWithRigidBody(
       linalg::dot(normalOfCentroid, relativeVelocityOfCentroidWRTFluid) *
       areaOfTriangle * deltaT;
 
+    const float displacementVolumePerSubstep =
+      displacementVolume / static_cast<float>(numSubsteps);
+
     const float heightSign = (normalOfCentroid.y > 0) ? 1.0F : -1.0F;
 
-    for (uint32_t q = 1; q < numSubsteps; ++q) {
+    for (uint32_t q = 0; q < numSubsteps; ++q) {
+        // for (uint32_t q = 0; q < 100; ++q) {
         // P_s
-        // TODO: Do they even use this anywhere??
-        const linalg::aliases::float3 newPos =
+        const linalg::aliases::float3 currentPos =
           positionOfCentroid + velocityOfCentroid * static_cast<float>(q) *
                                  deltaT / static_cast<float>(numSubsteps);
 
-        const auto [i, j] =
-          getClosestGridPoint(positionOfCentroid.x, positionOfCentroid.z);
+        const auto [i, j] = getClosestGridPoint(currentPos.x, currentPos.z);
 
-        const float depth = heights.getEta(i, j) - positionOfCentroid.y;
+        if (i < 0 || i >= static_cast<int>(numRows) || j < 0 ||
+            j >= static_cast<int>(numCols))
+        {
+            continue;
+        }
+
+        const float waterSurfaceHeight = heights.getEta(i, j);
+        const float depth = waterSurfaceHeight - currentPos.y;
 
         if (depth > 0) {
-            const float decay = std::expf(decayRate_SolidsToFluids * -depth);
+            const float decay = std::expf(-decayRate_SolidsToFluids * depth);
 
             const float heightChange =
               Cdisplacement_SolidsToFluids * decay *
-              (displacementVolume /
-               (static_cast<float>(numSubsteps) * deltaT * deltaT));
+              (displacementVolumePerSubstep / (deltaX * deltaX));
 
-            const float currHeight = heights.getWaterHeight(i, j);
-            heights.setWaterHeight(i, j, currHeight + heightChange, maxDepth);
+            heights.setWaterHeight(
+              i, j, heights.getWaterHeight(i, j) + heightChange, maxDepth);
 
             const float velCoeffUpperBound =
               decay * Cadapt_SolidsToFluids * (depth / heights.getEta(i, j)) *
@@ -463,18 +488,208 @@ void WaterSimulation::updateFluidWithRigidBody(
 
             const float velCoeff = std::min(1.0F, velCoeffUpperBound);
 
-            const float velU_change =
-              velCoeff * (velocityOfCentroid.x -
-                          velocityGrid.getVelocity_u_i_plus_half_j(i, j));
-            const float velW_change =
-              velCoeff * (velocityOfCentroid.z -
-                          velocityGrid.getVelocity_w_i_j_plus_half(i, j));
+            const float targetU = velocityOfCentroid.x;
+            const float currentU =
+              velocityGrid.getVelocity_u_i_plus_half_j(i, j);
+            const float velU_change = velCoeff * (targetU - currentU);
+            velocityGrid.setVelocity_u_i_plus_half_j(i, j,
+                                                     currentU + velU_change);
 
-            const float oldU = velocityGrid.getVelocity_u_i_plus_half_j(i, j);
-            const float oldW = velocityGrid.getVelocity_w_i_j_plus_half(i, j);
+            const float targetW = velocityOfCentroid.z;
+            const float currentW =
+              velocityGrid.getVelocity_w_i_j_plus_half(i, j);
+            const float velW_change = velCoeff * (targetW - currentW);
+            velocityGrid.setVelocity_w_i_j_plus_half(i, j,
+                                                     currentW + velW_change);
+        }
+    }
+}
 
-            velocityGrid.setVelocity_u_i_plus_half_j(i, j, velU_change + oldU);
-            velocityGrid.setVelocity_w_i_j_plus_half(i, j, velW_change + oldW);
+linalg::aliases::float3 WaterSimulation::computeFluidForceOnTriangle(
+  const SubTriangle& subTriangle,
+  const linalg::aliases::float3& triangleVelocity,
+  const HeightGrid<numRows, numCols>& heights) const
+{
+    const linalg::aliases::float3& pos = subTriangle.centroid;
+    const linalg::aliases::float3& normal = subTriangle.normal;
+    const float area = subTriangle.area;
+
+    if (!isPositionInWater(pos, heights)) {
+        return {0.0F, 0.0F, 0.0F};
+    }
+
+    const auto [i, j] = getClosestGridPoint(pos.x, pos.z);
+    const float waterHeight = heights.getWaterHeight(i, j);
+    const float depth = waterHeight - pos.y;
+
+    if (depth <= 0) {
+        return {0.0F, 0.0F, 0.0F};
+    }
+
+    linalg::aliases::float3 totalForce = {0.0F, 0.0F, 0.0F};
+
+    constexpr float fluidDensity = 1000.0F;
+    constexpr float forceScale =
+      Physics::WaterSim::deltaT / Physics::RigidBody::deltaT;
+
+    // buoyancy force (archimedes principle)
+    // only apply buoyancy to upward-facing component of surfaces
+    if (normal.y > 0) {
+        const float maxBuoyancyDepth = std::min(depth, 0.2F); // TODO: what cap?
+        const float submergedVolume = maxBuoyancyDepth * area * normal.y;
+
+        linalg::aliases::float3 buoyancyForce =
+          fluidDensity * Physics::gravitationalAccelerationMagnitude *
+          submergedVolume * upDirection_yHat * forceScale;
+
+        // damping
+        constexpr float buoyancyDampingCoeff = 0.1F;
+        float upwardVelocity = linalg::dot(triangleVelocity, upDirection_yHat);
+        if (upwardVelocity > 0) {
+            float dampingForceMagnitude = buoyancyDampingCoeff * fluidDensity *
+                                          (area * normal.y) * upwardVelocity *
+                                          forceScale;
+            buoyancyForce.y -= dampingForceMagnitude;
+        }
+
+        totalForce += buoyancyForce;
+    }
+
+    const linalg::aliases::float3 fluidVelocity =
+      getFluidVelocityAtPosition(pos);
+    const linalg::aliases::float3 relativeVelocity =
+      triangleVelocity - fluidVelocity;
+    const float relativeSpeed = linalg::length(relativeVelocity);
+
+    // damping force (broken)
+    // constexpr float dampingCoefficient = 1.0F;
+    // const linalg::aliases::float3 dampingForce =
+    //   -dampingCoefficient * fluidDensity * area * relativeVelocity;
+    // totalForce += dampingForce;
+    // Other damping force...maybe this works?
+    // constexpr float viscousDampingCoeff = 0.5F;
+    // const linalg::aliases::float3 viscousForce = -viscousDampingCoeff *
+    //                                              fluidDensity * area *
+    //                                              relativeVelocity *
+    //                                              forceScale;
+    // totalForce += viscousForce;
+
+    // drag and lift
+    if (relativeSpeed > 1e-4F) {
+        const linalg::aliases::float3 flowDirection =
+          relativeVelocity / relativeSpeed;
+        const float normalDotVelocity = linalg::dot(normal, relativeVelocity);
+
+        if (normalDotVelocity >= 0.0F) {
+            const float normalDotFlow = linalg::dot(normal, flowDirection);
+            constexpr float omega = 0.5F;
+            const float effectiveArea =
+              (normalDotFlow < 0.0F)
+                ? 0.0F
+                : area * (normalDotFlow * omega + (1.0F - omega));
+
+            // drag force
+            constexpr float dragCoefficient = 0.01F; // paper sec. 3.1
+            const linalg::aliases::float3 dragForce =
+              -0.5F * fluidDensity * dragCoefficient * effectiveArea *
+              relativeSpeed * relativeVelocity * forceScale;
+            totalForce += dragForce;
+
+            // lift force
+            const linalg::aliases::float3 crossProduct =
+              linalg::cross(normal, flowDirection);
+            const float crossLength = linalg::length(crossProduct);
+
+            if (crossLength > 1e-6F) {
+                constexpr float liftCoefficient = 0.005F; // paper sec. 3.1
+                const linalg::aliases::float3 liftDirection =
+                  crossProduct / crossLength;
+                const linalg::aliases::float3 liftForce =
+                  0.5F * fluidDensity * liftCoefficient * effectiveArea *
+                  relativeSpeed * relativeSpeed * liftDirection * forceScale;
+                totalForce += liftForce;
+            }
+
+            //                const float pressureCoefficient = 0.5F;
+            //                const linalg::aliases::float3 pressureForce =
+            //                  -pressureCoefficient * fluidDensity *
+            //                  relativeSpeed * relativeSpeed * normalDotFlow *
+            //                  normal;
+            //                totalForce += pressureForce;
+        }
+    }
+
+    // force limiting
+    const float maxForcePerTriangle = 0.1F;
+    const float forceLength = linalg::length(totalForce);
+    if (forceLength > maxForcePerTriangle) {
+        totalForce = (totalForce / forceLength) * maxForcePerTriangle;
+    }
+
+    // Last resort: bad idea
+    // totalForce *= Physics::WaterSim::deltaT;
+
+    return totalForce;
+}
+
+// in the 2D axis (considers height to be 0)
+linalg::aliases::float3 WaterSimulation::getFluidVelocityAtPosition(
+  const linalg::aliases::float3& worldPos) const
+{
+    const float gridX = (worldPos.x - bottomLeftCornerWorldPos_xz.x) / cellSize;
+    const float gridZ = (worldPos.z - bottomLeftCornerWorldPos_xz.y) / cellSize;
+
+    const float u = interpolate<numRows, numCols + 1>(
+      velocityGrid.getUVelocities(),
+      linalg::aliases::float2{gridX + 0.5F, gridZ});
+
+    const float w = interpolate<numRows + 1, numCols>(
+      velocityGrid.getWVelocities(),
+      linalg::aliases::float2{gridX, gridZ + 0.5F});
+
+    return {u, 0.0F, w};
+}
+
+void WaterSimulation::coupleWithRigidBodies(
+  std::vector<RigidBodyData>& rigidBodies,
+  HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights)
+{
+    // TODO: Do this with area < kappa delta x^2 bound as suggested by the paper
+    constexpr int subdivisions = 1;
+
+    // TODO: Add AABB to further optimie this loop
+    for (auto& rigidBody : rigidBodies) {
+        rigidBody.invalidateTriangleCache();
+        const std::vector<Triangle>& triangles = rigidBody.getTriangles();
+
+        for (const Triangle& triangle : triangles) {
+            std::vector<SubTriangle> subTriangles =
+              triangle.subdivide(subdivisions);
+
+            for (const SubTriangle& subTriangle : subTriangles) {
+                if (!isPositionInWater(subTriangle.centroid, heights)) {
+                    continue;
+                }
+
+                linalg::aliases::float3 triangleVelocity =
+                  rigidBody.getPointVelocity(subTriangle.centroid);
+
+                linalg::aliases::float3 fluidVelocity =
+                  getFluidVelocityAtPosition(subTriangle.centroid);
+
+                linalg::aliases::float3 relativeVelocity =
+                  triangleVelocity - fluidVelocity;
+
+                linalg::aliases::float3 fluidForce =
+                  computeFluidForceOnTriangle(subTriangle, triangleVelocity,
+                                              heights);
+
+                rigidBody.applyForce(fluidForce, subTriangle.centroid);
+
+                updateFluidWithTriangle(subTriangle.area, subTriangle.centroid,
+                                        triangleVelocity, relativeVelocity,
+                                        subTriangle.normal, heights);
+            }
         }
     }
 }

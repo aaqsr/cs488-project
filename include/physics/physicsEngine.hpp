@@ -1,8 +1,13 @@
 #pragma once
 
-#include "linalg.h"
+#include "physics/AABB.hpp"
 #include "physics/rigidBody.hpp"
+#include "physics/rigidBodyMesh.hpp"
+#include "sim/waterSimulation.hpp"
 #include "util/channel.hpp"
+
+#include <linalg.h>
+
 #include <memory>
 #include <vector>
 
@@ -28,10 +33,21 @@ struct PhysicsEngineReceiverData
 
 class PhysicsEngine
 {
+    constexpr static float linearDamping = 1.0F;
+    constexpr static float angularDamping = 1.0F;
+
     Receiver<std::vector<PhysicsEngineReceiverData>>& channel;
 
     std::vector<std::shared_ptr<RigidBodyCharacteristics>>
       rigidBodyCharacteristics;
+
+    inline static const AABB thePoolLimits{
+      linalg::aliases::float3{WaterSimulation::bottomLeftCornerWorldPos_xz.x,
+                              0.25F, WaterSimulation::bottomLeftCornerWorldPos_xz.y},
+      linalg::aliases::float3{  WaterSimulation::topRightCornerWorldPos_xz.x,
+                              10.0F,   WaterSimulation::topRightCornerWorldPos_xz.y}
+    };
+    static void keepWithinAABB(AABB aabb, RigidBodyData& rigidBody);
 
     void simulateRigidBody(RigidBodyData& out, const RigidBodyData& prev);
 

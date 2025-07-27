@@ -1,5 +1,6 @@
 #pragma once
 
+#include "physics/AABB.hpp"
 #include "physics/constants.hpp"
 #include "physics/inertiaTensor.hpp"
 #include "util/error.hpp"
@@ -9,6 +10,7 @@
 #include <memory>
 
 class Model;
+struct Triangle;
 
 // For static data that does not vary between frames
 class RigidBodyCharacteristics
@@ -61,6 +63,9 @@ class RigidBodyData
     linalg::aliases::float3 angularMomentum = {0.0F, 0.0F, 0.0F};
     Quaternion orientation{0.0F, 0.0F, 0.0F, 1.0F};
 
+    mutable std::vector<Triangle> cachedTriangles;
+    mutable bool trianglesCacheValid = false;
+
   public:
     RigidBodyData(std::shared_ptr<RigidBodyCharacteristics> characteristics,
                   const linalg::aliases::float3& initPos = {0.0F, 0.0F, 0.0F},
@@ -82,4 +87,18 @@ class RigidBodyData
     [[nodiscard]] const linalg::aliases::float3& getWorldPosition() const;
     [[nodiscard]] const linalg::aliases::float3& getScale() const;
     [[nodiscard]] const Quaternion& getOrientation() const;
+
+    [[nodiscard]] linalg::aliases::float3 getLinearVelocity() const;
+    [[nodiscard]] linalg::aliases::float3 getAngularVelocity() const;
+    [[nodiscard]] linalg::aliases::float3 getWorldPosOfCenterOfMass() const;
+
+    // velocity of any point on the rigid body
+    [[nodiscard]] linalg::aliases::float3
+    getPointVelocity(const linalg::aliases::float3& point) const;
+
+    // extract trianlges out of the mesh
+    [[nodiscard]] const std::vector<Triangle>& getTriangles() const;
+    void invalidateTriangleCache();
+
+    AABB computeAABB() const;
 };

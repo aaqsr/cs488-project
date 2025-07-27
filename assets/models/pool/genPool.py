@@ -150,4 +150,142 @@ def generate_pool_obj(obj_filename, size_of_all_columns=(80-1) * 0.05 + 0.05, si
     print(f"[✓] MTL saved: {mtl_filename}")
 
 
-generate_pool_obj("pool.obj")
+def generate_pool_obj_with_different_textures_for_all_of_the_walls(
+        obj_filename,
+        size_of_all_columns=(80 - 1) * 0.05 + 0.05,
+        size_of_all_rows=(100 - 1) * 0.05 + 0.05,
+        depth=1.5,
+        wall_thickness=0.25):
+    import os
+
+    mtl_filename = os.path.splitext(obj_filename)[0] + ".mtl"
+    sz_col = size_of_all_columns
+    sz_row = size_of_all_rows
+
+    materials = {
+        "outer_front": "mat_outer_front",
+        "outer_right": "mat_outer_right",
+        "outer_back": "mat_outer_back",
+        "outer_left": "mat_outer_left",
+        "inner_front": "mat_inner_front",
+        "inner_right": "mat_inner_right",
+        "inner_back": "mat_inner_back",
+        "inner_left": "mat_inner_left",
+        "floor": "mat_floor",
+        "lip": "mat_lip"
+    }
+
+    outer = [
+        (-wall_thickness, depth, -wall_thickness),                   # 0
+        (sz_col + wall_thickness, depth, -wall_thickness),           # 1
+        (sz_col + wall_thickness, depth, sz_row + wall_thickness),   # 2
+        (-wall_thickness, depth, sz_row + wall_thickness),           # 3
+
+        (-wall_thickness, 0, -wall_thickness),                       # 4
+        (sz_col + wall_thickness, 0, -wall_thickness),               # 5
+        (sz_col + wall_thickness, 0, sz_row + wall_thickness),       # 6
+        (-wall_thickness, 0, sz_row + wall_thickness),               # 7
+    ]
+
+    inner = [
+        (0, depth, 0),                        # 8
+        (sz_col, depth, 0),                   # 9
+        (sz_col, depth, sz_row),              # 10
+        (0, depth, sz_row),                   # 11
+
+        (0, wall_thickness, 0),               # 12
+        (sz_col, wall_thickness, 0),          # 13
+        (sz_col, wall_thickness, sz_row),     # 14
+        (0, wall_thickness, sz_row),          # 15
+    ]
+
+    vertices = outer + inner
+
+    faces_by_material = {
+        materials["outer_front"]: [(0, 1, 5, 4)],
+        materials["outer_right"]: [(1, 2, 6, 5)],
+        materials["outer_back"]: [(2, 3, 7, 6)],
+        materials["outer_left"]: [(3, 0, 4, 7)],
+        materials["lip"]: [
+            (0, 8, 9, 1),
+            (1, 9, 10, 2),
+            (2, 10, 11, 3),
+            (3, 11, 8, 0)
+        ],
+        materials["inner_front"]: [(12, 13, 9, 8)],
+        materials["inner_right"]: [(13, 14, 10, 9)],
+        materials["inner_back"]: [(14, 15, 11, 10)],
+        materials["inner_left"]: [(15, 12, 8, 11)],
+        materials["floor"]: [(12, 15, 14, 13)],
+    }
+
+    uv_coords = []
+    uv_map = {}
+
+    def get_uv_index(v_idx, f_idx, uv):
+        key = (v_idx, f_idx)
+        if key in uv_map:
+            return uv_map[key]
+        uv_coords.append(uv)
+        uv_map[key] = len(uv_coords)
+        return uv_map[key]
+
+    with open(obj_filename, "w") as f:
+        f.write("# Pool with separate materials and UVs\n")
+        f.write(f"mtllib {os.path.basename(mtl_filename)}\n")
+
+        for v in vertices:
+            f.write(f"v {v[0]:.4f} {v[1]:.4f} {v[2]:.4f}\n")
+
+        face_index = 0
+        for mat_name, face_list in faces_by_material.items():
+            f.write(f"usemtl {mat_name}\n")
+            for face in face_list:
+                vpos = [vertices[i] for i in face]
+                # Determine projection
+                edge1 = (vpos[1][0] - vpos[0][0], vpos[1][1] -
+                         vpos[0][1], vpos[1][2] - vpos[0][2])
+                edge2 = (vpos[2][0] - vpos[1][0], vpos[2][1] -
+                         vpos[1][1], vpos[2][2] - vpos[1][2])
+                nx = edge1[1] * edge2[2] - edge1[2] * edge2[1]
+                ny = edge1[2] * edge2[0] - edge1[0] * edge2[2]
+                nz = edge1[0] * edge2[1] - edge1[1] * edge2[0]
+                nx, ny, nz = abs(nx), abs(ny), abs(nz)
+
+                if ny > nx and ny > nz:
+                    uv_proj = [(v[0], v[2]) for v in vpos]
+                elif nx > nz:
+                    uv_proj = [(v[2], v[1]) for v in vpos]
+                else:
+                    uv_proj = [(v[0], v[1]) for v in vpos]
+
+                uv_inds = [get_uv_index(vi, face_index, uv)
+                           for vi, uv in zip(face, uv_proj)]
+                for uv in uv_coords[len(uv_coords) - len(uv_inds):]:
+                    f.write(f"vt {uv[0]:.4f} {uv[1]:.4f}\n")
+
+                face_line = " ".join(
+                    f"{vi+1}/{uvi}" for vi, uvi in zip(face, uv_inds))
+                f.write(f"f {face_line}\n")
+                face_index += 1
+
+    # Write MTL
+    with open(mtl_filename, "w") as mtl:
+        for mat_name in materials.values():
+            mtl.write(f"newmtl {mat_name}\n")
+            mtl.write("Ka 1.000 1.000 1.000\n")
+            mtl.write("Kd 1.000 1.000 1.000\n")
+            mtl.write("Ks 0.500 0.500 0.500\n")
+            mtl.write("Ns 96.078431\n")
+            mtl.write("illum 2\n")
+            # mtl.write(f"map_Kd {mat_name}_diffuse.png\n")
+            # mtl.write(f"map_Kd {mat_name}_specular.png\n")
+            mtl.write("map_Kd pool_diffuse.png\n")
+            mtl.write("map_Ks pool_specular.png\n\n")
+
+    print(f"[✓] OBJ saved: {obj_filename}")
+    print(f"[✓] MTL saved: {mtl_filename}")
+
+
+# generate_pool_obj("pool.obj")
+generate_pool_obj_with_different_textures_for_all_of_the_walls("pool.obj")

@@ -48,5 +48,7 @@ class Model
                            const linalg::aliases::float3& scale = {1.0F, 1.0F,
                                                                    1.0F});
 
+    [[nodiscard]] const linalg::aliases::float4x4& getModelMatrix() const;
+
     [[nodiscard]] const std::vector<Mesh>& getMeshes() const;
 };

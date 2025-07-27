@@ -5,6 +5,9 @@
 
 #include <linalg.h>
 
+struct SubTriangle;
+class RigidBodyData;
+
 class WaterSimulation
 {
   public:
@@ -64,6 +67,21 @@ class WaterSimulation
     // std::unique_ptr<StaggeredGrid<numRows, numCols>>
     void advectVelocities();
 
+    void updateFluidWithTriangle(
+      float areaOfTriangle, const linalg::aliases::float3& positionOfCentroid,
+      const linalg::aliases::float3& velocityOfCentroid,
+      const linalg::aliases::float3& relativeVelocityOfCentroidWRTFluid,
+      const linalg::aliases::float3& normalOfCentroid,
+      HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights);
+
+    [[nodiscard]] linalg::aliases::float3 computeFluidForceOnTriangle(
+      const SubTriangle& subTriangle,
+      const linalg::aliases::float3& triangleVelocity,
+      const HeightGrid<numRows, numCols>& heights) const;
+
+    [[nodiscard]] linalg::aliases::float3
+    getFluidVelocityAtPosition(const linalg::aliases::float3& worldPos) const;
+
   public:
     WaterSimulation();
 
@@ -79,15 +97,12 @@ class WaterSimulation
     void update(HeightGrid<numRows, numCols>& newHeightGrid,
                 const HeightGrid<numRows, numCols>& prevHeightGrid);
 
-    [[nodiscard]] static bool doesObjectCollideWithWater(
-      const linalg::aliases::float3& pos,
-      const HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>&
-        heights);
+    [[nodiscard]] static bool
+    isPositionInWater(const linalg::aliases::float3& pos,
+                      const HeightGrid<WaterSimulation::numRows,
+                                       WaterSimulation::numCols>& heights);
 
-    void updateFluidWithRigidBody(
-      float areaOfTriangle, const linalg::aliases::float3& positionOfCentroid,
-      const linalg::aliases::float3& velocityOfCentroid,
-      const linalg::aliases::float3& relativeVelocityOfCentroidWRTFluid,
-      const linalg::aliases::float3& normalOfCentroid,
+    void coupleWithRigidBodies(
+      std::vector<RigidBodyData>& rigidBodies,
       HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights);
 };

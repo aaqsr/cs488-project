@@ -1,4 +1,4 @@
-newmtl pool_material
+newmtl mat_outer_front
 Ka 1.000 1.000 1.000
 Kd 1.000 1.000 1.000
 Ks 0.500 0.500 0.500
@@ -6,3 +6,85 @@ Ns 96.078431
 illum 2
 map_Kd pool_diffuse.png
 map_Ks pool_specular.png
+
+newmtl mat_outer_right
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
+newmtl mat_outer_back
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
+newmtl mat_outer_left
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
+newmtl mat_inner_front
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
+newmtl mat_inner_right
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
+newmtl mat_inner_back
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
+newmtl mat_inner_left
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
+newmtl mat_floor
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
+newmtl mat_lip
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.500 0.500 0.500
+Ns 96.078431
+illum 2
+map_Kd pool_diffuse.png
+map_Ks pool_specular.png
+
