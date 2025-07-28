@@ -1,5 +1,6 @@
 #pragma once
 
+#include "physics/constants.hpp"
 #include <array>
 #include <cstddef>
 
@@ -19,11 +20,12 @@ class HeightGrid
         return waterHeight[(i * numCols) + j];
     }
 
-    void setWaterHeight(size_t i, size_t j, float val, float maxHeightClamp)
+    void setWaterHeight(size_t i, size_t j, float val)
     {
         // water height always clamped to >= 0
         // TODO: any instance where we could accidentally read a value < 0?
-        waterHeight[(i * numCols) + j] = std::clamp(val, 0.0F, maxHeightClamp);
+        waterHeight[(i * numCols) + j] =
+          std::clamp(val, 0.0F, Physics::WaterSim::maxDepth);
     }
 
     // float getTerrainHeight(int i, int j)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "physics/constants.hpp"
 #include "sim/staggeredGrid.hpp"
 #include "sim/waterHeightGrid.hpp"
 
@@ -11,11 +12,12 @@ class RigidBodyData;
 class WaterSimulation
 {
   public:
+    constexpr static float cellSize = Physics::WaterSim::cellSize;
+
     // TODO: come up with actual numbers
     constexpr static size_t numRows = 100;
     constexpr static size_t numCols = 80;
 
-    constexpr static float cellSize = 0.05F;
     constexpr static linalg::aliases::float2 bottomLeftCornerWorldPos_xz{
       0.025F, 0.025F};
     constexpr static linalg::aliases::float2 topRightCornerWorldPos_xz{
@@ -27,10 +29,6 @@ class WaterSimulation
     // Grid spacing in meters.
     // Equal to cell size if we assume 1 meter = 1.0F in world space
     constexpr static float deltaX = cellSize;
-
-    // TODO: the paper suggests a better maxDepth in section 2.1.5
-    // TODO: should we/can we lower the base depth of 1.0 further?
-    constexpr static float maxDepth = 1.5F;
 
     // Some tiny loss of energy for velocity components
     // TODO: Come up with an actual value for this guy
@@ -48,17 +46,24 @@ class WaterSimulation
     constexpr static float Cadapt_SolidsToFluids = 0.2F;
 
   private:
-    StaggeredVelocityGrid<numRows, numCols> velocityGrid;
+    StaggeredVelocityGrid<numRows, numCols> velocityGrid{};
+
+    // required sub-steps based on CFL condition
+    int subStepsPerPhysicsStep = 1;
+    int calculateRequiredSubSteps(
+      const HeightGrid<numRows, numCols>& heightGrid) const;
 
     // Add this to h_{i,j} each tick
-    [[nodiscard]]
-    float calcHeightChangeIntegral(
+    [[nodiscard]] float calcHeightChangeIntegral(
       size_t i, size_t j, const HeightGrid<numRows, numCols>& heightGrid) const;
+
+    void updateHeightsSemiImplicit(
+      HeightGrid<numRows, numCols>& newHeightGrid,
+      const HeightGrid<numRows, numCols>& prevHeightGrid);
 
     // TODO: could be static!
     // Returns (u_{u+1/2, j}, w_{i,j+1/2})
-    [[nodiscard]]
-    linalg::aliases::float2 calcVelocityChangeIntegration(
+    [[nodiscard]] linalg::aliases::float2 calcVelocityChangeIntegration(
       size_t i, size_t j, const HeightGrid<numRows, numCols>& heightGrid,
       const linalg::aliases::float3& accelExt = {0.0F, 0.0F, 0.0F}) const;
 
@@ -81,6 +86,11 @@ class WaterSimulation
 
     [[nodiscard]] linalg::aliases::float3
     getFluidVelocityAtPosition(const linalg::aliases::float3& worldPos) const;
+
+    // volume conservation + other stability hacks yay
+    mutable int stabilityCheckCounter = 0;
+    mutable float previousTotalEnergy = 0.0F;
+    void performStabilityCheck(const HeightGrid<numRows, numCols>& heightGrid);
 
   public:
     WaterSimulation();

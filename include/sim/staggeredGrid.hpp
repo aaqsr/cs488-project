@@ -1,5 +1,6 @@
 #pragma once
 
+#include "physics/constants.hpp"
 #include "util/error.hpp"
 #include "util/logger.hpp"
 
@@ -16,16 +17,8 @@ class StaggeredVelocityGrid
     std::array<float, (numRows + 1) * numCols>
       w_velocity; // We store w_{i, j+1/2}
 
-    float maxSpeedComponent;
-
   public:
-    explicit StaggeredVelocityGrid(float maxSpeedClamp)
-      : maxSpeedComponent{maxSpeedClamp}
-    {
-        if (maxSpeedClamp < 0) {
-            throw IrrecoverableError{"Speed should be unsigned magnitude"};
-        }
-    }
+    StaggeredVelocityGrid() = default;
     StaggeredVelocityGrid(const StaggeredVelocityGrid&) = delete;
     StaggeredVelocityGrid(StaggeredVelocityGrid&&) = default;
     StaggeredVelocityGrid& operator=(const StaggeredVelocityGrid&) = delete;
@@ -53,8 +46,16 @@ class StaggeredVelocityGrid
 
     float clampVelocity(float velocity)
     {
+        // float magnitude = std::abs(velocity);
+        // float clampedMagnitude = std::min(magnitude, maxSpeedComponent);
+        // return std::copysign(clampedMagnitude, velocity);
+
+        constexpr float alpha = 0.5F;
+        float maxSpeed =
+          alpha * Physics::WaterSim::cellSize / Physics::WaterSim::deltaT;
+
         float magnitude = std::abs(velocity);
-        float clampedMagnitude = std::min(magnitude, maxSpeedComponent);
+        float clampedMagnitude = std::min(magnitude, maxSpeed);
         return std::copysign(clampedMagnitude, velocity);
     }
 

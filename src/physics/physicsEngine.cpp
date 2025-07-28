@@ -189,13 +189,6 @@ void PhysicsEngine::simulateRigidBody(RigidBodyData& out,
     out.orientation.normalize();
 
     out.invalidateTriangleCache();
-
-    // damping
-    linalg::aliases::float3 velocity = out.getLinearVelocity();
-    velocity *= linearDamping;
-    out.prevWorldPosition =
-      out.worldPosition - velocity * Physics::RigidBody::deltaT;
-    out.angularMomentum *= angularDamping;
 }
 
 PhysicsEngine::PhysicsEngine(

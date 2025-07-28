@@ -8,6 +8,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <string>
 
 using Physics::WaterSim::deltaT;
 
@@ -59,63 +60,65 @@ float interpolate(const std::array<float, rows * cols>& field,
 // float calculateAdjustedHeight(
 //   size_t i, size_t j,
 //   const HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>&
-//     heightGrid,
-//   float baseHeight)
+//     heightGrid)
 // {
 //     // Stability enhancement from section 2.1.5
 //     // hadj = max(0, (h_i+1,j + h_i-1,j + h_i,j+1 + h_i,j-1)/4 - havgmax)
 //     // havgmax = β * Δx / (g * Δt)
 //
 //     constexpr float beta = 2.0F;
-//     constexpr float havgmax =
+//     const float h_avg_max =
 //       beta * WaterSimulation::deltaX /
-//       (WaterSimulation::gravitationalAcceleration * WaterSimulation::deltaT);
+//       (Physics::gravitationalAccelerationMagnitude *
+//       Physics::WaterSim::deltaT);
 //
-//     // Calculate average height of neighbors
-//     float neighborSum = 0.0F;
-//     int neighborCount = 0;
+//     // Calculate average height of neighbours
+//     float neighbourSum = 0.0F;
+//     int neighbourCount = 0;
 //
-//     // Right neighbor (i+1, j)
-//     if (i + 1 < WaterSimulation::numRows) {
-//         neighborSum += heightGrid.getWaterHeight(i + 1, j);
-//         neighborCount++;
+//     const std::array<std::pair<int, int>, 4> neighbourIndices = {
+//       {
+//        {static_cast<int>(i) + 1, static_cast<int>(j)}, // right
+//         {static_cast<int>(i) - 1, static_cast<int>(j)}, // left
+//         {static_cast<int>(i), static_cast<int>(j) + 1}, // bottom
+//         {static_cast<int>(i), static_cast<int>(j) - 1}  // top
+//       }
+//     };
+//
+//     for (const auto& [ni, nj] : neighbourIndices) {
+//         // for boundary cells, use available neighbours
+//         if (ni >= 0 && ni < static_cast<int>(WaterSimulation::numRows) &&
+//             nj >= 0 && nj < static_cast<int>(WaterSimulation::numCols))
+//         {
+//             neighbourSum += heightGrid.getWaterHeight(ni, nj);
+//             neighbourCount++;
+//         }
 //     }
 //
-//     // Left neighbor (i-1, j)
-//     if (i > 0) {
-//         neighborSum += heightGrid.getWaterHeight(i - 1, j);
-//         neighborCount++;
-//     }
-//
-//     // Bottom neighbor (i, j+1)
-//     if (j + 1 < WaterSimulation::numCols) {
-//         neighborSum += heightGrid.getWaterHeight(i, j + 1);
-//         neighborCount++;
-//     }
-//
-//     // Top neighbor (i, j-1)
-//     if (j > 0) {
-//         neighborSum += heightGrid.getWaterHeight(i, j - 1);
-//         neighborCount++;
-//     }
-//
-//     // For boundary cells, use available neighbors
-//     float avgNeighborHeight =
-//       (neighborCount > 0) ? neighborSum / neighborCount : baseHeight;
+//     float avgNeighbourHeight =
+//       (neighbourCount > 0) ? neighbourSum /
+//       static_cast<float>(neighbourCount)
+//                            : heightGrid.getWaterHeight(i, j);
 //
 //     // Calculate hadj
-//     float hadj = std::max(0.0F, avgNeighborHeight - havgmax);
+//     float h_adj = std::max(0.0F, avgNeighbourHeight - h_avg_max);
 //
-//     // Return adjusted height: h_bar - hadj
-//     return baseHeight - hadj;
+//     // TODO : damping. Good idea?
+//     constexpr float dampingFactor = 0.8F;
+//     float adjustedHeight =
+//       heightGrid.getWaterHeight(i, j) - (dampingFactor * h_adj);
+//     return std::max(0.0F, adjustedHeight);
+//
+//     // adjusted height: h_bar - h_adj
+//     // return heightGrid.getWaterHeight(i, j) - h_adj;
 // }
 
 std::pair<int, int> getClosestGridPoint(float x, float z)
 {
     float gridX = (x - WaterSimulation::bottomLeftCornerWorldPos_xz.x) /
-                  WaterSimulation::cellSize;
+                  Physics::WaterSim::cellSize;
     float gridZ = (z - WaterSimulation::bottomLeftCornerWorldPos_xz.y) /
-                  WaterSimulation::cellSize;
+                  Physics::WaterSim::cellSize;
 
     int i = std::clamp(static_cast<int>(std::round(gridZ)), 0,
                        static_cast<int>(WaterSimulation::numRows - 1));
@@ -127,10 +130,7 @@ std::pair<int, int> getClosestGridPoint(float x, float z)
 
 } // namespace
 
-WaterSimulation::WaterSimulation()
-  : velocityGrid{Physics::WaterSim::waterSimulationMaxSpeedComponent}
-{
-}
+WaterSimulation::WaterSimulation() = default;
 
 void WaterSimulation::setInitConditions(
   HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heightGrid)
@@ -158,11 +158,9 @@ void WaterSimulation::setInitConditions(
                           WaterSimulation::cellSize;
 
                 // add the hump to the base level of 1.0
-                heightGrid.setWaterHeight(i, j, 1.0F + fn(x, y),
-                                          WaterSimulation::maxDepth);
+                heightGrid.setWaterHeight(i, j, 1.0F + fn(x, y));
             } else {
-                heightGrid.setWaterHeight(i, j, 1.0F,
-                                          WaterSimulation::maxDepth);
+                heightGrid.setWaterHeight(i, j, 1.0F);
             }
         }
     }
@@ -178,16 +176,18 @@ void WaterSimulation::update(HeightGrid<numRows, numCols>& newHeightGrid,
             const float newHeight =
               prevHeightGrid.getWaterHeight(i, j) +
               calcHeightChangeIntegral(i, j, prevHeightGrid);
-            newHeightGrid.setWaterHeight(i, j, newHeight, maxDepth);
+            newHeightGrid.setWaterHeight(i, j, newHeight);
         }
     }
+    // updateHeightsSemiImplicit(newHeightGrid, prevHeightGrid);
+
+    performStabilityCheck(newHeightGrid);
 
     {
         // corner boundary condition to prevent corner (0, 0) from getting
         // stuck to init height throughout simulation
         // TODO: THIS IS A HACK. Impl properly?
-        newHeightGrid.setWaterHeight(0, 0, newHeightGrid.getWaterHeight(0, 1),
-                                     maxDepth);
+        newHeightGrid.setWaterHeight(0, 0, newHeightGrid.getWaterHeight(0, 1));
     }
     // for (size_t i = 0; i < numRows; ++i) {
     //   grid.setWaterHeight(i, 0, 0.0F, maxDepth);
@@ -237,68 +237,260 @@ float WaterSimulation::calcHeightChangeIntegral(
 {
     // Both evaluated in the upwind direction
     // TODO: why capturing one but not the other??
-    const auto hBar_i_plus_half_j =
-      [&heightGrid](const decltype(velocityGrid)& grid, size_t i,
-                    size_t j) -> float {
-        // Boundary conditions:
-        // if at right edge, use current cell height
-        if (i + 1 >= numRows) {
-            return heightGrid.getWaterHeight(i, j);
+    // const auto hBar_i_plus_half_j =
+    //   [&heightGrid](const decltype(velocityGrid)& grid, size_t i,
+    //                 size_t j) -> float {
+    //     // Boundary conditions:
+    //     // if at right edge, use current cell height
+    //     if (i + 1 >= numRows) {
+    //         return heightGrid.getWaterHeight(i, j);
+    //     }
+    //
+    //     return (grid.getVelocity_u_i_plus_half_j(i, j) <= 0)
+    //              ? heightGrid.getWaterHeight(i + 1, j)
+    //              : heightGrid.getWaterHeight(i, j);
+    // };
+    // const auto hBar_i_j_plus_half =
+    //   [&heightGrid](const decltype(velocityGrid)& grid, size_t i,
+    //                 size_t j) -> float {
+    //     if (j + 1 >= numCols) {
+    //         return heightGrid.getWaterHeight(i, j);
+    //     }
+    //     return (grid.getVelocity_w_i_j_plus_half(i, j) <= 0)
+    //              ? heightGrid.getWaterHeight(i, j + 1)
+    //              : heightGrid.getWaterHeight(i, j);
+    // };
+
+    // Stability improvement in section 2.1.5 final paragraph
+    const auto getStabilisedHeight = [&heightGrid](size_t ii,
+                                                   size_t jj) -> float {
+        // havgmax
+        constexpr float beta = 0.5F;
+        const float h_ij = heightGrid.getWaterHeight(ii, jj);
+        const float havgmax = beta * WaterSimulation::deltaX /
+                              (Physics::gravitationalAccelerationMagnitude *
+                               Physics::WaterSim::deltaT);
+
+        // get neighbours
+        float neighbourSum = 0.0F;
+        int count = 0;
+        const std::array<std::pair<int, int>, 4> neighbourIndicies = {
+          {{static_cast<int>(ii) + 1, static_cast<int>(jj)},
+           {static_cast<int>(ii) - 1, static_cast<int>(jj)},
+           {static_cast<int>(ii), static_cast<int>(jj) + 1},
+           {static_cast<int>(ii), static_cast<int>(jj) - 1}}
+        };
+
+        for (const auto& [ni, nj] : neighbourIndicies) {
+            if (ni >= 0 && ni < static_cast<int>(numRows) && nj >= 0 &&
+                nj < static_cast<int>(numCols))
+            {
+                neighbourSum += heightGrid.getWaterHeight(ni, nj);
+                count++;
+            } else {
+                neighbourSum += h_ij;
+                count++;
+            }
         }
 
-        return (grid.getVelocity_u_i_plus_half_j(i, j) <= 0)
-                 ? heightGrid.getWaterHeight(i + 1, j)
-                 : heightGrid.getWaterHeight(i, j);
+        float avgHeight =
+          (count > 0) ? neighbourSum / static_cast<float>(count) : h_ij;
+        float hadj = std::max(0.0F, avgHeight - havgmax);
+
+        return std::max(0.0F, h_ij - hadj);
+    };
+
+    // const auto getStabilisedHeight = [&heightGrid](size_t ii,
+    //                                                size_t jj) -> float {
+    //     return heightGrid.getWaterHeight(ii, jj);
+    // };
+
+    // heights in upwind evaluation
+    const auto hBar_i_plus_half_j =
+      [&getStabilisedHeight](
+        const StaggeredVelocityGrid<numRows, numCols>& velocityGrid, size_t ii,
+        size_t jj) -> float {
+        // boundary condition: if at right edge, use current cell
+        if (ii + 1 >= numRows) {
+            return getStabilisedHeight(ii, jj);
+        }
+        float u_vel = velocityGrid.getVelocity_u_i_plus_half_j(ii, jj);
+        return (u_vel <= 0.0F) ? getStabilisedHeight(ii + 1, jj)
+                               : getStabilisedHeight(ii, jj);
     };
     const auto hBar_i_j_plus_half =
-      [&heightGrid](const decltype(velocityGrid)& grid, size_t i,
-                    size_t j) -> float {
-        if (j + 1 >= numCols) {
-            return heightGrid.getWaterHeight(i, j);
+      [&getStabilisedHeight](
+        const StaggeredVelocityGrid<numRows, numCols>& velocityGrid, size_t ii,
+        size_t jj) -> float {
+        // boundary condition: if at bottom edge, use current cell
+        if (jj + 1 >= numCols) {
+            return getStabilisedHeight(ii, jj);
         }
-        return (grid.getVelocity_w_i_j_plus_half(i, j) <= 0)
-                 ? heightGrid.getWaterHeight(i, j + 1)
-                 : heightGrid.getWaterHeight(i, j);
+        float w_vel = velocityGrid.getVelocity_w_i_j_plus_half(ii, jj);
+        return (w_vel <= 0.0F) ? getStabilisedHeight(ii, jj + 1)
+                               : getStabilisedHeight(ii, jj);
     };
 
-    // TODO: Stability improvement in section 2.1.5 final paragraph
-    // constexpr float beta = 2.0F;
-    // const float h_avgmax = (beta * deltaX) / (gravitationalAcceleration *
-    // deltaTime);
+    // Boundary conditions:
+    // float uDirectionFlux = 0.0F;
+    // if (i > 0) {
+    //     const float rightFaceFlux =
+    //       hBar_i_plus_half_j(velocityGrid, i, j) *
+    //       velocityGrid.getVelocity_u_i_plus_half_j(i, j);
+    //     const float leftFaceFlux =
+    //       hBar_i_plus_half_j(velocityGrid, i - 1, j) *
+    //       velocityGrid.getVelocity_u_i_plus_half_j(i - 1, j);
+    //     uDirectionFlux = rightFaceFlux - leftFaceFlux;
+    // } else {
+    //     uDirectionFlux = hBar_i_plus_half_j(velocityGrid, i, j) *
+    //                      velocityGrid.getVelocity_u_i_plus_half_j(i, j);
+    // }
+    // float wDirectionFlux = 0.0F;
+    // if (j > 0) {
+    //     const float bottomFaceFlux =
+    //       hBar_i_j_plus_half(velocityGrid, i, j) *
+    //       velocityGrid.getVelocity_w_i_j_plus_half(i, j);
+    //     const float topFaceFlux =
+    //       hBar_i_j_plus_half(velocityGrid, i, j - 1) *
+    //       velocityGrid.getVelocity_w_i_j_plus_half(i, j - 1);
+    //     wDirectionFlux = bottomFaceFlux - topFaceFlux;
+    // } else {
+    //     wDirectionFlux = hBar_i_j_plus_half(velocityGrid, i, j) *
+    //                      velocityGrid.getVelocity_w_i_j_plus_half(i, j);
+    // }
 
-    // Boundary conditions: left boundary
-    float uDirectionNumerator = 0.0F;
+    // boundary conditions v2.0: (u direction)
+    // we calculate flux differences with stability limiting
+    // float uDirectionFlux = 0.0F;
+    // float wDirectionFlux = 0.0F;
+    // if (i > 0) {
+    //     float rightFaceFlux = hBar_i_plus_half_j(i, j) *
+    //                           velocityGrid.getVelocity_u_i_plus_half_j(i, j);
+    //     float leftFaceFlux = hBar_i_plus_half_j(i - 1, j) *
+    //                          velocityGrid.getVelocity_u_i_plus_half_j(i - 1,
+    //                          j);
+    //     uDirectionFlux = rightFaceFlux - leftFaceFlux;
+    // } else {
+    //     // left boundary: only outflow
+    //     uDirectionFlux =
+    //       hBar_i_plus_half_j(i, j) *
+    //       std::max(0.0F, velocityGrid.getVelocity_u_i_plus_half_j(i, j));
+    // }
+    //
+    // // boundary conditions: (w direction)
+    // if (j > 0) {
+    //     float bottomFaceFlux = hBar_i_j_plus_half(i, j) *
+    //                            velocityGrid.getVelocity_w_i_j_plus_half(i,
+    //                            j);
+    //     float topFaceFlux = hBar_i_j_plus_half(i, j - 1) *
+    //                         velocityGrid.getVelocity_w_i_j_plus_half(i, j -
+    //                         1);
+    //     wDirectionFlux = bottomFaceFlux - topFaceFlux;
+    // } else {
+    //     // top boundary: only outflow
+    //     wDirectionFlux =
+    //       hBar_i_j_plus_half(i, j) *
+    //       std::max(0.0F, velocityGrid.getVelocity_w_i_j_plus_half(i, j));
+    // }
+
+    float uDirectionFlux = 0.0F;
+    const float rightFaceFlux = hBar_i_plus_half_j(velocityGrid, i, j) *
+                                velocityGrid.getVelocity_u_i_plus_half_j(i, j);
+    float leftFaceFlux = 0.0F;
     if (i > 0) {
-        uDirectionNumerator =
-          (hBar_i_plus_half_j(velocityGrid, i, j) *
-           velocityGrid.getVelocity_u_i_plus_half_j(i, j)) -
-          (hBar_i_plus_half_j(velocityGrid, i - 1, j) *
-           velocityGrid.getVelocity_u_i_plus_half_j(i - 1, j));
-    } else {
-        // TODO: boundary conditions are kinda sus ngl
-        uDirectionNumerator = hBar_i_plus_half_j(velocityGrid, i, j) *
-                              velocityGrid.getVelocity_u_i_plus_half_j(i, j);
+        leftFaceFlux = hBar_i_plus_half_j(velocityGrid, i - 1, j) *
+                       velocityGrid.getVelocity_u_i_plus_half_j(i - 1, j);
     }
+    uDirectionFlux = rightFaceFlux - leftFaceFlux;
 
-    // Boundary conditions: top boundary
-    float wDirectionNumerator = 0.0F;
+    float wDirectionFlux = 0.0F;
+    const float bottomFaceFlux = hBar_i_j_plus_half(velocityGrid, i, j) *
+                                 velocityGrid.getVelocity_w_i_j_plus_half(i, j);
+    float topFaceFlux = 0.0F;
     if (j > 0) {
-        wDirectionNumerator =
-          (hBar_i_j_plus_half(velocityGrid, i, j) *
-           velocityGrid.getVelocity_w_i_j_plus_half(i, j)) -
-          (hBar_i_j_plus_half(velocityGrid, i, j - 1) *
-           velocityGrid.getVelocity_w_i_j_plus_half(i, j - 1));
-    } else {
-        wDirectionNumerator = hBar_i_j_plus_half(velocityGrid, i, j) *
-                              velocityGrid.getVelocity_w_i_j_plus_half(i, j);
+        topFaceFlux = hBar_i_j_plus_half(velocityGrid, i, j - 1) *
+                      velocityGrid.getVelocity_w_i_j_plus_half(i, j - 1);
     }
+    wDirectionFlux = bottomFaceFlux - topFaceFlux;
 
     constexpr float invDeltaX = 1.0F / deltaX;
 
-    const float delH_delT =
-      -(uDirectionNumerator + wDirectionNumerator) * invDeltaX;
+    const float totalFluxDivergence =
+      (uDirectionFlux + wDirectionFlux) * invDeltaX;
+    float heightChange = -totalFluxDivergence * deltaT;
 
-    return delH_delT * deltaT;
+    //
+    // again apply flux limiting to prevent extreme changes
+    // const float currentHeight = heightGrid.getWaterHeight(i, j);
+    // const float maxAllowedChange = 0.5F * currentHeight; // limit to 50% /
+    // step const float heightChange = delH_delT * Physics::WaterSim::deltaT;
+    //
+    // return std::clamp(heightChange, -maxAllowedChange, maxAllowedChange);
+
+    // limit max height change / step
+    float currentHeight = heightGrid.getWaterHeight(i, j);
+    if (currentHeight > 1e-6F) {
+        float maxAllowedChangeRatio = 0.25F;
+        float maxAllowedChange = maxAllowedChangeRatio * currentHeight;
+        heightChange =
+          std::clamp(heightChange, -maxAllowedChange, maxAllowedChange);
+    }
+
+    return heightChange;
+}
+
+void WaterSimulation::updateHeightsSemiImplicit(
+  HeightGrid<numRows, numCols>& newHeightGrid,
+  const HeightGrid<numRows, numCols>& prevHeightGrid)
+{
+    // Semi-implicit scheme: theta = 0.5 for Crank-Nicolson
+    constexpr float theta = 0.5F;
+    constexpr int maxIterations = 8;
+    constexpr float tolerance = 1e-5F;
+
+    // Initialize with explicit step
+    for (size_t i = 0; i < numRows; ++i) {
+        for (size_t j = 0; j < numCols; ++j) {
+            const float explicitChange =
+              calcHeightChangeIntegral(i, j, prevHeightGrid);
+            const float newHeight =
+              prevHeightGrid.getWaterHeight(i, j) + explicitChange;
+            newHeightGrid.setWaterHeight(i, j, newHeight);
+        }
+    }
+
+    // refine implicit component
+    for (int iter = 0; iter < maxIterations; ++iter) {
+        HeightGrid<numRows, numCols> tempGrid = newHeightGrid;
+        float maxChange = 0.0F;
+
+        for (size_t i = 0; i < numRows; ++i) {
+            for (size_t j = 0; j < numCols; ++j) {
+                const float explicitChange =
+                  calcHeightChangeIntegral(i, j, prevHeightGrid);
+                const float implicitChange =
+                  calcHeightChangeIntegral(i, j, tempGrid);
+
+                const float totalChange =
+                  ((1.0F - theta) * explicitChange) + (theta * implicitChange);
+
+                const float newHeight =
+                  prevHeightGrid.getWaterHeight(i, j) + totalChange;
+                const float clampedHeight =
+                  std::clamp(newHeight, 0.0F, Physics::WaterSim::maxDepth);
+                const float oldHeight = newHeightGrid.getWaterHeight(i, j);
+
+                newHeightGrid.setWaterHeight(i, j, clampedHeight);
+
+                maxChange =
+                  std::max(maxChange, std::abs(clampedHeight - oldHeight));
+            }
+        }
+
+        if (maxChange < tolerance) {
+            break; // converged early
+        }
+    }
 }
 
 linalg::aliases::float2 WaterSimulation::calcVelocityChangeIntegration(
@@ -405,6 +597,61 @@ void WaterSimulation::advectVelocities()
     }
 }
 
+void WaterSimulation::performStabilityCheck(
+  const HeightGrid<numRows, numCols>& heightGrid)
+{
+    if ((++stabilityCheckCounter % 100) != 0) {
+        return;
+    }
+
+    // approximate the current energy
+    float totalEnergy = 0.0F;
+    float maxHeight = 0.0F;
+    float maxVelocity = 0.0F;
+
+    for (size_t i = 0; i < numRows; ++i) {
+        for (size_t j = 0; j < numCols; ++j) {
+            const float h = heightGrid.getWaterHeight(i, j);
+            maxHeight = std::max(maxHeight, h);
+
+            // potential energy
+            totalEnergy +=
+              0.5F * Physics::gravitationalAccelerationMagnitude * h * h;
+
+            // kinetic energy (approx)
+            if (j < numCols) {
+                float u = velocityGrid.getVelocity_u_i_plus_half_j(i, j);
+                maxVelocity = std::max(maxVelocity, std::abs(u));
+                totalEnergy += 0.25F * h * u * u;
+            }
+            if (i < numRows) {
+                float w = velocityGrid.getVelocity_w_i_j_plus_half(i, j);
+                maxVelocity = std::max(maxVelocity, std::abs(w));
+                totalEnergy += 0.25F * h * w * w;
+            }
+        }
+    }
+
+    // check for energy explosion (instability RED FLAG wee woo wee woo)
+    if (stabilityCheckCounter > 100) {
+        const float energyGrowthRatio = totalEnergy / previousTotalEnergy;
+        if (energyGrowthRatio > 1.1F) { // TODO: 10% growth is suspicious??
+            Logger::GetInstance().log(
+              "Warning: Energy growing rapidly, ratio = " +
+              std::to_string(energyGrowthRatio));
+        }
+    }
+
+    previousTotalEnergy = totalEnergy;
+
+    if (stabilityCheckCounter % 500 == 0) {
+        Logger::GetInstance().log(
+          std::format("Stability check: Max height = {:.4f}, Max velocity = "
+                      "{:.4f}, Total energy = {:.2f}",
+                      maxHeight, maxVelocity, totalEnergy));
+    }
+}
+
 bool WaterSimulation::isPositionInWater(
   const linalg::aliases::float3& pos,
   const HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights)
@@ -479,8 +726,8 @@ void WaterSimulation::updateFluidWithTriangle(
               Cdisplacement_SolidsToFluids * decay *
               (displacementVolumePerSubstep / (deltaX * deltaX));
 
-            heights.setWaterHeight(
-              i, j, heights.getWaterHeight(i, j) + heightChange, maxDepth);
+            heights.setWaterHeight(i, j,
+                                   heights.getWaterHeight(i, j) + heightChange);
 
             const float velCoeffUpperBound =
               decay * Cadapt_SolidsToFluids * (depth / heights.getEta(i, j)) *
@@ -627,7 +874,10 @@ linalg::aliases::float3 WaterSimulation::computeFluidForceOnTriangle(
     }
 
     // Last resort: bad idea
-    // totalForce *= Physics::WaterSim::deltaT;
+    // totalForce *= Physics::WaterSim::deltaT / (Physics::RigidBody::deltaT);
+    // totalForce *= Physics::WaterSim::deltaT / (Physics::RigidBody::deltaT);
+    // totalForce *= Physics::WaterSim::deltaT / (Physics::RigidBody::deltaT);
+    // totalForce *= Physics::WaterSim::deltaT / (Physics::RigidBody::deltaT);
 
     return totalForce;
 }
@@ -692,4 +942,45 @@ void WaterSimulation::coupleWithRigidBodies(
             }
         }
     }
+}
+
+int WaterSimulation::calculateRequiredSubSteps(
+  const HeightGrid<numRows, numCols>& heightGrid) const
+{
+    float maxWaveSpeed = 0.0F;
+    float maxAdvectionSpeed = 0.0F;
+
+    for (size_t i = 0; i < numRows; ++i) {
+        for (size_t j = 0; j < numCols; ++j) {
+            float h = heightGrid.getWaterHeight(i, j);
+            if (h > 1e-6F) {
+                float waveSpeed =
+                  std::sqrt(Physics::gravitationalAccelerationMagnitude * h);
+                maxWaveSpeed = std::max(maxWaveSpeed, waveSpeed);
+            }
+
+            if (j < numCols) {
+                float u =
+                  std::abs(velocityGrid.getVelocity_u_i_plus_half_j(i, j));
+                maxAdvectionSpeed = std::max(maxAdvectionSpeed, u);
+            }
+            if (i < numRows) {
+                float w =
+                  std::abs(velocityGrid.getVelocity_w_i_j_plus_half(i, j));
+                maxAdvectionSpeed = std::max(maxAdvectionSpeed, w);
+            }
+        }
+    }
+
+    float maxSpeed = maxWaveSpeed + maxAdvectionSpeed;
+    if (maxSpeed < 1e-6F) {
+        return 1;
+    }
+
+    // required sub-steps to satisfy CFL
+    float requiredDt = 0.8F * deltaX / maxSpeed;
+    int requiredSubSteps =
+      static_cast<int>(std::ceil(Physics::WaterSim::deltaT / requiredDt));
+
+    return std::clamp(requiredSubSteps, 1, 10);
 }
