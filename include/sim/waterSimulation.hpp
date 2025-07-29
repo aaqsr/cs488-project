@@ -12,49 +12,64 @@ class RigidBodyData;
 class WaterSimulation
 {
   public:
-    constexpr static float cellSize = Physics::WaterSim::cellSize;
+    using Real = float;
+    using Real2 = linalg::aliases::float2;
+    using Real3 = linalg::aliases::float3;
+
+    constexpr static Real cellSize = Physics::WaterSim::cellSize;
 
     // TODO: come up with actual numbers
     constexpr static size_t numRows = 100;
     constexpr static size_t numCols = 80;
 
-    constexpr static linalg::aliases::float2 bottomLeftCornerWorldPos_xz{
-      0.025F, 0.025F};
-    constexpr static linalg::aliases::float2 topRightCornerWorldPos_xz{
-      (static_cast<float>(numCols - 1) * cellSize) +
+    constexpr static Real2 bottomLeftCornerWorldPos_xz{0.025F, 0.025F};
+    constexpr static Real2 topRightCornerWorldPos_xz{
+      (static_cast<Real>(numCols - 1) * cellSize) +
         bottomLeftCornerWorldPos_xz.x,
-      (static_cast<float>(numRows - 1) * cellSize) +
+      (static_cast<Real>(numRows - 1) * cellSize) +
         bottomLeftCornerWorldPos_xz.y};
 
     // Grid spacing in meters.
     // Equal to cell size if we assume 1 meter = 1.0F in world space
-    constexpr static float deltaX = cellSize;
+    constexpr static Real deltaX = cellSize;
 
     // Some tiny loss of energy for velocity components
     // TODO: Come up with an actual value for this guy
-    constexpr static float velocityComponentDissipationConstant = 0.99985F;
+    constexpr static Real velocityComponentDissipationConstant = 0.99985F;
 
     // TODO: Check for volume conservation every N timesteps?
 
-    constexpr static linalg::aliases::float3 upDirection_yHat = {0.0F, 1.0F,
-                                                                 0.0F};
+    constexpr static Real3 upDirection_yHat = {0.0F, 1.0F, 0.0F};
 
-    constexpr static float decayRate_SolidsToFluids = 1.0F;
+    constexpr static Real decayRate_SolidsToFluids = 1.5F;
     static_assert(decayRate_SolidsToFluids > 0.0F);
 
-    constexpr static float Cdisplacement_SolidsToFluids = 1.0F;
-    constexpr static float Cadapt_SolidsToFluids = 0.2F;
+    constexpr static Real Cdisplacement_SolidsToFluids = 0.1F;
+    constexpr static Real Cadapt_SolidsToFluids = 0.002F;
 
   private:
     StaggeredVelocityGrid<numRows, numCols> velocityGrid{};
 
+    //
+    //
     // required sub-steps based on CFL condition
-    int subStepsPerPhysicsStep = 1;
-    int calculateRequiredSubSteps(
+    int currentSubStep = 0;
+    int totalSubSteps = 1;
+    Real accumulatedTime = 0.0;
+    bool subStepInProgress = false;
+    // calc. optimal sub-step size based on CFL condition
+    int calculateOptimalSubSteps(
       const HeightGrid<numRows, numCols>& heightGrid) const;
+    // perform single sub-step update
+    void
+    performSingleSubStep(HeightGrid<numRows, numCols>& newHeightGrid,
+                         const HeightGrid<numRows, numCols>& prevHeightGrid,
+                         Real subDeltaT);
+    //
+    //
 
     // Add this to h_{i,j} each tick
-    [[nodiscard]] float calcHeightChangeIntegral(
+    [[nodiscard]] Real calcHeightChangeIntegral(
       size_t i, size_t j, const HeightGrid<numRows, numCols>& heightGrid) const;
 
     void updateHeightsSemiImplicit(
@@ -63,9 +78,9 @@ class WaterSimulation
 
     // TODO: could be static!
     // Returns (u_{u+1/2, j}, w_{i,j+1/2})
-    [[nodiscard]] linalg::aliases::float2 calcVelocityChangeIntegration(
+    [[nodiscard]] Real2 calcVelocityChangeIntegration(
       size_t i, size_t j, const HeightGrid<numRows, numCols>& heightGrid,
-      const linalg::aliases::float3& accelExt = {0.0F, 0.0F, 0.0F}) const;
+      const Real3& accelExt = {0.0F, 0.0F, 0.0F}) const;
 
     // TODO: make all these functions static and operate on an inputed grid
     // [[nodiscard]]
@@ -73,23 +88,21 @@ class WaterSimulation
     void advectVelocities();
 
     void updateFluidWithTriangle(
-      float areaOfTriangle, const linalg::aliases::float3& positionOfCentroid,
-      const linalg::aliases::float3& velocityOfCentroid,
-      const linalg::aliases::float3& relativeVelocityOfCentroidWRTFluid,
-      const linalg::aliases::float3& normalOfCentroid,
+      Real areaOfTriangle, const Real3& positionOfCentroid,
+      const Real3& velocityOfCentroid,
+      const Real3& relativeVelocityOfCentroidWRTFluid,
+      const Real3& normalOfCentroid,
       HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights);
 
-    [[nodiscard]] linalg::aliases::float3 computeFluidForceOnTriangle(
-      const SubTriangle& subTriangle,
-      const linalg::aliases::float3& triangleVelocity,
+    [[nodiscard]] Real3 computeFluidForceOnTriangle(
+      const SubTriangle& subTriangle, const Real3& triangleVelocity,
       const HeightGrid<numRows, numCols>& heights) const;
 
-    [[nodiscard]] linalg::aliases::float3
-    getFluidVelocityAtPosition(const linalg::aliases::float3& worldPos) const;
+    [[nodiscard]] Real3 getFluidVelocityAtPosition(const Real3& worldPos) const;
 
     // volume conservation + other stability hacks yay
     mutable int stabilityCheckCounter = 0;
-    mutable float previousTotalEnergy = 0.0F;
+    mutable Real previousTotalEnergy = 0.0F;
     void performStabilityCheck(const HeightGrid<numRows, numCols>& heightGrid);
 
   public:
@@ -108,7 +121,7 @@ class WaterSimulation
                 const HeightGrid<numRows, numCols>& prevHeightGrid);
 
     [[nodiscard]] static bool
-    isPositionInWater(const linalg::aliases::float3& pos,
+    isPositionInWater(const Real3& pos,
                       const HeightGrid<WaterSimulation::numRows,
                                        WaterSimulation::numCols>& heights);
 

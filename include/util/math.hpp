@@ -1,5 +1,6 @@
 #pragma once
 
+#include "linalg.h"
 #include <cmath>
 #include <limits>
 

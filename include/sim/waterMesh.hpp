@@ -20,8 +20,9 @@ class WaterMesh
     constexpr static size_t numRows = WaterSimulation::numRows;
     constexpr static size_t numCols = WaterSimulation::numCols;
     constexpr static float cellSize = WaterSimulation::cellSize;
-    constexpr static linalg::aliases::float2 bottomLeftCornerWorldPos_xz =
-      WaterSimulation::bottomLeftCornerWorldPos_xz;
+    constexpr static linalg::aliases::float2 bottomLeftCornerWorldPos_xz = {
+      WaterSimulation::bottomLeftCornerWorldPos_xz.x,
+      WaterSimulation::bottomLeftCornerWorldPos_xz.y};
 
     uint32_t VAO{0};
     uint32_t positionVBO{0};
