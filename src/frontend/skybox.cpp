@@ -41,7 +41,7 @@ Skybox::Skybox()
             int height = 0;
             int channels = 0;
             unsigned char* data =
-              stbi_load(path.c_str(), &width, &height, &channels, 0);
+              stbi_load(path.string().c_str(), &width, &height, &channels, 0);
 
             if (data == nullptr) {
                 stbi_image_free(data);
