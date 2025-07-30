@@ -1,6 +1,7 @@
 #pragma once
 
 #include "physics/constants.hpp"
+#include <algorithm>
 #include <array>
 #include <cstddef>
 
