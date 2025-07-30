@@ -16,6 +16,7 @@
 #include <filesystem>
 
 struct BridgeChannelData;
+class RigidBody;
 
 class Renderer : public Singleton<Renderer>
 {
@@ -36,6 +37,7 @@ class Renderer : public Singleton<Renderer>
     Renderer();
 
     Receiver<BridgeChannelData>* bridgeChannel = nullptr;
+
     Sender<std::vector<PhysicsEngineReceiverData>>* physCmdChannel = nullptr;
 
     WaterMesh waterMesh;
@@ -112,6 +114,7 @@ class Renderer : public Singleton<Renderer>
     void loop();
 
     void attachBridgeChannel(Receiver<BridgeChannelData>*);
+
     void attachPhysicsEngineCommandsChannel(
       Sender<std::vector<PhysicsEngineReceiverData>>*);
 };

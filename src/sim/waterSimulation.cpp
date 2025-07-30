@@ -8,6 +8,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+
 #include <string>
 
 using Physics::WaterSim::deltaT;
@@ -21,6 +22,7 @@ using Real3 = WaterSimulation::Real3;
 
 template <size_t rows, size_t cols>
 [[nodiscard]]
+
 Real interpolate(const std::array<float, rows * cols>& field, const Real2& pos)
 {
     // Boundary Conditions:
@@ -699,6 +701,7 @@ void WaterSimulation::advectVelocities()
     }
 }
 
+
 void WaterSimulation::performStabilityCheck(
   const HeightGrid<numRows, numCols>& heightGrid)
 {
@@ -766,6 +769,7 @@ bool WaterSimulation::isPositionInWater(
     if (!withinGrid) {
         return false;
     }
+
 
     const Real waterHeight = interpolate<numRows, numCols>(
       heights.getWaterHeights(),

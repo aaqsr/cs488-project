@@ -1,10 +1,12 @@
 #pragma once
 
+
 #include "physics/constants.hpp"
 #include "sim/staggeredGrid.hpp"
 #include "sim/waterHeightGrid.hpp"
 
 #include <linalg.h>
+
 
 struct SubTriangle;
 class RigidBodyData;
@@ -22,6 +24,7 @@ class WaterSimulation
     constexpr static size_t numRows = 100;
     constexpr static size_t numCols = 80;
 
+
     constexpr static Real2 bottomLeftCornerWorldPos_xz{0.025F, 0.025F};
     constexpr static Real2 topRightCornerWorldPos_xz{
       (static_cast<Real>(numCols - 1) * cellSize) +
@@ -38,6 +41,7 @@ class WaterSimulation
     constexpr static Real velocityComponentDissipationConstant = 0.99985F;
 
     // TODO: Check for volume conservation every N timesteps?
+
 
     constexpr static Real3 upDirection_yHat = {0.0F, 1.0F, 0.0F};
 
@@ -119,6 +123,7 @@ class WaterSimulation
 
     void update(HeightGrid<numRows, numCols>& newHeightGrid,
                 const HeightGrid<numRows, numCols>& prevHeightGrid);
+
 
     [[nodiscard]] static bool
     isPositionInWater(const Real3& pos,

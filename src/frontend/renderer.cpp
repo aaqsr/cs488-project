@@ -137,6 +137,7 @@ void Renderer::update()
             }
         }
 
+
         // Should be second last thing drawn
         {
             skybox.setUniformsAndDraw(mainCamera);
@@ -231,4 +232,6 @@ void Renderer::attachPhysicsEngineCommandsChannel(
   Sender<std::vector<PhysicsEngineReceiverData>>* s)
 {
     physCmdChannel = s;
+
 }
+

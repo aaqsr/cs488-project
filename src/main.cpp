@@ -64,6 +64,7 @@ void physicsAndSimulationThread(
             {
                 auto msg = bridgeChannel.createMessage();
 
+
                 // Must be in this order:
                 // Heightfield simulation
                 // Solid simulation
@@ -77,6 +78,7 @@ void physicsAndSimulationThread(
                 // message as fast as possible.
                 sim.update(msg.getWriteBuffer().waterHeights,
                            msg.getPreviousWriteBuffer().waterHeights);
+
 
                 phys.updateRigidBodies(
                   msg.getWriteBuffer().physicsObjects,
@@ -110,6 +112,7 @@ void run()
     Renderer& renderer = Renderer::GetInstance();
 
     // Attach channels
+
     TripleBufferedChannel<BridgeChannelData>
       bridgeChannel; // very heavy class yum!
     renderer.attachBridgeChannel(&(bridgeChannel.getReceiver()));
@@ -119,6 +122,7 @@ void run()
 
     // aaaaaaand awayyyyy we go!
     std::atomic<bool> appShouldExit{false};
+
 
     std::jthread simulationThread{
       physicsAndSimulationThread, std::ref(bridgeChannel.getSender()),
