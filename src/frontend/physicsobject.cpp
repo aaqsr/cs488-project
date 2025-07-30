@@ -1,6 +1,5 @@
 #include "frontend/physicsobject.hpp"
 #include "linalg.h"
-#include <numbers>
 
 namespace
 {
@@ -15,14 +14,16 @@ void Inertia::calcTemps(const linalg::aliases::float3& w, float& f1, float& f2, 
     float tmp1 = w[0] + w[1];
     f1 = tmp1 + w[2];
     float tmp2 = w[0]*w[0];
-    float tmp3 = tmp2 + w[1]*tmp1;
+    float tmp3 = tmp2 + (w[1]*tmp1);
     f2 = tmp3 + w[2]*f1;
     f3 = w[0]*tmp2 + w[1]*tmp3 + w[2]*f2;
 }
 void Inertia::calcIntegrals(const linalg::aliases::float3& x, const linalg::aliases::float3& y, const linalg::aliases::float3& z) {
     // find surface integral using barycentric parametrisation
     // common temp values
-    linalg::aliases::float3 f1, f2, f3;
+    linalg::aliases::float3 f1;
+    linalg::aliases::float3 f2;
+    linalg::aliases::float3 f3;
     calcTemps(x, f1.x, f2.x, f3.x);
     calcTemps(y, f1.y, f2.y, f3.y);
     calcTemps(z, f1.z, f2.z, f3.z);
@@ -52,7 +53,7 @@ void Inertia::add_face(const linalg::aliases::float3& v0, const linalg::aliases:
     auto face_com = linalg::aliases::float3{int_x2*norm.x, int_y2*norm.y, int_z2*norm.z}/2;
     volume += norm.x * int_x;
     mass += norm.x * int_x * density;
-    if (mass != 0.0f) com = (com * old_mass + density*face_com)/mass;
+    if (mass != 0.0F) {com = (com * old_mass + density*face_com)/mass;}
     inertia_xx += density * (int_y3*norm.y+int_z3*norm.z)/3;
     inertia_yy += density * (int_x3*norm.x+int_z3*norm.z)/3;
     inertia_zz += density * (int_x3*norm.x+int_y3*norm.y)/3;

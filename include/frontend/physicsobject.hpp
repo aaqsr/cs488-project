@@ -8,7 +8,7 @@
 
 class Inertia {
     float int_x, int_x2, int_y2, int_z2, int_x3, int_y3, int_z3, int_x2y, int_y2z, int_z2x;
-    void calcTemps(const linalg::aliases::float3& w, float& f1, float& f2, float& f3);
+    static void calcTemps(const linalg::aliases::float3& w, float& f1, float& f2, float& f3);
     void calcIntegrals(const linalg::aliases::float3& x, const linalg::aliases::float3& y, const linalg::aliases::float3& z);
   public:
     float inertia_xx, inertia_yy, inertia_zz, inertia_xy, inertia_yz, inertia_zx;

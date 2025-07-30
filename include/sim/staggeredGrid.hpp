@@ -2,6 +2,7 @@
 
 #include "util/logger.hpp"
 
+#include <algorithm>
 #include <array>
 
 template <size_t numRows, size_t numCols>

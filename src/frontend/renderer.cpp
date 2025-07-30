@@ -14,7 +14,7 @@ void Renderer::init()
 
     // teaPot2.worldPos = {-2.0F, 0.0F, 0.0F};
     physicsObjects.emplace_back(physTest);
-    physicsObjects[0].rescale(linalg::aliases::float3{0.2f});
+    physicsObjects[0].rescale(0.2f);
     // physicsObjects[0].getInitVelocity() = {4.1103F, 7.0F, 0.0F};
     physicsObjects[0].applyForce({0.911037F, 1.73011F, 0.711037F}, -linalg::aliases::float3{1.0f, 4.0F, 0.0f});
 
