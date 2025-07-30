@@ -40,8 +40,8 @@ void Renderer::init()
             ),
           .scale = linalg::aliases::float3{0.045F},
           .initPos = linalg::aliases::float3{1.0F, 1.0F, 1.0F},
-          .initVel = linalg::aliases::float3{3.0F, 2.0F, 3.0F},
-          .initAngVel = linalg::aliases::float3{1.0F, 0.0F, 2.0F},
+          .initVel = linalg::aliases::float3{0.0F, 0.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{0.0F, 0.0F, 0.0F},
           .density = 300.0F
         };
         msg.getWriteBuffer().emplace_back(std::move(emptyBottle));

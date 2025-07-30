@@ -1,6 +1,6 @@
 #include "frontend/window.hpp"
-#include "frontend/renderer.hpp"
 #include "frontend/crosshair.hpp"
+#include "frontend/renderer.hpp"
 #include "util/error.hpp"
 
 #include <GL/glew.h>
@@ -39,6 +39,8 @@ Window::Window()
       window, [](GLFWwindow*, int width, int height) {
           Window::width = width;
           Window::height = height;
+
+          glViewport(0, 0, width, height);
 
           // very evil i must say, very evil
           // *at least* it is not across threads
