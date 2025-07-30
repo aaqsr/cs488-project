@@ -8,7 +8,7 @@ class Crosshair : public Singleton<Crosshair>
 {
     friend class Singleton<Crosshair>;
 
-    constexpr static float size = 0.5F;
+    constexpr static float size = 0.1F;
 
     static Model createCrosshairModel()
     {
