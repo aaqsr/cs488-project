@@ -8,6 +8,16 @@ git submodule update --init --recursive
 
 # Compilation
 
+**NOTE:**
+Your default compiler may not support C++ 20 fully.
+If you cannot find `std::format` during compilation, then this is because of that.
+If you are on the Linux student server, then this may be the case.
+Try using clang instead via this flag,
+```sh
+cmake -DCMAKE_CXX_COMPILER=clang++ --preset release
+```
+
+
 If you have not built the project yet, or if you add/remove source or header files, first run,
 ```sh
 # for windows
