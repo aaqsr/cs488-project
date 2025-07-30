@@ -21,63 +21,119 @@ Controller::Controller() : window{Window::GetInstance().getWindow()}
 void Controller::update(double deltaTime)
 {
     if (!inputCaptured || (camera == nullptr)) {
+        if (camera != nullptr) {
+            // Supposed to float to a stop, but isn't working?
+            float currentSpeed = linalg::length(moveVelocity);
+            if (currentSpeed > 0.001F) {
+                float newSpeed =
+                  std::max(0.0, currentSpeed - (moveDeAccel * deltaTime));
+                moveVelocity = linalg::normalize(moveVelocity) * newSpeed;
+            } else {
+                moveVelocity = {0.0F, 0.0F, 0.0F};
+            }
+        }
         return;
     }
 
-    const Quaternion& orientation = camera->getOrientation();
+    updateKeyboardState();
 
+    const Quaternion& orientation = camera->getOrientation();
     linalg::aliases::float3 forwardOrientation = orientation.forward();
 
-    // Extract yaw from quaternion for horizontal movement
+    // extract yaw from quaternion for horizontal movement
     float yaw = atan2(forwardOrientation.x, -forwardOrientation.z);
 
-    // Calculate movement direction using yaw rotation
+    // calc movement direction using yaw rotation
     linalg::aliases::float3 forward{sin(yaw), 0.0F, -cos(yaw)};
     linalg::aliases::float3 right{cos(yaw), 0.0F, sin(yaw)};
     linalg::aliases::float3 up{0.0F, 1.0F, 0.0F};
 
-    bool moveForward = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
-    bool moveBackward = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
-    bool moveLeft = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
-    bool moveRight = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
-    bool moveUp = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
-    bool moveDown = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
-
-    float velocity = moveSpeed * deltaTime;
-    linalg::aliases::float3 movement{0.0F, 0.0F, 0.0F};
-
-    // movement input (my god this is terrible, surely I can do
-    // better...SURELY)
-    if (moveForward) {
-        movement += forward * velocity;
+    linalg::aliases::float3 desiredDirection{0.0F, 0.0F, 0.0F};
+    if (moveKeyState.forward) {
+        desiredDirection += forward;
     }
-    if (moveBackward) {
-        movement -= forward * velocity;
+    if (moveKeyState.backward) {
+        desiredDirection -= forward;
     }
-    if (moveLeft) {
-        movement -= right * velocity;
+    if (moveKeyState.left) {
+        desiredDirection -= right;
     }
-    if (moveRight) {
-        movement += right * velocity;
+    if (moveKeyState.right) {
+        desiredDirection += right;
     }
-    if (moveUp) {
-        movement += up * velocity;
+    if (moveKeyState.up) {
+        desiredDirection += up;
     }
-    if (moveDown) {
-        movement -= up * velocity;
+    if (moveKeyState.down) {
+        desiredDirection -= up;
     }
 
-    // normalise diagonal movement
-    float horizontalMagnitude =
-      ((movement.x * movement.x) + (movement.z * movement.z));
-    if (horizontalMagnitude > velocity * velocity) {
-        float scale = velocity / std::sqrtf(horizontalMagnitude);
-        movement.x *= scale;
-        movement.z *= scale;
+    // normalise diagonal movement to prevent faster diagonal movement
+    float horizontalLength =
+      std::sqrt((desiredDirection.x * desiredDirection.x) +
+                (desiredDirection.z * desiredDirection.z));
+    if (horizontalLength > 1.0F) {
+        float scale = 1.0F / horizontalLength;
+        desiredDirection.x *= scale;
+        desiredDirection.z *= scale;
     }
 
-    if (movement.x != 0.0F || movement.y != 0.0F || movement.z != 0.0F) {
-        camera->move(movement);
+    updateVelocityWithMomentum(desiredDirection, deltaTime);
+
+    if (linalg::length(moveVelocity) > 0.001F) {
+        camera->move(moveVelocity * static_cast<float>(deltaTime));
+    }
+}
+
+void Controller::updateKeyboardState()
+{
+    moveKeyState.forward = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
+    moveKeyState.backward = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+    moveKeyState.left = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
+    moveKeyState.right = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+    moveKeyState.up = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+    moveKeyState.down = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+}
+
+void Controller::updateVelocityWithMomentum(
+  const linalg::aliases::float3& desiredDirection, double deltaTime)
+{
+    auto dt = static_cast<float>(deltaTime);
+
+    if (linalg::length(desiredDirection) > 0.001F) {
+        // pressing keys!
+        linalg::aliases::float3 targetVelocity =
+          desiredDirection * moveMaxSpeed;
+
+        // acceleration towards target velocity
+        linalg::aliases::float3 velocityDiff = targetVelocity - moveVelocity;
+        linalg::aliases::float3 accelerationVector =
+          velocityDiff * (moveAccel * dt);
+
+        // limit acceleration (to prevent overshooting)
+        float accelerationMagnitude = linalg::length(accelerationVector);
+        float maxAcceleration = moveAccel * moveMaxSpeed * dt;
+        if (accelerationMagnitude > maxAcceleration) {
+            accelerationVector =
+              linalg::normalize(accelerationVector) * maxAcceleration;
+        }
+
+        moveVelocity += accelerationVector;
+
+        // no exceed max speed plz plz
+        float currentSpeed = linalg::length(moveVelocity);
+        if (currentSpeed > moveMaxSpeed) {
+            moveVelocity = linalg::normalize(moveVelocity) * moveMaxSpeed;
+        }
+    } else {
+        // no input : apply de-acceleration
+        float currentSpeed = linalg::length(moveVelocity);
+        if (currentSpeed > 0.001F) {
+            float newSpeed = std::max(0.0F, currentSpeed - (moveDeAccel * dt));
+            moveVelocity = linalg::normalize(moveVelocity) * newSpeed;
+        } else {
+            moveVelocity = {0.0F, 0.0F, 0.0F};
+        }
     }
 }
 

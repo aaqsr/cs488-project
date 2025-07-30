@@ -1,6 +1,9 @@
 #pragma once
 
 #include "util/singleton.hpp"
+
+#include <linalg.h>
+
 #include <atomic>
 
 struct GLFWwindow;
@@ -21,6 +24,7 @@ class Controller : public Singleton<Controller>
     double lastMouseX = 0.0;
     double lastMouseY = 0.0;
     bool firstMouse = true;
+    float mouseSensitivity = 0.1F;
 
     // but, but, we used quaternions?? well dear reader, this is here to
     // prevent you from being able to look around the world. We do dispatch out
@@ -28,8 +32,26 @@ class Controller : public Singleton<Controller>
     float pitch = 0.0F; // in radians
 
     // Movement settings
-    float moveSpeed = 3.0F;
-    float mouseSensitivity = 0.1F;
+    struct
+    {
+        bool forward = false;
+        bool backward = false;
+        bool left = false;
+        bool right = false;
+        bool up = false;
+        bool down = false;
+    } moveKeyState;
+    linalg::aliases::float3 moveVelocity{0.0F, 0.0F, 0.0F};
+    constexpr static float moveAccel = 15.0F;
+    constexpr static float moveDeAccel = 10.0F;
+    constexpr static float moveMaxSpeed = 4.5F;
+    constexpr static float moveMomentumDamping = 0.9F;
+
+    void updateKeyboardState();
+    linalg::aliases::float3 calculateDesiredMovement() const;
+    void
+    updateVelocityWithMomentum(const linalg::aliases::float3& desiredDirection,
+                               double deltaTime);
 
     // Static callbacks
     static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
