@@ -47,6 +47,8 @@ class WaterSimulation
     constexpr static Real Cdisplacement_SolidsToFluids = 0.1F;
     constexpr static Real Cadapt_SolidsToFluids = 0.002F;
 
+    inline static Real adaptiveDeltaT = Physics::WaterSim::deltaT;
+
   private:
     StaggeredVelocityGrid<numRows, numCols> velocityGrid{};
 

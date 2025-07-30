@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <string>
 
-using Physics::WaterSim::deltaT;
+// using Physics::WaterSim::deltaT;
 
 namespace
 {
@@ -226,9 +226,8 @@ void WaterSimulation::performSingleSubStep(
   HeightGrid<numRows, numCols>& newHeightGrid,
   const HeightGrid<numRows, numCols>& prevHeightGrid, Real subDeltaT)
 {
-    // temporarily override it (TODO: holy hell this is evil)
-    const Real originalDeltaT = Physics::WaterSim::deltaT;
-    const_cast<float&>(Physics::WaterSim::deltaT) = subDeltaT;
+    // did override it (TODO: holy hell this is no longer evil)
+    WaterSimulation::adaptiveDeltaT = subDeltaT;
 
     advectVelocities();
 
@@ -284,9 +283,6 @@ void WaterSimulation::performSingleSubStep(
         velocityGrid.setVelocity_u_i_plus_half_j(i, 0, 0.0F);
         velocityGrid.setVelocity_u_i_plus_half_j(i, numCols, 0.0F);
     }
-
-    // Restore original deltaT
-    const_cast<float&>(Physics::WaterSim::deltaT) = originalDeltaT;
 }
 
 int WaterSimulation::calculateOptimalSubSteps(
@@ -374,7 +370,7 @@ Real WaterSimulation::calcHeightChangeIntegral(
         const Real h_ij = heightGrid.getWaterHeight(ii, jj);
         const Real havgmax = beta * WaterSimulation::deltaX /
                              (Physics::gravitationalAccelerationMagnitude *
-                              Physics::WaterSim::deltaT);
+                              WaterSimulation::adaptiveDeltaT);
 
         // get neighbours
         Real neighbourSum = 0.0F;
@@ -522,7 +518,7 @@ Real WaterSimulation::calcHeightChangeIntegral(
 
     const Real totalFluxDivergence =
       (uDirectionFlux + wDirectionFlux) * invDeltaX;
-    Real heightChange = -totalFluxDivergence * deltaT;
+    Real heightChange = -totalFluxDivergence * WaterSimulation::adaptiveDeltaT;
 
     //
     // again apply flux limiting to prevent extreme changes
@@ -622,9 +618,9 @@ Real2 WaterSimulation::calcVelocityChangeIntegration(
     }
 
     const Real delta_u_i_plus_half_j =
-      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) * deltaT;
+      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) * WaterSimulation::adaptiveDeltaT;
     const Real delta_w_i_j_plus_half =
-      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) * deltaT;
+      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) * WaterSimulation::adaptiveDeltaT;
 
     return {delta_u_i_plus_half_j, delta_w_i_j_plus_half};
 }
@@ -661,7 +657,7 @@ void WaterSimulation::advectVelocities()
                          w_interp};
 
             // trace back in time
-            Real2 departure_pos = pos - vel * deltaT;
+            Real2 departure_pos = pos - vel * WaterSimulation::adaptiveDeltaT;
 
             // sample old u-velocity field at departure point.
             // convert departure point in to a u-field grid coords
@@ -687,7 +683,7 @@ void WaterSimulation::advectVelocities()
             Real2 vel = {u_interp,
                          velocityGrid.getVelocity_w_i_j_plus_half(i, j)};
 
-            Real2 departure_pos = pos - vel * deltaT;
+            Real2 departure_pos = pos - vel * WaterSimulation::adaptiveDeltaT;
 
             Real2 w_pos_grid = {departure_pos.x / deltaX,
                                 (departure_pos.y / deltaX) + 0.5F};
@@ -795,7 +791,7 @@ void WaterSimulation::updateFluidWithTriangle(
 
     const Real displacementVolume =
       linalg::dot(normalOfCentroid, relativeVelocityOfCentroidWRTFluid) *
-      areaOfTriangle * deltaT;
+      areaOfTriangle * Physics::WaterSim::deltaT;
 
     const Real displacementVolumePerSubstep =
       displacementVolume / static_cast<Real>(numSubsteps);
@@ -807,7 +803,7 @@ void WaterSimulation::updateFluidWithTriangle(
         // P_s
         const Real3 currentPos =
           positionOfCentroid + velocityOfCentroid * static_cast<Real>(q) *
-                                 deltaT / static_cast<Real>(numSubsteps);
+                                 Physics::WaterSim::deltaT / static_cast<Real>(numSubsteps);
 
         const auto [i, j] = getClosestGridPoint(currentPos.x, currentPos.z);
 
@@ -832,7 +828,7 @@ void WaterSimulation::updateFluidWithTriangle(
 
             const Real velCoeffUpperBound =
               decay * Cadapt_SolidsToFluids * (depth / heights.getEta(i, j)) *
-              heightSign * (deltaT / (deltaX * deltaX)) * areaOfTriangle;
+              heightSign * (Physics::WaterSim::deltaT / (deltaX * deltaX)) * areaOfTriangle;
 
             const Real velCoeff =
               std::min(static_cast<Real>(1.0), velCoeffUpperBound);
