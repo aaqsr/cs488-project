@@ -1,7 +1,8 @@
 #pragma once
 
-#include "linalg.h"
 #include "model.hpp"
+
+#include <linalg.h>
 
 namespace DebugShape
 {
@@ -176,13 +177,13 @@ inline Model createRectangle()
 
     std::vector<Vertex> vertices = {
       // Bottom-left
-      {{-0.7F, -0.5F, 0.0F}, {0.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
+      {{-0.13F, -0.05F, 0.0F}, {0.0F, 0.0F, 0.0F}, {1.0F, 0.0F}},
       // Bottom-right
-      {{-0.1F, -0.5F, 0.0F}, {0.0F, 0.0F, 0.0F}, {1.0F, 1.0F}},
+      {{0.13F, -0.05F, 0.0F}, {0.0F, 0.0F, 0.0F}, {1.0F, 1.0F}},
       // Top-right
-      { {-0.1F, 0.5F, 0.0F}, {0.0F, 0.0F, 0.0F}, {0.0F, 1.0F}},
+      { {0.13F, 0.05F, 0.0F}, {0.0F, 0.0F, 0.0F}, {0.0F, 1.0F}},
       // Top-left
-      { {-0.7F, 0.5F, 0.0F}, {0.0F, 0.0F, 0.0F}, {0.0F, 0.0F}}
+      { {-0.13F, 0.05F, 0.0F}, {0.0F, 0.0F, 0.0F}, {0.0F, 0.0F}}
     };
 
     // Indices for two triangles forming a square

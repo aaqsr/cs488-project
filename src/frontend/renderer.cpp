@@ -1,5 +1,6 @@
 #include "frontend/renderer.hpp"
 #include "bridgeChannelData.hpp"
+#include "frontend/crosshair.hpp"
 #include "frontend/debugShapes.hpp"
 #include "frontend/shader.hpp"
 #include "linalg.h"
@@ -180,6 +181,8 @@ void Renderer::loop()
 
         /* RENDER COMMANDS HERE */
         update();
+
+        Crosshair::GetInstance().draw();
 
         // Enable this for Wireframe mode
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

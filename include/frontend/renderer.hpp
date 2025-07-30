@@ -66,10 +66,8 @@ class Renderer : public Singleton<Renderer>
     Shader sunShader{
       std::filesystem::path{"shaders/vertex/modelLightPerspTextureShader.glsl"},
       std::filesystem::path{"shaders/fragment/sunBlinnPhongTextureShader.glsl"},
-      {"projection", "view", "model", "material.diffuse",
-      "material.specular",
-                            "material.Kd", "material.Ks", "material.Ns",
-                            "viewPos"}
+      {"projection", "view", "model", "material.diffuse", "material.specular",
+                            "material.Kd", "material.Ks", "material.Ns", "viewPos"}
     };
 
     Shader waterShader{

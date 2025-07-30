@@ -1,5 +1,6 @@
 #include "frontend/window.hpp"
 #include "frontend/renderer.hpp"
+#include "frontend/crosshair.hpp"
 #include "util/error.hpp"
 
 #include <GL/glew.h>
@@ -38,7 +39,11 @@ Window::Window()
       window, [](GLFWwindow*, int width, int height) {
           Window::width = width;
           Window::height = height;
+
+          // very evil i must say, very evil
+          // *at least* it is not across threads
           Renderer::GetInstance().mainCamera.updateAspectRatio(width, height);
+          Crosshair::GetInstance().updateSize(width, height);
       });
 
     // Use framebuffer size, not window size for viewport.

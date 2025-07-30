@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include "util/error.hpp"
+#include "util/logger.hpp"
 
 namespace
 {
@@ -132,10 +133,12 @@ void Texture::loadFromFile(const std::filesystem::path& path)
         case 2: format = internalFormat = GL_RG; break;
         case 3:
             format = GL_RGB;
+            internalFormat = GL_RGB;
             // internalFormat = GL_SRGB;
             break;
         case 4:
             format = GL_RGBA;
+            internalFormat = GL_RGBA;
             // internalFormat = GL_SRGB_ALPHA;
             break;
         default:
