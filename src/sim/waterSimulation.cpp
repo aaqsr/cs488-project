@@ -899,7 +899,6 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
     // }
 
     totalForce += buoyancyForce;
-    // }
 
     const Real3 fluidVelocity = getFluidVelocityAtPosition(pos);
     const Real3 relativeVelocity = triangleVelocity - fluidVelocity;
@@ -925,29 +924,29 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
 
         if (normalDotVelocity >= 0.0F) {
             const Real normalDotFlow = linalg::dot(normal, flowDirection);
-            constexpr Real omega = 0.5F;
+            constexpr Real omega = 0.9F;
             const Real effectiveArea =
               (normalDotFlow < 0.0F)
                 ? 0.0F
                 : area * (normalDotFlow * omega + (1.0F - omega));
 
-            // drag force
-            constexpr Real dragCoefficient = 0.0F; // paper sec. 3.1
+            // drag force (for cylinder)
+            constexpr Real dragCoefficient = 0.82F; // paper sec. 3.1
             const Real3 dragForce = -0.5F * fluidDensity * dragCoefficient *
                                     effectiveArea * relativeSpeed *
                                     relativeVelocity * forceScale;
             totalForce += dragForce;
 
             // lift force
-            const Real3 crossProduct = linalg::cross(normal, flowDirection);
+            const Real3 crossProduct = linalg::cross(normal, relativeVelocity);
             const Real crossLength = linalg::length(crossProduct);
 
             if (crossLength > 1e-6F) {
                 constexpr Real liftCoefficient = 0.0F; // paper sec. 3.1
                 const Real3 liftDirection = crossProduct / crossLength;
                 const Real3 liftForce =
-                  0.5F * fluidDensity * liftCoefficient * effectiveArea *
-                  relativeSpeed * relativeSpeed * liftDirection * forceScale;
+                  -0.5F * fluidDensity * liftCoefficient * effectiveArea *
+                  relativeSpeed * linalg::cross(relativeVelocity, liftDirection) * forceScale;
                 totalForce += liftForce;
             }
 
