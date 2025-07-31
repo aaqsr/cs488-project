@@ -41,11 +41,11 @@ class WaterSimulation
 
     constexpr static Real3 upDirection_yHat = {0.0F, 1.0F, 0.0F};
 
-    constexpr static Real decayRate_SolidsToFluids = 1.5F;
+    constexpr static Real decayRate_SolidsToFluids = 1.0F; // paper recommends 1.0
     static_assert(decayRate_SolidsToFluids > 0.0F);
 
-    constexpr static Real Cdisplacement_SolidsToFluids = 1.0F;
-    constexpr static Real Cadapt_SolidsToFluids = 0.2F;
+    constexpr static Real Cdisplacement_SolidsToFluids = 1.1F; // paper recommends 1.0
+    constexpr static Real Cadapt_SolidsToFluids = 0.4F; // paper recommends 0.2
 
     inline static Real adaptiveDeltaT = Physics::WaterSim::deltaT;
 

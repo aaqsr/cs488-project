@@ -80,17 +80,19 @@ void Renderer::init()
         // };
         // msg.getWriteBuffer().emplace_back(std::move(debugCube));
 
-        // PhysicsEngineReceiverData teaPot{
-        //   .model = std::make_unique<Model>(
-        //     std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}
-        //     ),
-        //   .scale = linalg::aliases::float3{0.01F},
-        //   .initPos = linalg::aliases::float3{1.0F, 2.0F, 2.0F},
-        //   // .initVel = linalg::aliases::float3{1.0F, 1.0F, 0.0F},
-        //   .initAngVel = linalg::aliases::float3{5.0F, 2.0F, 0.0F},
-        //   .density = 3.0F
-        // };
-        // msg.getWriteBuffer().emplace_back(std::move(teaPot));
+        PhysicsEngineReceiverData teaPot{
+          .model = std::make_unique<Model>(
+            std::filesystem::path{"assets/models/teapot-brick-big/teapot.obj"}
+            ),
+          // .scale = linalg::aliases::float3{0.01F},
+          .scale = linalg::aliases::float3{0.02F},
+          .initPos = linalg::aliases::float3{3.0F, 2.0F, 3.0F},
+          .initVel = linalg::aliases::float3{0.0F, 10.0F, 0.0F},
+          .initAngVel = linalg::aliases::float3{5.0F, 2.0F, 0.0F},
+          // .density = 2300.0F
+          .density = 700.0F
+        };
+        msg.getWriteBuffer().emplace_back(std::move(teaPot));
     }
 
     {

@@ -14,5 +14,5 @@ void main() {
     vec3 waterColor = vec3(0.2, 0.6, 1.0);
     vec3 finalColor = waterColor * (0.3 + 0.7 * diff);
 
-    FragColour = vec4(finalColor, 0.5);
+    FragColour = vec4(finalColor, 0.7);
 }
