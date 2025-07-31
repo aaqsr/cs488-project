@@ -121,7 +121,7 @@ RigidBodyData::RigidBodyData(
 void RigidBodyData::applyForce(linalg::aliases::float3 force,
                                linalg::aliases::float3 contact)
 {
-    auto dist = contact - characteristics->getInertiaTensor().getCentreOfMass();
+    auto dist = contact - getWorldPosOfCenterOfMass();
     accumulatedForce += force;
     accumulatedTorque += linalg::cross(dist, force);
 }
@@ -178,8 +178,13 @@ linalg::aliases::float3 RigidBodyData::getAngularVelocity() const
 
 linalg::aliases::float3 RigidBodyData::getWorldPosOfCenterOfMass() const
 {
-    return worldPosition +
-           characteristics->getInertiaTensor().getCentreOfMass();
+    linalg::aliases::float4x4 transformMatrix =
+      linalg::mul(linalg::mul(linalg::translation_matrix(worldPosition),
+                              orientation.toMatrix4x4()),
+                  linalg::scaling_matrix(characteristics->getScale()));
+    linalg::aliases::float4 worldCenterOfMass = 
+      linalg::mul(transformMatrix, linalg::aliases::float4{characteristics->getInertiaTensor().getCentreOfMass(), 1.0F});
+    return worldCenterOfMass.xyz();
 }
 
 linalg::aliases::float3

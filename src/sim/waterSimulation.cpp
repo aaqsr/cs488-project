@@ -881,7 +881,7 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
     // if (normal.y > 0) {
         const Real maxBuoyancyDepth =
           std::min(depth, static_cast<Real>(0.2)); // TODO: what cap?
-        const Real submergedVolume = maxBuoyancyDepth * area * normal.y;
+        const Real submergedVolume = depth * area * normal.y;
 
         Real3 buoyancyForce = fluidDensity *
                               Physics::gravitationalAccelerationMagnitude *

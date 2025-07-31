@@ -237,7 +237,7 @@ void PhysicsEngine::updateRigidBodies(
 
         simulateRigidBody(rigidBodies[i], prevRigidBodies[i]);
 
-        keepWithinAABB(thePoolLimits, rigidBodies[i]);
+        // keepWithinAABB(thePoolLimits, rigidBodies[i]);
 
         if (std::isnan(rigidBodies[0].worldPosition.x +
                        rigidBodies[0].worldPosition.y +
