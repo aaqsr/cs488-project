@@ -101,5 +101,10 @@ class RigidBodyData
     [[nodiscard]] const std::vector<Triangle>& getTriangles() const;
     void invalidateTriangleCache();
 
+    void dampenAngularMomentum() {
+      angularMomentum *= 0.99999F;
+      // angularMomentum *= 0.999995F;
+    }
+
     AABB computeAABB() const;
 };

@@ -141,7 +141,7 @@ void WaterSimulation::setInitConditions(
     constexpr static auto fn = [](Real x, float y) {
         // Gaussian hump function
         const Real sigma = 0.25F;    // width of the hump
-        const Real amplitude = 0.5F; // height of the hump
+        const Real amplitude = 0.0F; // height of the hump
         Real r_squared = (x * x) + (y * y);
         return amplitude * std::exp(-r_squared / (2.0F * sigma * sigma));
     };
@@ -211,7 +211,7 @@ void WaterSimulation::update(HeightGrid<numRows, numCols>& newHeightGrid,
     currentSubStep = 0;
     accumulatedTime = 0.0;
 
-    performStabilityCheck(newHeightGrid);
+    // performStabilityCheck(newHeightGrid);
 
     {
         // corner boundary condition to prevent corner (0, 0) from getting
@@ -618,9 +618,11 @@ Real2 WaterSimulation::calcVelocityChangeIntegration(
     }
 
     const Real delta_u_i_plus_half_j =
-      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) * WaterSimulation::adaptiveDeltaT;
+      (g_over_deltaX * (eta_i_plus_1_j - eta_ij) + accelExt.x) *
+      WaterSimulation::adaptiveDeltaT;
     const Real delta_w_i_j_plus_half =
-      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) * WaterSimulation::adaptiveDeltaT;
+      (g_over_deltaX * (eta_i_j_plus_1 - eta_ij) + accelExt.z) *
+      WaterSimulation::adaptiveDeltaT;
 
     return {delta_u_i_plus_half_j, delta_w_i_j_plus_half};
 }
@@ -803,7 +805,8 @@ void WaterSimulation::updateFluidWithTriangle(
         // P_s
         const Real3 currentPos =
           positionOfCentroid + velocityOfCentroid * static_cast<Real>(q) *
-                                 Physics::WaterSim::deltaT / static_cast<Real>(numSubsteps);
+                                 Physics::WaterSim::deltaT /
+                                 static_cast<Real>(numSubsteps);
 
         const auto [i, j] = getClosestGridPoint(currentPos.x, currentPos.z);
 
@@ -828,7 +831,8 @@ void WaterSimulation::updateFluidWithTriangle(
 
             const Real velCoeffUpperBound =
               decay * Cadapt_SolidsToFluids * (depth / heights.getEta(i, j)) *
-              heightSign * (Physics::WaterSim::deltaT / (deltaX * deltaX)) * areaOfTriangle;
+              heightSign * (Physics::WaterSim::deltaT / (deltaX * deltaX)) *
+              areaOfTriangle;
 
             const Real velCoeff =
               std::min(static_cast<Real>(1.0), velCoeffUpperBound);
@@ -877,24 +881,24 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
       Physics::WaterSim::deltaT / Physics::RigidBody::deltaT;
 
     // time for buoyancy force (archimedes principle) yayyy \o/
-        const Real submergedVolume = depth * area * normal.y;
+    const Real submergedVolume = depth * area * normal.y;
 
-        Real3 buoyancyForce = fluidDensity *
+    Real3 buoyancyForce = fluidDensity *
                           (-Physics::gravitationalAccelerationMagnitude) *
-                              submergedVolume * upDirection_yHat * forceScale;
+                          submergedVolume * upDirection_yHat * forceScale;
 
-        // damping
-        // constexpr Real buoyancyDampingCoeff = 0.1F;
-        // Real upwardVelocity = linalg::dot(triangleVelocity,
-        // upDirection_yHat); if (upwardVelocity > 0) {
-        //     Real dampingForceMagnitude = buoyancyDampingCoeff * fluidDensity
-        //     *
-        //                                  (area * normal.y) * upwardVelocity *
-        //                                  forceScale;
-        //     buoyancyForce.y -= dampingForceMagnitude;
-        // }
+    // damping
+    // constexpr Real buoyancyDampingCoeff = 0.1F;
+    // Real upwardVelocity = linalg::dot(triangleVelocity,
+    // upDirection_yHat); if (upwardVelocity > 0) {
+    //     Real dampingForceMagnitude = buoyancyDampingCoeff * fluidDensity
+    //     *
+    //                                  (area * normal.y) * upwardVelocity *
+    //                                  forceScale;
+    //     buoyancyForce.y -= dampingForceMagnitude;
+    // }
 
-        totalForce += buoyancyForce;
+    totalForce += buoyancyForce;
     // }
 
     const Real3 fluidVelocity = getFluidVelocityAtPosition(pos);
@@ -928,7 +932,7 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
                 : area * (normalDotFlow * omega + (1.0F - omega));
 
             // drag force
-            constexpr Real dragCoefficient = 0.1F; // paper sec. 3.1
+            constexpr Real dragCoefficient = 0.0F; // paper sec. 3.1
             const Real3 dragForce = -0.5F * fluidDensity * dragCoefficient *
                                     effectiveArea * relativeSpeed *
                                     relativeVelocity * forceScale;
@@ -939,7 +943,7 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
             const Real crossLength = linalg::length(crossProduct);
 
             if (crossLength > 1e-6F) {
-                constexpr Real liftCoefficient = 0.05F; // paper sec. 3.1
+                constexpr Real liftCoefficient = 0.0F; // paper sec. 3.1
                 const Real3 liftDirection = crossProduct / crossLength;
                 const Real3 liftForce =
                   0.5F * fluidDensity * liftCoefficient * effectiveArea *
@@ -1011,6 +1015,8 @@ void WaterSimulation::coupleWithRigidBodies(
                 rigidBody.applyForce(
                   static_cast<linalg::aliases::float3>(fluidForce),
                   static_cast<linalg::aliases::float3>(subTriangle.centroid));
+
+                rigidBody.dampenAngularMomentum();
 
                 updateFluidWithTriangle(
                   static_cast<Real>(subTriangle.area),

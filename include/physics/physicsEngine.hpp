@@ -51,6 +51,18 @@ class PhysicsEngine
 
     void simulateRigidBody(RigidBodyData& out, const RigidBodyData& prev);
 
+    struct CollisionInfo
+    {
+        bool hasCollision = false;
+        linalg::aliases::float3 normal{0.0F};
+        linalg::aliases::float3 contactPoint{0.0F};
+        float penetrationDepth = 0.0F;
+    };
+    constexpr static float restitutionCoefficient = 0.6F;
+    constexpr static float collisionAngularDamping = 0.95F;
+    static CollisionInfo detectAABBCollision(const AABB& aabb,
+                                             const RigidBodyData& rigidBody);
+
   public:
     PhysicsEngine(Receiver<std::vector<PhysicsEngineReceiverData>>& recv);
     void updateRigidBodies(std::vector<RigidBodyData>& rigidBodies,
