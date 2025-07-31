@@ -44,8 +44,8 @@ class WaterSimulation
     constexpr static Real decayRate_SolidsToFluids = 1.5F;
     static_assert(decayRate_SolidsToFluids > 0.0F);
 
-    constexpr static Real Cdisplacement_SolidsToFluids = 0.1F;
-    constexpr static Real Cadapt_SolidsToFluids = 0.002F;
+    constexpr static Real Cdisplacement_SolidsToFluids = 1.0F;
+    constexpr static Real Cadapt_SolidsToFluids = 0.2F;
 
     inline static Real adaptiveDeltaT = Physics::WaterSim::deltaT;
 

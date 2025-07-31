@@ -87,6 +87,7 @@ class RigidBodyData
     [[nodiscard]] const linalg::aliases::float3& getWorldPosition() const;
     [[nodiscard]] const linalg::aliases::float3& getScale() const;
     [[nodiscard]] const Quaternion& getOrientation() const;
+    [[nodiscard]] const RigidBodyCharacteristics& getCharacteristics() const;
 
     [[nodiscard]] linalg::aliases::float3 getLinearVelocity() const;
     [[nodiscard]] linalg::aliases::float3 getAngularVelocity() const;

@@ -877,14 +877,10 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
       Physics::WaterSim::deltaT / Physics::RigidBody::deltaT;
 
     // time for buoyancy force (archimedes principle) yayyy \o/
-    // only apply buoyancy to upward-facing component of surfaces
-    // if (normal.y > 0) {
-        const Real maxBuoyancyDepth =
-          std::min(depth, static_cast<Real>(0.2)); // TODO: what cap?
         const Real submergedVolume = depth * area * normal.y;
 
         Real3 buoyancyForce = fluidDensity *
-                              Physics::gravitationalAccelerationMagnitude *
+                          (-Physics::gravitationalAccelerationMagnitude) *
                               submergedVolume * upDirection_yHat * forceScale;
 
         // damping
@@ -959,19 +955,6 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
             //                totalForce += pressureForce;
         }
     }
-
-    // force limiting
-    const Real maxForcePerTriangle = 0.1F;
-    const Real forceLength = linalg::length(totalForce);
-    if (forceLength > maxForcePerTriangle) {
-        totalForce = (totalForce / forceLength) * maxForcePerTriangle;
-    }
-
-    // Last resort: bad idea
-    // totalForce *= Physics::WaterSim::deltaT / (Physics::RigidBody::deltaT);
-    // totalForce *= Physics::WaterSim::deltaT / (Physics::RigidBody::deltaT);
-    // totalForce *= Physics::WaterSim::deltaT / (Physics::RigidBody::deltaT);
-    // totalForce *= Physics::WaterSim::deltaT / (Physics::RigidBody::deltaT);
 
     return totalForce;
 }

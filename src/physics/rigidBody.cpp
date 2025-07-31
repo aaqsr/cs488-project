@@ -152,6 +152,11 @@ const Quaternion& RigidBodyData::getOrientation() const
     return orientation;
 }
 
+const RigidBodyCharacteristics& RigidBodyData::getCharacteristics() const
+{
+    return *characteristics;
+}
+
 std::shared_ptr<Model> RigidBodyCharacteristics::getModelPtr() const
 {
     return model;
