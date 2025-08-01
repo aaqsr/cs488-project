@@ -267,4 +267,5 @@ void Renderer::attachPhysicsEngineCommandsChannel(
   Sender<std::vector<PhysicsEngineReceiverData>>* s)
 {
     physCmdChannel = s;
+    controller.setPhysicsCommandChannel(physCmdChannel);
 }

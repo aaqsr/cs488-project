@@ -9,6 +9,9 @@
 struct GLFWwindow;
 class WaterSimulation;
 class Camera;
+template <typename T>
+class Sender;
+struct PhysicsEngineReceiverData;
 
 class Controller : public Singleton<Controller>
 {
@@ -18,6 +21,10 @@ class Controller : public Singleton<Controller>
     // TODO: Make this safe for use after free...
     Camera* camera = nullptr;
     std::atomic<std::atomic<bool>*> isPlaying_ptr;
+
+    // Channel for sending physics commands (like throwing bottles [whaaa no
+    // way])
+    Sender<std::vector<PhysicsEngineReceiverData>>* physCmdChannel = nullptr;
 
     // Mouse state
     bool inputCaptured = false;
@@ -53,6 +60,11 @@ class Controller : public Singleton<Controller>
     updateVelocityWithMomentum(const linalg::aliases::float3& desiredDirection,
                                double deltaTime);
 
+    // Bottle throwing settings
+    constexpr static float throwSpeed = 4.0F;
+    constexpr static float throwSpinSpeed = 3.0F;
+    void throwBottle();
+
     // Static callbacks
     static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
     static void mouseButtonCallback(GLFWwindow* window, int button, int action,
@@ -67,6 +79,8 @@ class Controller : public Singleton<Controller>
 
     void setMainCamera(Camera* cam);
     void setIsPlayingBoolPtr(std::atomic<bool>* isPlayingBool_ptr);
+    void setPhysicsCommandChannel(
+      Sender<std::vector<PhysicsEngineReceiverData>>* channel);
 
     void toggleIsPlaying();
 

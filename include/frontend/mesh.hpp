@@ -44,4 +44,8 @@ class Mesh
     {
         return vertices[indices[i]];
     }
+    [[nodiscard]] const std::vector<Vertex>& getVertices() const
+    {
+        return vertices;
+    }
 };
