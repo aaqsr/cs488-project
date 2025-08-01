@@ -82,3 +82,4 @@ class Camera
 
     void setUniforms(Shader::BindObject& shader) const;
 };
+

@@ -127,6 +127,10 @@ void Skybox::setSkyboxSamplerUniform(Shader::BindObject& shader)
 
 void Skybox::setUniformsAndDraw(const Camera& mainCamera)
 {
+    // save current depth function
+    GLint depthFunc = 0;
+    glGetIntegerv(GL_DEPTH_FUNC, &depthFunc);
+
     // depth buffer fixed at 1.0 for skybox
     // so need to make sure the skybox passes the depth tests with values less
     // than or equal to the depth buffer
@@ -171,5 +175,5 @@ void Skybox::setUniformsAndDraw(const Camera& mainCamera)
 
     // Clean up
     glBindVertexArray(0);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(depthFunc);
 }
