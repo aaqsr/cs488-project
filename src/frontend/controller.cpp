@@ -5,6 +5,7 @@
 #include "frontend/window.hpp"
 #include "physics/physicsEngine.hpp"
 #include "util/logger.hpp"
+#include "util/math.hpp"
 #include "util/quaternion.hpp"
 
 #include <GLFW/glfw3.h>
@@ -157,13 +158,13 @@ void Controller::throwBottle()
     linalg::aliases::float3 throwVelocity =
       cameraFront * throwSpeed + moveVelocity;
 
-    // aaaand some random spin for realism
+    // aaaand some random spin for "realism"
     linalg::aliases::float3 randomSpin = {
-      (static_cast<float>(rand()) / RAND_MAX - 0.5F) * throwSpinSpeed,
-      (static_cast<float>(rand()) / RAND_MAX - 0.5F) * throwSpinSpeed,
-      (static_cast<float>(rand()) / RAND_MAX - 0.5F) * throwSpinSpeed};
+      (CS488Math::rand() - 0.5F) * throwSpinSpeed,
+      (CS488Math::rand() - 0.5F) * throwSpinSpeed,
+      (CS488Math::rand() - 0.5F) * throwSpinSpeed};
 
-    const float bottleDensity = 300.0F; // empty bottle density
+    const float bottleDensity = 700.0F;
 
     {
         auto msg = physCmdChannel->createMessage();
@@ -179,14 +180,13 @@ void Controller::throwBottle()
         msg.getWriteBuffer().emplace_back(std::move(thrownBottle));
     }
 
-    Logger::GetInstance().log(
-      std::format("Threw bottle with density {}\n"
-                  "  Thrown from {}, {}, {}\n"
-                  "  With velocity {}, {}, {}\n"
-                  "  With angular velocity {}, {}, {}",
-                  bottleDensity, cameraPos.x, cameraPos.y, cameraPos.z,
-                  throwVelocity.x, throwVelocity.y, throwVelocity.z,
-                  randomSpin.x, randomSpin.y, randomSpin.z));
+    Logger::GetInstance().log(std::format(
+      "Threw bottle with density {}\n"
+      "  Thrown from {}, {}, {}\n"
+      "  With velocity {}, {}, {}\n"
+      "  With angular velocity {}, {}, {}",
+      bottleDensity, cameraPos.x, cameraPos.y, cameraPos.z, throwVelocity.x,
+      throwVelocity.y, throwVelocity.z, randomSpin.x, randomSpin.y, randomSpin.z));
 }
 
 void Controller::captureMouse()

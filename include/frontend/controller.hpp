@@ -61,8 +61,8 @@ class Controller : public Singleton<Controller>
                                double deltaTime);
 
     // Bottle throwing settings
-    constexpr static float throwSpeed = 4.0F;
-    constexpr static float throwSpinSpeed = 3.0F;
+    constexpr static float throwSpeed = 10.0F;
+    constexpr static float throwSpinSpeed = 4.0F;
     void throwBottle();
 
     // Static callbacks
