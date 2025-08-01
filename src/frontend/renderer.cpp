@@ -218,7 +218,7 @@ void Renderer::loop()
         /* RENDER COMMANDS HERE */
         update();
 
-        Crosshair::GetInstance().draw();
+        HUD::GetInstance().draw();
 
         // Enable this for Wireframe mode
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
