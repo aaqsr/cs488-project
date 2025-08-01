@@ -141,7 +141,7 @@ void WaterSimulation::setInitConditions(
     constexpr static auto fn = [](Real x, float y) {
         // Gaussian hump function
         const Real sigma = 0.25F;    // width of the hump
-        const Real amplitude = 0.0F; // height of the hump
+        const Real amplitude = 0.4F; // height of the hump
         Real r_squared = (x * x) + (y * y);
         return amplitude * std::exp(-r_squared / (2.0F * sigma * sigma));
     };
@@ -943,7 +943,9 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
             const Real crossLength = linalg::length(crossProduct);
 
             if (crossLength > 1e-6F) {
-                constexpr Real liftCoefficient = 0.0F; // paper sec. 3.1
+                // paper sec. 3.1
+                constexpr Real liftCoefficient =
+                  0.007F; // most objects have no lift
                 const Real3 liftDirection = crossProduct / crossLength;
                 const Real3 liftForce =
                   0.5F * fluidDensity * liftCoefficient * effectiveArea *
