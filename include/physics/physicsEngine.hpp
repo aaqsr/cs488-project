@@ -28,6 +28,7 @@ struct PhysicsEngineReceiverData
 
     linalg::aliases::float3 initForce{0.0F};
     linalg::aliases::float3 initForceContact{0.0F};
+
     float density = 1.0F;
 };
 

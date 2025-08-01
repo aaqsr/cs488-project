@@ -23,10 +23,6 @@ class RigidBodyCharacteristics
     Inertia inertiaTensor;
     linalg::aliases::float3x3 initInvInertia{linalg::identity};
 
-    // linalg::aliases::float3 constantAcceleration =
-    //   linalg::aliases::float3{0.0F, 0.0F, 0.0F} +
-    //   Physics::gravitationalAcceleration;
-
   public:
     RigidBodyCharacteristics(std::shared_ptr<Model> rigidBodyModel,
                              linalg::aliases::float3 scale, float density);
@@ -101,9 +97,10 @@ class RigidBodyData
     [[nodiscard]] const std::vector<Triangle>& getTriangles() const;
     void invalidateTriangleCache();
 
-    void dampenAngularMomentum() {
-      angularMomentum *= 0.99999F;
-      // angularMomentum *= 0.999995F;
+    void dampenAngularMomentum()
+    {
+        angularMomentum *= 0.99999F;
+        // angularMomentum *= 0.999995F;
     }
 
     AABB computeAABB() const;
