@@ -45,7 +45,7 @@ Window::Window()
           // very evil i must say, very evil
           // *at least* it is not across threads
           Renderer::GetInstance().mainCamera.updateAspectRatio(width, height);
-          Crosshair::GetInstance().updateSize(width, height);
+          HUD::GetInstance().updateSize(width, height);
       });
 
     // Use framebuffer size, not window size for viewport.
