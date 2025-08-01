@@ -20,13 +20,6 @@
 namespace
 {
 
-constexpr auto durationToDuration(const float time_s)
-{
-    using namespace std::chrono;
-    using fsec = duration<float>;
-    return round<nanoseconds>(fsec{time_s});
-}
-
 void physicsAndSimulationThread(
   Sender<BridgeChannelData>& bridgeChannel,
   Receiver<std::vector<PhysicsEngineReceiverData>>& physCmdChannel,
@@ -44,13 +37,9 @@ void physicsAndSimulationThread(
         WaterSimulation::setInitConditions(msg.getWriteBuffer().waterHeights);
     }
 
-    // TODO: The bound here is wonky. I think we want it such that
-    // deltaT is less than the time between rendered frames??
-    // I'm not sure. See section 2.3 of R. Bridson for more
-    // We also more importantly want it so that the simulation frames that take
-    // longer For now this is an *arbitrary* amount.
-    // constexpr auto targetFrameTime = std::chrono::microseconds(50);
-    constexpr auto targetFrameTime = durationToDuration(Physics::RigidBody::deltaT);
+    // we want it such that deltaT is less than the time between rendered frames
+    constexpr auto targetFrameTime =
+      std::chrono::duration<double>{Physics::WaterSim::deltaT};
 
     IterationsPerSecondCounter msPerUpdate{"UPS", "update"};
 
