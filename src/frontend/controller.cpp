@@ -1,12 +1,15 @@
 #include "frontend/controller.hpp"
 
 #include "frontend/camera.hpp"
+#include "frontend/model.hpp"
 #include "frontend/window.hpp"
+#include "physics/physicsEngine.hpp"
 #include "util/logger.hpp"
 #include "util/quaternion.hpp"
 
 #include <GLFW/glfw3.h>
 #include <atomic>
+#include <format>
 #include <sstream>
 
 Controller::Controller() : window{Window::GetInstance().getWindow()}
@@ -137,6 +140,55 @@ void Controller::updateVelocityWithMomentum(
     }
 }
 
+void Controller::throwBottle()
+{
+    if (camera == nullptr || physCmdChannel == nullptr) {
+        return;
+    }
+
+    linalg::aliases::float3 cameraPos = camera->getPosition();
+    linalg::aliases::float3 cameraFront = camera->getFront();
+    linalg::aliases::float3 cameraRight = camera->getRight();
+    linalg::aliases::float3 cameraUp = camera->getUp();
+
+    linalg::aliases::float3 spawnOffset = cameraFront * 0.5F;
+    linalg::aliases::float3 spawnPos = cameraPos + spawnOffset;
+
+    linalg::aliases::float3 throwVelocity =
+      cameraFront * throwSpeed + moveVelocity;
+
+    // aaaand some random spin for realism
+    linalg::aliases::float3 randomSpin = {
+      (static_cast<float>(rand()) / RAND_MAX - 0.5F) * throwSpinSpeed,
+      (static_cast<float>(rand()) / RAND_MAX - 0.5F) * throwSpinSpeed,
+      (static_cast<float>(rand()) / RAND_MAX - 0.5F) * throwSpinSpeed};
+
+    const float bottleDensity = 300.0F; // empty bottle density
+
+    {
+        auto msg = physCmdChannel->createMessage();
+        PhysicsEngineReceiverData thrownBottle{
+          .model = std::make_unique<Model>(
+            std::filesystem::path{"assets/models/bottle/bottle.obj"}),
+          .scale = linalg::aliases::float3{0.045F},
+          .initPos = spawnPos,
+          .initVel = throwVelocity,
+          .initAngVel = randomSpin,
+          .density = bottleDensity};
+
+        msg.getWriteBuffer().emplace_back(std::move(thrownBottle));
+    }
+
+    Logger::GetInstance().log(
+      std::format("Threw bottle with density {}\n"
+                  "  Thrown from {}, {}, {}\n"
+                  "  With velocity {}, {}, {}\n"
+                  "  With angular velocity {}, {}, {}",
+                  bottleDensity, cameraPos.x, cameraPos.y, cameraPos.z,
+                  throwVelocity.x, throwVelocity.y, throwVelocity.z,
+                  randomSpin.x, randomSpin.y, randomSpin.z));
+}
+
 void Controller::captureMouse()
 {
     inputCaptured = true;
@@ -201,7 +253,13 @@ void Controller::mouseButtonCallback(GLFWwindow* window, int button, int action,
       static_cast<Controller*>(glfwGetWindowUserPointer(window));
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        controller->captureMouse();
+        if (controller->inputCaptured) {
+            // Mouse is already captured, so throw a bottle
+            controller->throwBottle();
+        } else {
+            // Mouse is not captured, so capture it
+            controller->captureMouse();
+        }
     }
 }
 
@@ -244,6 +302,12 @@ void Controller::setMainCamera(Camera* cam)
 void Controller::setIsPlayingBoolPtr(std::atomic<bool>* isPlayingBool_ptr)
 {
     isPlaying_ptr.store(isPlayingBool_ptr);
+}
+
+void Controller::setPhysicsCommandChannel(
+  Sender<std::vector<PhysicsEngineReceiverData>>* channel)
+{
+    physCmdChannel = channel;
 }
 
 void Controller::toggleIsPlaying()
