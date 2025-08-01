@@ -1,6 +1,7 @@
 #include "frontend/controller.hpp"
 
 #include "frontend/camera.hpp"
+#include "frontend/crosshair.hpp"
 #include "frontend/model.hpp"
 #include "frontend/window.hpp"
 #include "physics/physicsEngine.hpp"
@@ -147,6 +148,18 @@ void Controller::throwBottle()
         return;
     }
 
+    {
+        std::atomic<bool>* ptr = isPlaying_ptr.load(std::memory_order_acquire);
+        if (ptr == nullptr) {
+            return;
+        }
+        bool old = ptr->load(std::memory_order_relaxed);
+        if (!old) {
+            // we aren't playing so don't throw
+            return;
+        }
+    }
+
     linalg::aliases::float3 cameraPos = camera->getPosition();
     linalg::aliases::float3 cameraFront = camera->getFront();
     linalg::aliases::float3 cameraRight = camera->getRight();
@@ -180,13 +193,14 @@ void Controller::throwBottle()
         msg.getWriteBuffer().emplace_back(std::move(thrownBottle));
     }
 
-    Logger::GetInstance().log(std::format(
-      "Threw bottle with density {}\n"
-      "  Thrown from {}, {}, {}\n"
-      "  With velocity {}, {}, {}\n"
-      "  With angular velocity {}, {}, {}",
-      bottleDensity, cameraPos.x, cameraPos.y, cameraPos.z, throwVelocity.x,
-      throwVelocity.y, throwVelocity.z, randomSpin.x, randomSpin.y, randomSpin.z));
+    Logger::GetInstance().log(
+      std::format("Threw bottle with density {}\n"
+                  "  Thrown from {}, {}, {}\n"
+                  "  With velocity {}, {}, {}\n"
+                  "  With angular velocity {}, {}, {}",
+                  bottleDensity, cameraPos.x, cameraPos.y, cameraPos.z,
+                  throwVelocity.x, throwVelocity.y, throwVelocity.z,
+                  randomSpin.x, randomSpin.y, randomSpin.z));
 }
 
 void Controller::captureMouse()
@@ -322,5 +336,6 @@ void Controller::toggleIsPlaying()
         while (!ptr->compare_exchange_strong(old, desired)) {
             desired = !old;
         }
+        HUD::GetInstance().togglePause();
     }
 }
