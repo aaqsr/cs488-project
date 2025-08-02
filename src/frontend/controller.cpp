@@ -3,6 +3,7 @@
 #include "frontend/camera.hpp"
 #include "frontend/crosshair.hpp"
 #include "frontend/model.hpp"
+#include "frontend/renderer.hpp"
 #include "frontend/window.hpp"
 #include "physics/physicsEngine.hpp"
 #include "util/logger.hpp"
@@ -291,6 +292,7 @@ void Controller::keyCallback(GLFWwindow* window, int key, int scancode,
         switch (key) {
             case GLFW_KEY_ESCAPE: controller->releaseMouse(); break;
             case GLFW_KEY_P: controller->toggleIsPlaying(); break;
+            case GLFW_KEY_K: Renderer::GetInstance().toggleDebugMode(); break;
             case GLFW_KEY_I:
                 if (controller->camera != nullptr) {
                     std::stringstream ss;
