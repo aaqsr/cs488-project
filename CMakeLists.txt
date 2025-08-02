@@ -55,6 +55,14 @@ if (WIN32)
             "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/assets"
             COMMENT "copying assets to build directory"
     )
+
+    add_custom_command(TARGET CS488 POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/scenes"
+            "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/scenes"
+            COMMENT "copying scenes to build directory"
+    )
+
     add_custom_command(TARGET CS488 POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_SOURCE_DIR}/shaders"
@@ -68,10 +76,18 @@ if (WIN32)
             "${CMAKE_BINARY_DIR}/assets"
             COMMENT "copying assets to build directory"
     )
+
+    add_custom_command(TARGET CS488 POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/scenes"
+            "${CMAKE_BINARY_DIR}/scenes"
+            COMMENT "copying scenes to build directory"
+    )
 else ()
     # use symbolic links
     file(CREATE_LINK "${CMAKE_SOURCE_DIR}/shaders" "${CMAKE_BINARY_DIR}/shaders" SYMBOLIC)
     file(CREATE_LINK "${CMAKE_SOURCE_DIR}/assets" "${CMAKE_BINARY_DIR}/assets" SYMBOLIC)
+    file(CREATE_LINK "${CMAKE_SOURCE_DIR}/scenes" "${CMAKE_BINARY_DIR}/scenes" SYMBOLIC)
     # If we generated the compile commands, then copy or symlink compile_commands.json to the project root (only if it's not already there)
         if (CMAKE_EXPORT_COMPILE_COMMANDS)
             add_custom_command(TARGET CS488 POST_BUILD
