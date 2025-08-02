@@ -34,20 +34,20 @@ void main() {
     vec3 viewDir = normalize(viewPos - worldPos);
     vec3 lightDir = sunDirection; // sun is inf. dist away
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    
+
     // Ambient
     vec3 ambient = sunAmbient * getDiffuseColour();
-    
+
     // Diffuse
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = sunDiffuse * diff * getDiffuseColour();
-    
+
     // Specular
     float spec = pow(max(dot(norm, halfwayDir), 0.0), material.Ns);
     vec3 specular = sunSpecular * spec * getSpecularColour();
-    
+
     // Final result (no falloff for directional sun light)
     vec3 result = ambient + diffuse + specular;
-    
+
     FragColour = vec4(result, 1.0);
 }
