@@ -197,9 +197,6 @@ PhysicsEngine::PhysicsEngine(
 {
 }
 
-//
-// TODO: this is bad and we makes deletion impossible. plz fix
-//
 void PhysicsEngine::updateRigidBodies(
   std::vector<RigidBodyData>& rigidBodies,
   const std::vector<RigidBodyData>& prevRigidBodies)
@@ -229,19 +226,33 @@ void PhysicsEngine::updateRigidBodies(
     }
 
     for (size_t i = 0; i < prevRigidBodies.size(); ++i) {
-        if (rigidBodies[i].characteristics.get() !=
-            prevRigidBodies[i].characteristics.get())
-        {
+        const auto& prevBody = prevRigidBodies[i];
+        auto& body = rigidBodies[i];
+
+        if (body.characteristics.get() != prevBody.characteristics.get()) {
             throw IrrecoverableError{"Characteristic ptr mismatch"};
         }
 
-        simulateRigidBody(rigidBodies[i], prevRigidBodies[i]);
+        if (!body.enabled) {
+            continue;
+        }
+        if (body.worldPosition.y <= -0.5F) {
+            body.enabled = false;
+            continue;
+        }
 
-        keepWithinAABB(thePoolLimits, rigidBodies[i]);
+        simulateRigidBody(body, prevBody);
 
-        if (std::isnan(rigidBodies[0].worldPosition.x +
-                       rigidBodies[0].worldPosition.y +
-                       rigidBodies[0].worldPosition.z))
+        if (thePoolLimits.contains(body.worldPosition) &&
+            body.worldPosition.y <= poolHeight)
+        {
+            keepWithinAABB(thePoolLimits, body);
+        } else {
+            keepWithinAABB(theWorldLimits, body);
+        }
+
+        if (std::isnan(body.worldPosition.x + body.worldPosition.y +
+                       body.worldPosition.z))
         {
             throw IrrecoverableError{"Rigid Body position is NAN yay"};
         }
