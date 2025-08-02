@@ -42,11 +42,16 @@ class PhysicsEngine
     std::vector<std::shared_ptr<RigidBodyCharacteristics>>
       rigidBodyCharacteristics;
 
+    constexpr static float poolHeight = 1.5F;
     inline static const AABB thePoolLimits{
       linalg::aliases::float3{WaterSimulation::bottomLeftCornerWorldPos_xz.x,
                               0.25F, WaterSimulation::bottomLeftCornerWorldPos_xz.y},
       linalg::aliases::float3{  WaterSimulation::topRightCornerWorldPos_xz.x,
-                              10.0F,   WaterSimulation::topRightCornerWorldPos_xz.y}
+                              2.0F,   WaterSimulation::topRightCornerWorldPos_xz.y}
+    };
+    inline static const AABB theWorldLimits{
+      thePoolLimits.min - linalg::aliases::float3{ 5.0F, 3.0F, 5.0F},
+      thePoolLimits.max + linalg::aliases::float3{5.0F, 8.0F, 5.0F}
     };
     static void keepWithinAABB(AABB aabb, RigidBodyData& rigidBody);
 
