@@ -55,6 +55,8 @@ RigidBodyCharacteristics::RigidBodyCharacteristics(
     inertiaTensor{model->getMeshes(), scale, density},
     initInvInertia{linalg::inverse(inertiaTensor.initialInertiaMatrix())}
 {
+    computeLocalAABB();
+
     // Log model's dimensions
     const std::vector<Mesh>& meshes = model->getMeshes();
     if (meshes.empty()) {
@@ -187,8 +189,10 @@ linalg::aliases::float3 RigidBodyData::getWorldPosOfCenterOfMass() const
       linalg::mul(linalg::mul(linalg::translation_matrix(worldPosition),
                               orientation.toMatrix4x4()),
                   linalg::scaling_matrix(characteristics->getScale()));
-    linalg::aliases::float4 worldCenterOfMass = 
-      linalg::mul(transformMatrix, linalg::aliases::float4{characteristics->getInertiaTensor().getCentreOfMass(), 1.0F});
+    linalg::aliases::float4 worldCenterOfMass = linalg::mul(
+      transformMatrix,
+      linalg::aliases::float4{
+        characteristics->getInertiaTensor().getCentreOfMass(), 1.0F});
     return worldCenterOfMass.xyz();
 }
 
@@ -286,4 +290,31 @@ AABB RigidBodyData::computeAABB() const
     }
 
     return aabb;
+}
+void RigidBodyCharacteristics::computeLocalAABB()
+{
+    const std::vector<Mesh>& meshes = model->getMeshes();
+    if (meshes.empty()) {
+        localAABB =
+          AABB{linalg::aliases::float3{0.0F}, linalg::aliases::float3{0.0F}};
+        return;
+    }
+
+    linalg::aliases::float3 firstVertex =
+      linalg::cmul(meshes[0].getVertexAtFaceIndex(0).position, scale);
+    localAABB = AABB{firstVertex, firstVertex};
+
+    for (const Mesh& mesh : meshes) {
+        for (size_t face_idx = 0; face_idx < mesh.getNumFaceIndices();
+             ++face_idx)
+        {
+            linalg::aliases::float3 scaledVertex =
+              linalg::cmul(mesh.getVertexAtFaceIndex(face_idx).position, scale);
+            localAABB.expand(scaledVertex);
+        }
+    }
+}
+const AABB& RigidBodyCharacteristics::getLocalAABB() const
+{
+    return localAABB;
 }

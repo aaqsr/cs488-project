@@ -23,4 +23,14 @@ struct AABB
 
     // expand AABB to include a point
     void expand(const linalg::aliases::float3& point);
+
+    [[nodiscard]] std::array<linalg::aliases::float3, 8> getCorners() const;
+
+    // efficient AABB computation for oriented boxes.
+    // computes the new AABB that is large enough to contain the oriented AABB,
+    // and moves it to new displacement. this is an information losing
+    // transform!!
+    [[nodiscard]] AABB computeMovedAndScaledAABB(
+      const linalg::aliases::float3& displacement,
+      const linalg::aliases::float3x3& rotationMatrix) const;
 };

@@ -39,3 +39,46 @@ bool AABB::contains(const AABB& other) const
            (other.min.y >= min.y && other.max.y <= max.y) &&
            (other.min.z >= min.z && other.max.z <= max.z);
 }
+
+std::array<linalg::aliases::float3, 8> AABB::getCorners() const
+{
+
+    using linalg::aliases::float3;
+    std::array<float3, 8> corners = {
+      float3{min.x, min.y, min.z},
+      float3{max.x, min.y, min.z},
+      float3{min.x, max.y, min.z},
+      float3{max.x, max.y, min.z},
+      float3{min.x, min.y, max.z},
+      float3{max.x, min.y, max.z},
+      float3{min.x, max.y, max.z},
+      float3{max.x, max.y, max.z}
+    };
+    return corners;
+}
+
+AABB AABB::computeMovedAndScaledAABB(
+  const linalg::aliases::float3& displacement,
+  const linalg::aliases::float3x3& rotationMatrix) const
+{
+    linalg::aliases::float3 currCentre = (max + min) * 0.5F;
+    linalg::aliases::float3 currExtents = (max - min) * 0.5F;
+
+    linalg::aliases::float3 newCentre =
+      linalg::mul(rotationMatrix, currCentre) + displacement;
+
+    // Compute world extents using absolute values of rotation matrix.
+    // This gives us the maximum extent in each world axis. I think.
+    linalg::aliases::float3 worldExtents = {
+      (std::abs(rotationMatrix[0][0]) * currExtents.x) +
+        (std::abs(rotationMatrix[0][1]) * currExtents.y) +
+        (std::abs(rotationMatrix[0][2]) * currExtents.z),
+      (std::abs(rotationMatrix[1][0]) * currExtents.x) +
+        (std::abs(rotationMatrix[1][1]) * currExtents.y) +
+        (std::abs(rotationMatrix[1][2]) * currExtents.z),
+      (std::abs(rotationMatrix[2][0]) * currExtents.x) +
+        (std::abs(rotationMatrix[2][1]) * currExtents.y) +
+        (std::abs(rotationMatrix[2][2]) * currExtents.z)};
+
+    return AABB{newCentre - worldExtents, newCentre + worldExtents};
+}

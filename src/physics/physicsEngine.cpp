@@ -80,31 +80,15 @@ linalg::aliases::float3
 findValidPosition(const AABB& aabb, const RigidBodyData& rigidBody,
                   const linalg::aliases::float3& desiredPosition)
 {
-    linalg::aliases::float3 offset =
-      desiredPosition - rigidBody.getWorldPosition();
 
-    const std::vector<Triangle>& triangles = rigidBody.getTriangles();
+    const AABB& localAABB = rigidBody.getCharacteristics().getLocalAABB();
+    linalg::aliases::float3x3 rotationMatrix =
+      rigidBody.getOrientation().toMatrix3x3();
 
-    // SHOULD NEVER HAPPEN
-    if (triangles.empty()) {
-        return linalg::aliases::float3{
-          std::max(aabb.min.x, std::min(aabb.max.x, desiredPosition.x)),
-          std::max(aabb.min.y, std::min(aabb.max.y, desiredPosition.y)),
-          std::max(aabb.min.z, std::min(aabb.max.z, desiredPosition.z))};
-    }
+    AABB desiredAABB =
+      localAABB.computeMovedAndScaledAABB(desiredPosition, rotationMatrix);
 
-    // find the AABB at desired position
-    linalg::aliases::float3 firstVertex = triangles[0].vertices[0] + offset;
-    AABB desiredAABB{firstVertex, firstVertex};
-
-    for (const Triangle& triangle : triangles) {
-        for (int i = 0; i < 3; ++i) {
-            linalg::aliases::float3 vertex = triangle.vertices[i] + offset;
-            desiredAABB.expand(vertex);
-        }
-    }
-
-    // correction needed to keep AABB within bounds
+    // keep AABB in bounds :)
     linalg::aliases::float3 correction{0.0F, 0.0F, 0.0F};
 
     if (desiredAABB.min.x < aabb.min.x) {
