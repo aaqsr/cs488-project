@@ -5,6 +5,7 @@
 #include "sim/waterSimulation.hpp"
 #include "util/channel.hpp"
 #include "util/error.hpp"
+#include "util/logger.hpp"
 #include "util/perf.hpp"
 #include "util/queueChannel.hpp"
 #include "util/tripleBufferedChannel.hpp"
@@ -108,6 +109,8 @@ void run(int argc, const char* argv[])
     // Parse command line arguments
     std::filesystem::path sceneFilePath;
 
+    bool loggingEnabled = false;
+
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
 
@@ -127,11 +130,19 @@ void run(int argc, const char* argv[])
                           << sceneFilePath << "\n";
                 return;
             }
+        } else if (arg == "--log") {
+            loggingEnabled = true;
         } else {
             std::cerr << "Error: Unknown option '" << arg << "'\n";
             printUsage(argv[0]);
             return;
         }
+    }
+
+    if (loggingEnabled) {
+        Logger::GetInstance().enable();
+    } else {
+        Logger::GetInstance().disable();
     }
 
     // Do not reorder these sigh

@@ -3,5 +3,6 @@
 
 IrrecoverableError::IrrecoverableError(std::string msg) : msg{std::move(msg)}
 {
-    Logger::GetInstance().log(std::string{">>> ERROR: "} + this->msg);
+    Logger::GetInstance().enable();
+    Logger::GetInstance().log(std::string{">>> ERROR: "} + this->msg, true);
 }

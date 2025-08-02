@@ -40,7 +40,20 @@ Logger::~Logger()
     }
 }
 
-void Logger::log(std::string str)
+void Logger::log(std::string str, bool force)
 {
+    if (!force && !loggingEnabled.load()) {
+        return;
+    }
     logChannel.sendSingle(std::move(str));
+}
+
+void Logger::enable()
+{
+    loggingEnabled.store(true);
+}
+
+void Logger::disable()
+{
+    loggingEnabled.store(false);
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util/error.hpp"
 #include <charconv>
 #include <iostream>
 #include <map>
@@ -19,7 +20,7 @@ class JsonValue;
 using JsonObject = std::map<std::string, JsonValue>;
 using JsonArray = std::vector<JsonValue>;
 
-class ParsingError : public std::runtime_error
+class ParsingError : public std::runtime_error, public IrrecoverableError
 {
     size_t lineNum;
     size_t colNum;

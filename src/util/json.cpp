@@ -1,4 +1,5 @@
 #include "util/json.hpp"
+#include "util/error.hpp"
 
 namespace json
 {
@@ -83,6 +84,8 @@ JsonValue parse(std::string_view source)
 
 ParsingError::ParsingError(const std::string& message, size_t line, size_t col)
   : std::runtime_error(message + " (at line " + std::to_string(line) +
+                       ", col " + std::to_string(col) + ")"),
+    IrrecoverableError(message + " (at line " + std::to_string(line) +
                        ", col " + std::to_string(col) + ")"),
     lineNum(line), colNum(col)
 {

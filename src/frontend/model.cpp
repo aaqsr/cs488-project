@@ -144,8 +144,10 @@ void Model::loadModel()
         meshes.emplace_back(vertices, indices, materials[currentMaterialName]);
     }
 
-    std::cout << "Loaded " << meshes.size() << " meshes\n";
-    std::cout << "First mesh has " << vertices.size() << " vertices\n";
+    std::stringstream ss;
+    ss << "Loaded " << meshes.size() << " meshes\n";
+    ss << "First mesh has " << vertices.size() << " vertices\n";
+    Logger::GetInstance().log(ss.str());
 }
 
 void Model::loadMaterials(const std::filesystem::path& mtlPath)
@@ -215,4 +217,3 @@ const linalg::aliases::float4x4& Model::getModelMatrix() const
 {
     return modelMatrix;
 }
-
