@@ -59,7 +59,22 @@ class WaterSimulation
     int totalSubSteps = 1;
     Real accumulatedTime = 0.0;
     bool subStepInProgress = false;
-    // calc. optimal sub-step size based on CFL condition
+    // calc. optimal sub-step size based on CFL condition.
+    // Bound suggested in Fluid Simulation for Computer Graphics by R. Bridson
+    // in section 12.3.
+    // Incorrect computation. See WaterSimulation::calculateOptimalSubsteps
+    // instead constexpr static float deltaTBoundAbove =
+    //   cellSize / CS488Math::sqrt(gravitationalAccelerationMagnitude *
+    //   maxDepth);
+
+    // to ensure fixed deltaT is bounded above by the...bound given above, we
+    // use a fractional value of the bound (0.2 is suggested by Fluid
+    // Simulation for Computer Graphics by R. Bridson in section 12.3).
+    // constexpr static float deltaT = 0.0002F;
+    // constexpr static float deltaT = deltaTBoundAbove * 0.005F;
+    // Other bounds on deltaT:
+    // - t_n + deltaT < t_frame  [SCG by R.B. section 2.3]
+    // -
     int calculateOptimalSubSteps(
       const HeightGrid<numRows, numCols>& heightGrid) const;
     // perform single sub-step update

@@ -308,7 +308,7 @@ class RigidBodyData
      * @details This is a wrapper around the `AABB::computeMovedAndScaledAABB()`
      * method on the `AABB` class that allows us to efficiently compute the
      * world space AABB without re-iterating through the body's vertices. See
-     * `AABB::computeMovedAndScaledAABB()` for more details.
+     * `AABB::computeMovedAndScaledAABB` for more details.
      */
     AABB computeAABB() const;
 };
