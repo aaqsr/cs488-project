@@ -5,9 +5,10 @@ newmtl TestMaterial
 Ns 630.368835
 Ka 0.800604 0.800604 0.800604
 Kd 1.000000 1.000000 1.000000
-Ks 0.500000 0.500000 0.500000
+Ks 1.000000 1.000000 1.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 3
 map_Kd bottle_texture.png
+map_Ks bottle_texture_specular.png
