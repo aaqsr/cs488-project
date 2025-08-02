@@ -1,4 +1,5 @@
 #include "controller.hpp"
+#include "frontend/aabbVisualiser.hpp"
 #include "frontend/camera.hpp"
 #include "frontend/skybox.hpp"
 #include "model.hpp"
@@ -94,6 +95,9 @@ class Renderer : public Singleton<Renderer>
     Model pool{std::filesystem::path{"assets/models/pool/pool.obj"}};
 
     Skybox skybox;
+
+    AABBVisualiser aabbVisualiser;
+    std::vector<AABB> aabbs = std::vector<AABB>(30);
 
     void update();
 

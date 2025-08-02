@@ -23,6 +23,10 @@ class RigidBodyCharacteristics
     Inertia inertiaTensor;
     linalg::aliases::float3x3 initInvInertia{linalg::identity};
 
+    AABB localAABB;
+
+    void computeLocalAABB();
+
   public:
     RigidBodyCharacteristics(std::shared_ptr<Model> rigidBodyModel,
                              linalg::aliases::float3 scale, float density);
@@ -38,6 +42,7 @@ class RigidBodyCharacteristics
     [[nodiscard]] const linalg::aliases::float3x3& getInitInvInertia() const;
     [[nodiscard]] std::shared_ptr<Model> getModelPtr() const;
     [[nodiscard]] const linalg::aliases::float3& getScale() const;
+    [[nodiscard]] const AABB& getLocalAABB() const;
 };
 
 // For data that may vary every frame
