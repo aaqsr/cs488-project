@@ -183,14 +183,14 @@ void Renderer::update()
             skybox.setUniformsAndDraw(mainCamera);
         }
 
-        // {
-        //     aabbs.clear();
-        //     for (const auto& rigidBody : message.getBuffer().physicsObjects) {
-        //         aabbs.emplace_back(rigidBody.computeAABB());
-        //     }
-        //     aabbVisualiser.draw(aabbs, mainCamera.getViewMatrix(),
-        //                         mainCamera.getPerspectiveMatrix());
-        // }
+        {
+            aabbs.clear();
+            for (const auto& rigidBody : message.getBuffer().physicsObjects) {
+                aabbs.emplace_back(rigidBody.computeAABB());
+            }
+            aabbVisualiser.draw(aabbs, mainCamera.getViewMatrix(),
+                                mainCamera.getPerspectiveMatrix());
+        }
 
         // Should be last thing drawn
         {
