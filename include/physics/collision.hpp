@@ -12,7 +12,7 @@ class RigidBodyData;
  * <blockquote>
  *  "Super collider...
  *      I am dust in a mo-ment"
- * </blockquote>
+ * </blockquote> - Radiohead, Supercollider / The Butcher (2011)
  * @ingroup physics
  *
  * @details This class centralises all logic related to collisions. It follows a
