@@ -12,36 +12,92 @@
 #include <variant>
 #include <vector>
 
+/**
+ * @namespace json
+ * @brief Provides facilities for parsing and serialising JSON data.
+ * @ingroup util
+ *
+ * @details This namespace contains a complete, self-contained JSON
+ * implementation. It allows for parsing a JSON string into a hierarchical,
+ * type-safe C++ object representation, and for serialising that representation
+ * back into a string.
+ */
 namespace json
 {
 
+// Forward declaration
 class JsonValue;
 
+/**
+ * @typedef JsonObject
+ * @brief Represents a JSON object as a map from string keys to JsonValue
+ * values.
+ */
 using JsonObject = std::map<std::string, JsonValue>;
+
+/**
+ * @typedef JsonArray
+ * @brief Represents a JSON array as a vector of JsonValue values.
+ */
 using JsonArray = std::vector<JsonValue>;
 
+/**
+ * @class ParsingError
+ * @brief An exception thrown when the JSON parser encounters a syntax error.
+ * @ingroup util
+ * @details This class inherits from `std::runtime_error` and provides
+ * additional context, specifically the line and column number where the parsing
+ * error occurred.
+ */
 class ParsingError : public std::runtime_error, public IrrecoverableError
 {
     size_t lineNum;
     size_t colNum;
 
-   public:
+  public:
+    /**
+     * @brief Constructs a ParsingError.
+     * @param message A description of the syntax error.
+     * @param line The line number where the error was detected.
+     * @param col The column number where the error was detected.
+     */
     ParsingError(const std::string& message, size_t line, size_t col);
 
+    /** @brief Retrieves the line number of the error. */
     [[nodiscard]] size_t line() const;
+    /** @brief Retrieves the column number of the error. */
     [[nodiscard]] size_t col() const;
 };
 
-// variant-based class to hold any valid JSON type.
+/**
+ * @class JsonValue
+ * @brief A type-safe container for any valid JSON value.
+ * @ingroup util
+ *
+ * @section Technicality
+ * This class is the cornerstone of the JSON library. It uses `std::variant` to
+ * hold one of the possible JSON data types: `null`, `boolean`, `number` (as
+ * `double`), `string`, `array`, or `object`. This is a modern C++ approach that
+ * provides compile-time type safety, preventing the programmer from
+ * accidentally accessing a value as the wrong type.
+ *
+ * Accessing the underlying data is done via the `as...()` methods (e.g.,
+ * `asString()`, `asObject()`). These methods will throw a
+ * `std::bad_variant_access` exception if the `JsonValue` does not contain the
+ * requested type, enforcing correct usage.
+ */
 class JsonValue
 {
-    // underlying variant that holds one of the possible JSON types.
+    /**
+     * @brief The underlying variant that holds one of the possible JSON types.
+     */
     std::variant<std::nullptr_t, bool, double, std::string, JsonArray,
                  JsonObject>
       value;
 
-   public:
-    // Constructors for each JSON type
+  public:
+    /** @name Constructors */
+    ///@{
     JsonValue(std::nullptr_t = nullptr);
     JsonValue(bool b);
     JsonValue(double d);
@@ -53,16 +109,25 @@ class JsonValue
     JsonValue(JsonArray&& a);
     JsonValue(const JsonObject& o);
     JsonValue(JsonObject&& o);
+    ///@}
 
-    // Helper functions to check the contained type
+    /** @name Type Checkers */
+    ///@{
     [[nodiscard]] bool isNull() const;
     [[nodiscard]] bool isBool() const;
     [[nodiscard]] bool isNumber() const;
     [[nodiscard]] bool isString() const;
     [[nodiscard]] bool isArray() const;
     [[nodiscard]] bool isObject() const;
+    ///@}
 
-    // type-safe accessors. !!throws std::bad_variant_access on type mismatch!!
+    /**
+     * @name Type-Safe Accessors
+     * @brief These methods provide access to the underlying data.
+     * @throws std::bad_variant_access if the `JsonValue` does not contain the
+     * requested type.
+     */
+    ///@{
     bool& asBool();
     double& asNumber();
     std::string& asString();
@@ -74,14 +139,76 @@ class JsonValue
     [[nodiscard]] const std::string& asString() const;
     [[nodiscard]] const JsonArray& asArray() const;
     [[nodiscard]] const JsonObject& asObject() const;
+    ///@}
 
+    /**
+     * @brief Friend function declaration for the serialiser.
+     */
     friend void serialise(const JsonValue& val, std::ostream& os, int indent);
 };
 
-[[nodiscard]] JsonValue parse(std::string_view source);
-
+/**
+ * @brief Serialises a `JsonValue` object into a pretty-printed string
+ * representation.
+ * @param val The `JsonValue` to serialise.
+ * @param os The output stream to write the string to.
+ * @param indent The initial indentation level, used for recursive calls.
+ */
 void serialise(const JsonValue& val, std::ostream& os, int indent = 0);
 
-std::ostream& operator<<(std::ostream& os, const JsonValue& val);
+/**
+ * @class Parser
+ * @brief Parses a JSON string into a `JsonValue` object.
+ * @ingroup util
+ *
+ * @section Technicality
+ * This class implements a handwritten **recursive descent parser**. It operates
+ * on a stream of tokens generated by an internal `Lexer`. The `Lexer` performs
+ * lexical analysis, converting the raw source string into a sequence of tokens
+ * (e.g., `LeftBrace`, `String`, `Number`). The `Parser` then consumes these
+ * tokens, building the hierarchical `JsonValue` structure by recursively
+ * calling parsing functions for each language construct (objects, arrays,
+ * values).
+ *
+ * @section Performance
+ * Using `std::string_view` in the `Lexer` avoids unnecessary string copies of
+ * the source text, which is a significant performance optimization for large
+ * JSON files.
+ */
+class Parser
+{
+    // The internal implementation details (Lexer, etc.) are hidden from the
+    // public API.
+    class impl;
+    std::unique_ptr<impl> pimpl;
+
+  public:
+    /**
+     * @brief Constructs a Parser for a given JSON source string.
+     * @param source A `std::string_view` of the JSON text to be parsed.
+     */
+    Parser(std::string_view source);
+
+    /**
+     * @brief Executes the parsing process.
+     * @return A `JsonValue` representing the root of the parsed JSON document.
+     * @throws ParsingError if a syntax error is found in the source string.
+     */
+    JsonValue parse();
+
+    ~Parser();
+    Parser(Parser&&) noexcept;
+    Parser& operator=(Parser&&) noexcept;
+};
+
+/**
+ * @brief A convenience function to parse a JSON string.
+ * @param source The JSON string to parse.
+ * @return A `JsonValue` representing the parsed document.
+ */
+inline JsonValue parse(std::string_view source)
+{
+    return Parser(source).parse();
+}
 
 } // namespace json
