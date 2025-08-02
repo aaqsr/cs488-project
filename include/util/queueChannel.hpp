@@ -231,7 +231,6 @@ class MPSCQueueChannel
      */
     void sendSingle(T&& item);
 
-    // signal shutdown to all threads sleeping on us
     /** @brief Signals the channel to shut down, waking up the receiver if it is
      * sleeping. */
     void shutdown();
