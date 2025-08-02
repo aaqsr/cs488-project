@@ -85,6 +85,8 @@ void Controller::update(double deltaTime)
 
     updateVelocityWithMomentum(desiredDirection, deltaTime);
 
+    moveVelocity += desiredDirection * 0.1F;
+
     if (linalg::length(moveVelocity) > 0.001F) {
         camera->move(moveVelocity * static_cast<float>(deltaTime));
     }

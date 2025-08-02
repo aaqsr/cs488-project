@@ -63,6 +63,8 @@ class RigidBodyData
     mutable bool trianglesCacheValid = false;
 
   public:
+    bool enabled = true;
+
     RigidBodyData(std::shared_ptr<RigidBodyCharacteristics> characteristics,
                   const linalg::aliases::float3& initPos = {0.0F, 0.0F, 0.0F},
                   const linalg::aliases::float3& initVel = {0.0F, 0.0F, 0.0F},

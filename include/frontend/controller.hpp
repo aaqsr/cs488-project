@@ -49,10 +49,10 @@ class Controller : public Singleton<Controller>
         bool down = false;
     } moveKeyState;
     linalg::aliases::float3 moveVelocity{0.0F, 0.0F, 0.0F};
-    constexpr static float moveAccel = 15.0F;
-    constexpr static float moveDeAccel = 10.0F;
+    constexpr static float moveAccel = 10.0F;
+    constexpr static float moveDeAccel = 8.0F;
     constexpr static float moveMaxSpeed = 4.5F;
-    constexpr static float moveMomentumDamping = 0.9F;
+    constexpr static float moveMomentumDamping = 0.7F;
 
     void updateKeyboardState();
     linalg::aliases::float3 calculateDesiredMovement() const;

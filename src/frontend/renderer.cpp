@@ -166,6 +166,10 @@ void Renderer::update()
             Shader::BindObject boundShader = sunShader.bind();
             mainCamera.setUniforms(boundShader);
             for (const auto& rigidBody : message.getBuffer().physicsObjects) {
+                if (!rigidBody.enabled) {
+                    continue;
+                }
+
                 Model& m = *(rigidBody.getModelPtr());
                 m.updateModelMatrix(rigidBody.getWorldPosition(),
                                     rigidBody.getOrientation(),
