@@ -1,0 +1,10 @@
+newmtl Mat
+illum 4
+Kd 0.80 0.80 0.80
+Ks 0.10 0.10 0.10
+Ns 20.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd car.png
+map_Ks car_specular.png
+Ni 1.00
