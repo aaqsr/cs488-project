@@ -7,6 +7,8 @@ struct SubTriangle;
 
 /**
  * @struct Triangle
+ * @ingroup physics
+ *
  * @brief Represents a single, world-space triangle of a rigid body's physics
  * mesh.
  *
@@ -79,6 +81,8 @@ struct Triangle
 
 /**
  * @struct SubTriangle
+ * @ingroup physics
+ *
  * @brief A lightweight representation of a subdivided triangle patch.
  *
  * @details This struct is a performance optimization. When a `Triangle` is

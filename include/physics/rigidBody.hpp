@@ -12,8 +12,14 @@
 class Model;
 struct Triangle;
 
+/** @defgroup physics Physics Module
+ *  Classes related to the physics engine and the simulation of physics.
+ */
+
 /**
  * @class RigidBodyCharacteristics
+ * @ingroup physics
+ *
  * @brief Stores the intrinsic, time-invariant properties of a rigid body.
  *
  * @details This class holds data that does not change during the simulation,
@@ -119,6 +125,8 @@ class RigidBodyCharacteristics
 
 /**
  * @class RigidBodyData
+ * @ingroup physics
+ *
  * @brief Represents the dynamic state of a rigid body at a moment in time.
  *
  * @details This class encapsulates the state variables that change
@@ -242,7 +250,7 @@ class RigidBodyData
      */
     [[nodiscard]] linalg::aliases::float3 getLinearVelocity() const;
 
-    /** @brief Calculates and returns the current angular velocity. \
+    /** @brief Calculates and returns the current angular velocity.
      * \f$\omega = I_{world}^{-1}  L\f$.
      */
     [[nodiscard]] linalg::aliases::float3 getAngularVelocity() const;

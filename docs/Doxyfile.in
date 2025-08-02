@@ -1,0 +1,22 @@
+# Doxyfile.in
+
+# Project Info
+PROJECT_NAME           = "@PROJECT_NAME@"
+PROJECT_NUMBER         = "@PROJECT_VERSION@"
+
+# Input
+INPUT                  = "@CMAKE_SOURCE_DIR@/include" "@CMAKE_SOURCE_DIR@/src"
+RECURSIVE              = YES
+
+# Exclude external dependencies
+EXCLUDE                = "@CMAKE_SOURCE_DIR@/external"
+
+# Output
+OUTPUT_DIRECTORY       = "@CMAKE_SOURCE_DIR@/docs/compiled"
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+USE_MATHJAX            = YES
+
+# Extra options
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO

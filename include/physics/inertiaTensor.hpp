@@ -6,6 +6,8 @@ class Mesh;
 
 /**
  * @class Inertia
+ * @ingroup physics
+ *
  * @brief Computes the inertial properties of a rigid body from its polygonal
  * mesh representation.
  *
