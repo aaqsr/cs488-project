@@ -5,6 +5,7 @@
 #include "model.hpp"
 #include "physics/physicsEngine.hpp"
 #include "pointLight.hpp"
+#include "scene.hpp"
 #include "sim/waterMesh.hpp"
 #include "sim/waterSimulation.hpp"
 #include "util/channel.hpp"
@@ -103,6 +104,10 @@ class Renderer : public Singleton<Renderer>
 
     bool DEBUGMODE = false;
 
+    std::filesystem::path sceneFilePath;
+
+    std::vector<PhysicsEngineReceiverData> createDefaultScene();
+
   public:
     Renderer(const Renderer&) = delete;
     Renderer(Renderer&&) = delete;
@@ -122,4 +127,6 @@ class Renderer : public Singleton<Renderer>
       Sender<std::vector<PhysicsEngineReceiverData>>*);
 
     void toggleDebugMode();
+
+    void setSceneFile(const std::filesystem::path& scenePath);
 };
