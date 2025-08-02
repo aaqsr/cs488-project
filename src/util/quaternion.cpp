@@ -109,7 +109,7 @@ linalg::aliases::float4x4 toHomogenousMatrix(const linalg::aliases::float3x3& m)
 }
 } // namespace
 
-Quaternion::RotationMaterices Quaternion::toMatrix4x4AndInverse() const
+Quaternion::RotationMatrices Quaternion::toMatrix4x4AndInverse() const
 {
     const linalg::aliases::float3x3 inhomogenousRotation = linalg::qmat(q);
     // orthogonal matrix
@@ -137,16 +137,6 @@ linalg::aliases::float3 Quaternion::toEulerAngles() const
     const float yaw = atan2(t1, t0);
 
     return {roll, pitch, yaw};
-}
-
-float3 Quaternion::axis() const
-{
-    return linalg::qaxis(q);
-}
-
-float Quaternion::angle() const
-{
-    return linalg::qangle(q);
 }
 
 float3 Quaternion::forward() const
