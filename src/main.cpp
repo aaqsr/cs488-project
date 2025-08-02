@@ -39,7 +39,7 @@ void physicsAndSimulationThread(
 
     // we want it such that deltaT is less than the time between rendered frames
     constexpr auto targetFrameTime =
-      std::chrono::duration<double>{Physics::WaterSim::deltaT};
+      std::chrono::duration<double>{Physics::WaterSim::deltaT * 0.8F};
 
     IterationsPerSecondCounter msPerUpdate{"UPS", "update"};
 
@@ -93,10 +93,56 @@ void physicsAndSimulationThread(
     }
 };
 
-void run()
+void printUsage(const char* programName)
 {
+    std::cout << "Usage: " << programName << " [options]\n";
+    std::cout << "Options:\n";
+    std::cout << "  --scene <path>    Path to scene JSON file\n";
+    std::cout << "  --help           Show this help message\n";
+    std::cout
+      << "\nIf no scene file is provided, a default scene will be used.\n";
+}
+
+void run(int argc, const char* argv[])
+{
+    // Parse command line arguments
+    std::filesystem::path sceneFilePath;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+
+        if (arg == "--help" || arg == "-h") {
+            printUsage(argv[0]);
+            return;
+        } else if (arg == "--scene") {
+            if (i + 1 >= argc) {
+                std::cerr << "Error: --scene option requires a file path\n";
+                printUsage(argv[0]);
+                return;
+            }
+            sceneFilePath = argv[++i];
+
+            if (!std::filesystem::exists(sceneFilePath)) {
+                std::cerr << "Error: Scene file does not exist: "
+                          << sceneFilePath << "\n";
+                return;
+            }
+        } else {
+            std::cerr << "Error: Unknown option '" << arg << "'\n";
+            printUsage(argv[0]);
+            return;
+        }
+    }
+
     // Do not reorder these sigh
     Renderer& renderer = Renderer::GetInstance();
+
+    if (!sceneFilePath.empty()) {
+        std::cout << "Loading scene from: " << sceneFilePath << "\n";
+        renderer.setSceneFile(sceneFilePath);
+    } else {
+        std::cout << "No scene file provided, using default scene\n";
+    }
 
     // Attach channels
     TripleBufferedChannel<BridgeChannelData>
@@ -126,7 +172,7 @@ void run()
 
 } // namespace
 
-int main()
+int main(int argc, const char* argv[])
 {
-    run();
+    run(argc, argv);
 }
