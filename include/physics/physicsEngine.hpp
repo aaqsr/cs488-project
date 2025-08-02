@@ -41,28 +41,65 @@ struct PhysicsEngineReceiverData
  * @ingroup physics
  *
  * @details The engine is the top-level orchestrator for the physics simulation.
- * Its main responsibility is to drive the simulation loop each frame, which
- * involves creating new bodies, applying forces, integrating motion, and
- * invoking the collision system.
+ * Its main responsibility is to drive the simulation loop each frame.
  *
- * The engine's responsibilities have been refined. It no longer contains
- * collision logic directly. Instead, it delegates all collision detection and
- * resolution tasks to the static `SuperCollider` class. This separation of
- * concerns improves modularity and clarity.
+ * @section Architecture
+ * The engine's design incorporates several key patterns:
+ * - **Separation of Concerns:** Collision logic is entirely delegated to the
+ * static `SuperCollider` class. The engine's role is to manage state and
+ * orchestrate the main simulation phases.
+ * - **Flyweight Pattern:** It separates intrinsic, static data
+ * (`RigidBodyCharacteristics`) from extrinsic, dynamic state (`RigidBodyData`).
+ * By storing shared pointers to characteristics, multiple instances of the same
+ * object type can share this data, significantly reducing memory usage.
+ * - **Asynchronous Creation:** A `Receiver` channel is used to queue requests
+ * for new bodies. This decouples the physics thread from other threads,
+ * allowing for safe object creation without race conditions.
+ *
+ * @section Technicality
+ * This engine employs a **Position-Based Dynamics (PBD)** approach. Unlike
+ * force/momentum-based methods, the state of each body is primarily defined by
+ * its current and previous positions and orientations.
+ *
+ * The core of the simulation is the **Position Verlet integration** scheme
+ * implemented in `RigidBodyData::integrate`. Velocity is represented implicitly
+ * as the difference between the current and previous positions over the time
+ * step. The next position is then extrapolated from these two points, with an
+ * added term for acceleration:
+ * \f$ x_{n+1} = x_n + (x_n - x_{n-1}) \cdot d_{linear} + \frac{F}{m} \cdot
+ * \Delta t^2 \f$ where \f$x_n\f$ is the current position, \f$x_{n-1}\f$ is the
+ * previous position, \f$d_{linear}\f$ is a damping factor,
+ * \f$F\f$ is the total force, and \f$m\f$ is the mass. A similar Verlet-like
+ * scheme is used for rotational motion using quaternions.
+ *
+ * This method is computationally efficient and is particularly known for its
+ * excellent stability, even with large time steps. It is the foundation for
+ * modern PBD techniques where constraints are resolved by directly manipulating
+ * particle positions.
+ *
+ * The simulation loop in `updateRigidBodies` proceeds as follows:
+ * 1.  **Command Processing:** Create new bodies from the channel.
+ * 2.  **State Integration:** Call `integrate` on each body to advance its
+ * position based on its history and applied forces.
+ * 3.  **Collision Handling:** Invoke `SuperCollider` to detect and resolve
+ * penetrations. In a PBD context, this resolution often involves directly
+ * correcting the positions of colliding bodies.
+ *
+ * @section Data and Code Sources
+ * Position-Based Dynamics and Verlet integration are foundational topics in
+ * physical simulation. The techniques are detailed in numerous sources, with
+ * seminal work including the paper "Position Based Dynamics" by Matthias Müller
+ * et al. (2007) (who also was a major contributor to the water simulation
+ * paper we used. Thanks Matthias!)
+ *
+ * The quaternion math used to compute rotational dynamics was inspired by
+ * "Robust rotational-velocity-Verlet integration methods" by Dmitri Rozmanov et
+ * al. (2010), as well as the "Physics - Kinematics - Angular Velocity" article
+ * by Euclidean Space,
+ * (https://www.euclideanspace.com/physics/kinematics/angularvelocity/)
  */
 class PhysicsEngine
 {
-    /**
-     * @brief Damping factor to gradually reduce linear velocity over time,
-     * simulating friction/drag.
-     */
-    constexpr static float linearDamping = 1.0F;
-
-    /**
-     * @brief Damping factor to gradually reduce angular velocity over time.
-     */
-    constexpr static float angularDamping = 1.0F;
-
     /**
      * @brief A communication channel to receive data for creating new rigid
      * bodies asynchronously.
@@ -78,6 +115,8 @@ class PhysicsEngine
 
     /**
      * @brief Simulates a single rigid body's motion for one time step.
+     * @details This method orchestrates the application of forces and the
+     * integration of the body's state using a position-based (Verlet) scheme.
      * @param out The output state of the rigid body after the simulation step.
      * @param prev The state of the rigid body from the previous time step.
      */
@@ -94,12 +133,8 @@ class PhysicsEngine
     /**
      * @brief The main update function for the physics simulation.
      * @details This method advances the entire physics world by one time step.
-     * It performs the following steps:
-     * 1. Receives and creates any new rigid bodies requested via the channel.
-     * 2. Iterates through all bodies, calling `simulateRigidBody` to apply
-     * forces and integrate motion.
-     * 3. Invokes the `SuperCollider` to handle boundary constraints and
-     * inter-object collisions.
+     * It orchestrates the creation of new bodies, state integration, and
+     * collision handling.
      * @param rigidBodies A vector of all dynamic rigid body data to be updated.
      * @param prevRigidBodies A const reference to the state of the bodies from
      * the previous frame.
