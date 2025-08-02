@@ -1,9 +1,8 @@
 #pragma once
 
 #include "physics/AABB.hpp"
-#include "physics/constants.hpp"
 #include "physics/inertiaTensor.hpp"
-#include "util/error.hpp"
+#include "physics/rigidBodyMesh.hpp"
 #include "util/quaternion.hpp"
 
 #include <linalg.h>
@@ -49,6 +48,7 @@ class RigidBodyCharacteristics
 class RigidBodyData
 {
     friend class PhysicsEngine;
+    friend class SuperCollider;
 
     std::shared_ptr<RigidBodyCharacteristics> characteristics;
 
