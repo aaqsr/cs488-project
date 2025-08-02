@@ -183,7 +183,7 @@ void Renderer::update()
             skybox.setUniformsAndDraw(mainCamera);
         }
 
-        {
+        if (DEBUGMODE) {
             aabbs.clear();
             for (const auto& rigidBody : message.getBuffer().physicsObjects) {
                 aabbs.emplace_back(rigidBody.computeAABB());
@@ -282,4 +282,10 @@ void Renderer::attachPhysicsEngineCommandsChannel(
 {
     physCmdChannel = s;
     controller.setPhysicsCommandChannel(physCmdChannel);
+}
+
+void Renderer::toggleDebugMode()
+{
+    Logger::GetInstance().log("Toggled Debug Mode");
+    DEBUGMODE = !DEBUGMODE;
 }

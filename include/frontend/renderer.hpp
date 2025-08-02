@@ -101,6 +101,8 @@ class Renderer : public Singleton<Renderer>
 
     void update();
 
+    bool DEBUGMODE = false;
+
   public:
     Renderer(const Renderer&) = delete;
     Renderer(Renderer&&) = delete;
@@ -118,4 +120,6 @@ class Renderer : public Singleton<Renderer>
     void attachBridgeChannel(Receiver<BridgeChannelData>*);
     void attachPhysicsEngineCommandsChannel(
       Sender<std::vector<PhysicsEngineReceiverData>>*);
+
+    void toggleDebugMode();
 };
