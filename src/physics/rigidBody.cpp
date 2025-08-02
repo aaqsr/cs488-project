@@ -270,27 +270,6 @@ const std::vector<Triangle>& RigidBodyData::getTriangles() const
     return cachedTriangles;
 }
 
-AABB RigidBodyData::computeAABB() const
-{
-    const std::vector<Triangle>& triangles = getTriangles();
-
-    // fallback to position if no triangles (SHOULD NEVER HAPPEN??)
-    if (triangles.empty()) {
-        Logger::GetInstance().log("WHERE THE TRIANLGES AT");
-        const auto& pos = getWorldPosition();
-        return AABB{pos, pos};
-    }
-
-    AABB aabb{triangles[0].vertices[0], triangles[0].vertices[0]};
-
-    for (const Triangle& triangle : triangles) {
-        for (auto vertex : triangle.vertices) {
-            aabb.expand(vertex);
-        }
-    }
-
-    return aabb;
-}
 void RigidBodyCharacteristics::computeLocalAABB()
 {
     const std::vector<Mesh>& meshes = model->getMeshes();
@@ -317,4 +296,11 @@ void RigidBodyCharacteristics::computeLocalAABB()
 const AABB& RigidBodyCharacteristics::getLocalAABB() const
 {
     return localAABB;
+}
+AABB RigidBodyData::computeAABB() const
+{
+    const AABB& localAABB = characteristics->getLocalAABB();
+    linalg::aliases::float3x3 rotationMatrix = orientation.toMatrix3x3();
+
+    return localAABB.computeMovedAndScaledAABB(worldPosition, rotationMatrix);
 }
