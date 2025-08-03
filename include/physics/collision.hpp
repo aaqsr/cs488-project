@@ -36,12 +36,16 @@ class RigidBodyData;
  * The impulse-based resolution method is a classic technique in game physics,
  * detailed in sources like Chris Hecker's articles on rigid body dynamics and
  * David Baraff's papers for SIGGRAPH.
+ * We also drew some inspiration from the "Physics - Collision Detection"
+ * tutorial by the University of Newcastle, Game Engineering Lab. Accessible at
+ * https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/physicstutorials/4collisiondetection/
  *
  * @section Caveats
  * The current implementation only performs AABB-AABB collision detection. For
  * non-convex or more complex shapes, this can be inaccurate. A more advanced
  * engine would follow this phase with a precise narrow-phase algorithm like the
- * Separating Axis Theorem (SAT) on the actual mesh geometry.
+ * Separating Axis Theorem (SAT) on the actual mesh geometry. We attempted to
+ * implement such a system many times. We could not get it to work each time.
  */
 class SuperCollider
 {
