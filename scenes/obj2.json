@@ -1,0 +1,60 @@
+{
+  "staticObjects": [
+    {
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.5,
+      "position": [0.5, 2.0, 0.5],
+      "rotation": [0.0, 45.0, 0.0],
+      "shader": "light",
+      "name": "Display Bottle"
+    },
+    {
+      "modelPath": "assets/models/pool/pool.obj",
+      "scale": 1.0,
+      "position": [0.0, 0.0, 2.0],
+      "rotation": [0.0, 0.0, 0.0],
+      "shader": "light",
+      "name": "Display Pool"
+    }
+  ],
+  "pointLights": [
+    {
+      "position": [1.0, 3.0, -1.0],
+      "ambientColour": [0.2, 0.2, 0.25],
+      "diffuseColour": [0.8, 0.8, 1.0],
+      "specularColour": [1.0, 1.0, 1.0],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.1,
+      "quadraticFalloff": 0.05
+    },
+    {
+      "position": [0.0, 3.0, 5.0],
+      "ambientColour": [0.15, 0.1, 0.05],
+      "diffuseColour": [0.9, 0.6, 0.3],
+      "specularColour": [1.0, 0.8, 0.5],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.15,
+      "quadraticFalloff": 0.08
+    },
+    {
+      "position": [1.0, 3.0, 1.0],
+      "ambientColour": [0.1, 0.15, 0.1],
+      "diffuseColour": [0.6, 0.9, 0.6],
+      "specularColour": [0.8, 1.0, 0.8],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.08,
+      "quadraticFalloff": 0.03
+    },
+    {
+      "position": [4.0, 3.0, 5.0],
+      "ambientColour": [0.1, 0.15, 0.1],
+      "diffuseColour": [0.6, 0.9, 0.6],
+      "specularColour": [0.8, 1.0, 0.8],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.08,
+      "quadraticFalloff": 0.03
+    }
+  ],
+  "waterEnabled": false,
+  "waterInitialHumpSize": 0.0
+}

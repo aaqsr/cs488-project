@@ -138,9 +138,6 @@ void Renderer::init()
     if (!currentSceneData.physicsObjects.empty()) {
         physicsObjects = Scene::SceneLoader::convertToPhysicsObjects(
           currentSceneData.physicsObjects);
-    } else {
-        // Fallback to hardcoded objects if no physics objects in scene
-        physicsObjects = createDefaultScene();
     }
 
     // send scene physics objects to physics engine

@@ -1,48 +1,6 @@
 {
   "physicsObjects": [
     {
-      "name": "Full Glass Bottle",
-      "modelPath": "assets/models/bottle/bottle.obj",
-      "scale": 0.045,
-      "initPos": [
-        1.0,
-        1.0,
-        2.0
-      ],
-      "initVel": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "initAngVel": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "density": 900.0
-    },
-    {
-      "name": "Empty Glass Bottle",
-      "modelPath": "assets/models/bottle/bottle.obj",
-      "scale": 0.045,
-      "initPos": [
-        1.0,
-        1.0,
-        1.0
-      ],
-      "initVel": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "initAngVel": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "density": 300.0
-    },
-    {
       "name": "Light Goose",
       "modelPath": "assets/models/goose/Mesh_Goose.obj",
       "scale": 0.007,
@@ -62,27 +20,6 @@
         0.0
       ],
       "density": 700.0
-    },
-    {
-      "name": "Heavy Goose",
-      "modelPath": "assets/models/goose/Mesh_Goose.obj",
-      "scale": 0.007,
-      "initPos": [
-        3.0,
-        1.0,
-        1.0
-      ],
-      "initVel": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "initAngVel": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "density": 1500.0
     },
     {
       "name": "Flying Bottle",
@@ -144,5 +81,7 @@
       "shader": "flat",
       "name": "Swimming Pool"
     }
-  ]
+  ],
+  "waterEnabled": true,
+  "waterInitialHumpSize": 0.0
 }

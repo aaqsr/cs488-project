@@ -1,0 +1,193 @@
+{
+  "waterInitialHumpSize": 0.4,
+  "physicsObjects": [
+    {
+      "name": "Full Glass Bottle",
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.045,
+      "initPos": [
+        1.0,
+        1.0,
+        2.0
+      ],
+      "initVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initAngVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "light",
+      "density": 900.0
+    },
+    {
+      "name": "Empty Glass Bottle",
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.045,
+      "initPos": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "initVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initAngVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "light",
+      "density": 300.0
+    },
+    {
+      "name": "Light Goose",
+      "modelPath": "assets/models/goose/Mesh_Goose.obj",
+      "scale": 0.007,
+      "initPos": [
+        1.0,
+        1.0,
+        3.0
+      ],
+      "initVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initAngVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "light",
+      "density": 700.0
+    },
+    {
+      "name": "Heavy Goose",
+      "modelPath": "assets/models/goose/Mesh_Goose.obj",
+      "scale": 0.007,
+      "initPos": [
+        3.0,
+        1.0,
+        1.0
+      ],
+      "initVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initAngVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "light",
+      "density": 1500.0
+    },
+    {
+      "name": "Flying Bottle",
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.045,
+      "initPos": [
+        3.0,
+        2.0,
+        3.0
+      ],
+      "initVel": [
+        0.0,
+        7.0,
+        0.0
+      ],
+      "initAngVel": [
+        5.0,
+        2.0,
+        0.0
+      ],
+      "shader": "light",
+      "density": 700.0
+    },
+    {
+      "name": "Car",
+      "modelPath": "assets/models/car/car.obj",
+      "scale": 0.008,
+      "initPos": [
+        2.5,
+        2.0,
+        2.0
+      ],
+      "initVel": [
+        0.0,
+        10.0,
+        0.0
+      ],
+      "initAngVel": [
+        5.0,
+        2.0,
+        0.0
+      ],
+      "shader": "light",
+      "density": 800.0
+    }
+  ],
+  "staticObjects": [
+    {
+      "modelPath": "assets/models/pool/pool.obj",
+      "scale": 1.0,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "light",
+      "name": "Swimming Pool"
+    }
+  ],
+  "pointLights": [
+    {
+      "position": [1.0, 2.5, 1.0],
+      "ambientColour": [0.2, 0.2, 0.2],
+      "diffuseColour": [0.8, 0.8, 0.8],
+      "specularColour": [1.0, 1.0, 1.0],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.09,
+      "quadraticFalloff": 0.032
+    },
+    {
+      "position": [3.0, 2.5, 4.0],
+      "ambientColour": [0.1, 0.0, 0.0],
+      "diffuseColour": [0.9, 0.2, 0.2],
+      "specularColour": [1.0, 0.5, 0.5],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.12,
+      "quadraticFalloff": 0.01
+    },
+    {
+      "position": [1.0, 2.5, 4.0],
+      "ambientColour": [0.1, 0.0, 0.0],
+      "diffuseColour": [0.2, 0.2, 0.9],
+      "specularColour": [1.0, 0.5, 0.5],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.12,
+      "quadraticFalloff": 0.01
+    },
+    {
+      "position": [3.0, 2.5, 1.0],
+      "ambientColour": [0.1, 0.0, 0.0],
+      "diffuseColour": [0.2, 0.9, 0.2],
+      "specularColour": [1.0, 0.5, 0.5],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.12,
+      "quadraticFalloff": 0.01
+    }
+  ]
+}

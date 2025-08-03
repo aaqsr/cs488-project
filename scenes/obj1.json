@@ -1,0 +1,51 @@
+{
+  "staticObjects": [
+    {
+      "modelPath": "assets/models/cornellbox/cornellbox.obj",
+      "scale": 3.0,
+      "position": [0.0, 0.0, 0.0],
+      "rotation": [0.0, 0.0, 0.0],
+      "shader": "light",
+      "name": "Cornell Box"
+    }
+  ],
+  "pointLights": [
+    {
+      "position": [0.0, 1.2, 0.0],
+      "ambientColour": [0.1, 0.1, 0.1],
+      "diffuseColour": [1.0, 0.9, 0.8],
+      "specularColour": [1.0, 1.0, 1.0],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.3,
+      "quadraticFalloff": 0.2
+    },
+    {
+      "position": [0.8, 1.2, 0.8],
+      "ambientColour": [0.05, 0.0, 0.1],
+      "diffuseColour": [0.3, 0.1, 0.8],
+      "specularColour": [0.6, 0.4, 1.0],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.5,
+      "quadraticFalloff": 0.4
+    },
+    {
+      "position": [-0.8, 1.2, -0.8],
+      "ambientColour": [0.1, 0.05, 0.0],
+      "diffuseColour": [0.9, 0.4, 0.1],
+      "specularColour": [1.0, 0.7, 0.3],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.4,
+      "quadraticFalloff": 0.3
+    },
+    {
+      "position": [0.0, 0.5, 1.5],
+      "ambientColour": [0.0, 0.1, 0.05],
+      "diffuseColour": [0.2, 0.8, 0.4],
+      "specularColour": [0.4, 1.0, 0.6],
+      "constantFalloff": 1.0,
+      "linearFalloff": 0.6,
+      "quadraticFalloff": 0.5
+    }
+  ],
+  "waterEnabled": false
+}

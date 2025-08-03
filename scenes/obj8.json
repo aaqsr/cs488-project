@@ -1,0 +1,36 @@
+{
+  "physicsObjects": [
+    {
+      "name": "Bottle",
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.045,
+      "initPos": [2.475, 1.0, 1.475],
+      "initVel": [0.0, 0.0, 0.0],
+      "initAngVel": [0.0, 0.0, 0.0],
+      "density": 300.0,
+      "shader": "sun"
+    },
+    {
+      "name": "Bottle 2",
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.045,
+      "initPos": [2.475, 1.0, 3.475],
+      "initVel": [0.0, 0.0, 0.0],
+      "initAngVel": [0.0, 1.0, 0.0],
+      "density": 900.0,
+      "shader": "sun"
+    }
+  ],
+  "staticObjects": [
+    {
+      "modelPath": "assets/models/pool/pool.obj",
+      "scale": 1.0,
+      "position": [0.0, 0.0, 0.0],
+      "rotation": [0.0, 0.0, 0.0],
+      "shader": "flat",
+      "name": "Collision Pool"
+    }
+  ],
+  "waterEnabled": true,
+  "waterInitialHumpSize": 0.4
+}

@@ -1,0 +1,155 @@
+{
+  "waterInitialHumpSize": 0.4,
+  "physicsObjects": [
+    {
+      "name": "Full Glass Bottle",
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.045,
+      "initPos": [
+        1.0,
+        1.0,
+        2.0
+      ],
+      "initVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initAngVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "flat",
+      "density": 900.0
+    },
+    {
+      "name": "Empty Glass Bottle",
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.045,
+      "initPos": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "initVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initAngVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "flat",
+      "density": 300.0
+    },
+    {
+      "name": "flat Goose",
+      "modelPath": "assets/models/goose/Mesh_Goose.obj",
+      "scale": 0.007,
+      "initPos": [
+        1.0,
+        1.0,
+        3.0
+      ],
+      "initVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initAngVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "flat",
+      "density": 700.0
+    },
+    {
+      "name": "Heavy Goose",
+      "modelPath": "assets/models/goose/Mesh_Goose.obj",
+      "scale": 0.007,
+      "initPos": [
+        3.0,
+        1.0,
+        1.0
+      ],
+      "initVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initAngVel": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "flat",
+      "density": 1500.0
+    },
+    {
+      "name": "Flying Bottle",
+      "modelPath": "assets/models/bottle/bottle.obj",
+      "scale": 0.045,
+      "initPos": [
+        3.0,
+        2.0,
+        3.0
+      ],
+      "initVel": [
+        0.0,
+        7.0,
+        0.0
+      ],
+      "initAngVel": [
+        5.0,
+        2.0,
+        0.0
+      ],
+      "shader": "flat",
+      "density": 700.0
+    },
+    {
+      "name": "Car",
+      "modelPath": "assets/models/car/car.obj",
+      "scale": 0.008,
+      "initPos": [
+        2.5,
+        2.0,
+        2.0
+      ],
+      "initVel": [
+        0.0,
+        10.0,
+        0.0
+      ],
+      "initAngVel": [
+        5.0,
+        2.0,
+        0.0
+      ],
+      "shader": "flat",
+      "density": 800.0
+    }
+  ],
+  "staticObjects": [
+    {
+      "modelPath": "assets/models/pool/pool.obj",
+      "scale": 1.0,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "flat",
+      "name": "Swimming Pool"
+    }
+  ]
+}
