@@ -289,18 +289,14 @@ void SuperCollider::resolveAABBCollision(RigidBodyData& bodyA,
     linalg::aliases::float3 uB = bodyB.worldPosition - bodyB.prevWorldPosition;
     linalg::aliases::float3 uA_along_dir = linalg::dot(collision.normal, uA) * collision.normal;
     linalg::aliases::float3 uB_along_dir = linalg::dot(-collision.normal, uB) * -collision.normal;
-    linalg::aliases::float3 bodyA_F = (
-      2 * bodyA.worldPosition - bodyA.prevWorldPosition // reflection
-      + correctionAmount * ratioA * collision.normal // correction
-      -(1 - ratio1) * uA_along_dir // initial velocities remaining component along collision dir
+    linalg::aliases::float3 bodyA_F = -(
+      + ratio1 * uA_along_dir // initial velocities remaining component along collision dir
       + ratio2A * -uB_along_dir
-    ) * massA  / Physics::RigidBody::deltaT / MAGIC_VALUE;
-    linalg::aliases::float3 bodyB_F = (
-      2 * bodyB.worldPosition - bodyB.prevWorldPosition // reflection
-      - correctionAmount * ratioB * collision.normal // correction
-      - (1 - (-ratio1)) * uB_along_dir // initial velocities remaining component along collision dir
+    ) * massA  / Physics::RigidBody::deltaT / Physics::RigidBody::deltaT / MAGIC_VALUE;
+    linalg::aliases::float3 bodyB_F = -(
+      - ratio1 * uB_along_dir // initial velocities remaining component along collision dir
       + ratio2B * -uA_along_dir
-    ) * massB / Physics::RigidBody::deltaT / MAGIC_VALUE;
+    ) * massB / Physics::RigidBody::deltaT / Physics::RigidBody::deltaT / MAGIC_VALUE;
     bodyA.accumulatedTorque += linalg::cross(collision.contactPoint - bodyA.getWorldPosOfCenterOfMass(), bodyA_F);
     bodyB.accumulatedTorque += linalg::cross(collision.contactPoint - bodyB.getWorldPosOfCenterOfMass(), bodyB_F);
     bodyA.worldPosition += correctionAmount * ratioA * collision.normal;
