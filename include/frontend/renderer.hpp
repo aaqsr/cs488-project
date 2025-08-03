@@ -74,17 +74,10 @@ class Renderer : public Singleton<Renderer>
 
     Shader waterShader{
       std::filesystem::path{"shaders/vertex/waterSurface.glsl"},
-      std::filesystem::path{"shaders/geometry/waterSurface.glsl"},
-      std::filesystem::path{"shaders/fragment/simpleWaterSurface.glsl"},
-      // std::filesystem::path{"shaders/fragment/reflectiveWaterSurface.glsl"},
-      // std::filesystem::path{"shaders/fragment/pbrWaterSurface.glsl"},
-      // std::filesystem::path{"shaders/fragment/opaqueWaterSurface.glsl"},
-      // std::filesystem::path{"shaders/fragment/cartoonyReflectiveWaterSurface.glsl"},
-      // std::filesystem::path{"shaders/fragment/fastReflectiveWaterSurface.glsl"},
-      {
-                            "projection", "view", "model",
-                            // "cameraPos", "skybox"
-      }
+      std::filesystem::path{"shaders/geometry/phongWaterSurface.glsl"},
+      // std::filesystem::path{"shaders/fragment/simpleWaterSurface.glsl"},
+      std::filesystem::path{"shaders/fragment/blinnPhongWaterSurface.glsl"},
+      {"projection", "view", "model", "cameraPos", "skybox"}
     };
 
     PointLight light;
