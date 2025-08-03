@@ -195,6 +195,69 @@ void Renderer::update()
         auto message = bridgeChannel->receive();
 
         {
+            // Check for splash conditions and emit particles (only when
+            // simulation is running)
+            if (isThisNewData) {
+                for (const auto& rigidBody : message.getBuffer().physicsObjects)
+                {
+                    if (!rigidBody.enabled) {
+                        continue;
+                    }
+
+                    linalg::aliases::float3 position =
+                      rigidBody.getWorldPosition();
+                    linalg::aliases::float3 velocity =
+                      rigidBody.getLinearVelocity();
+
+                    // Simple splash detection: check if object is moving fast
+                    // and near water surface
+                    float velocityMagnitude = linalg::length(velocity);
+                    if (velocityMagnitude > 1.0F) {
+                        // Check if near water surface
+                        if (WaterSimulation::isPositionInWater(
+                              position, message.getBuffer().waterHeights))
+                        {
+                            float intensity =
+                              std::min(0.8F, velocityMagnitude / 5.0F);
+                            particleSystem.emitSplash(position, velocity,
+                                                      intensity);
+                        }
+                    }
+                }
+            }
+
+            // Update particles only when simulation is running
+            // Check if we received new data to determine if simulation is
+            // running
+            float simulationDeltaTime = isThisNewData ? deltaTime : 0.0;
+
+            particleSystem.update(
+              simulationDeltaTime,
+              [&message](const linalg::aliases::float3& pos) -> float {
+                  if (!WaterSimulation::isPositionInWater(
+                        pos, message.getBuffer().waterHeights))
+                  {
+                      return 0.0F;
+                  }
+
+                  size_t i = static_cast<size_t>(
+                    (pos.z - WaterSimulation::bottomLeftCornerWorldPos_xz.y) /
+                    WaterSimulation::cellSize);
+                  size_t j = static_cast<size_t>(
+                    (pos.x - WaterSimulation::bottomLeftCornerWorldPos_xz.x) /
+                    WaterSimulation::cellSize);
+
+                  if (i >= WaterSimulation::numRows ||
+                      j >= WaterSimulation::numCols)
+                  {
+                      return 0.0F;
+                  }
+
+                  return message.getBuffer().waterHeights.getWaterHeight(i, j);
+              });
+        }
+
+        {
             Shader::BindObject boundShader = sunShader.bind();
             mainCamera.setUniforms(boundShader);
             for (const auto& rigidBody : message.getBuffer().physicsObjects) {
@@ -235,6 +298,11 @@ void Renderer::update()
             }
 
             waterMesh.draw(boundShader, mainCamera.getPosition());
+        }
+
+        // render particles
+        if (particleSystem.getAliveCount() > 0) {
+            particleRenderer.draw(particleSystem, mainCamera);
         }
     }
 }

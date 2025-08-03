@@ -948,7 +948,8 @@ Real3 WaterSimulation::computeFluidForceOnTriangle(
                 const Real3 liftDirection = crossProduct / crossLength;
                 const Real3 liftForce =
                   -0.5F * fluidDensity * liftCoefficient * effectiveArea *
-                  relativeSpeed * linalg::cross(relativeVelocity, liftDirection) * forceScale;
+                  relativeSpeed *
+                  linalg::cross(relativeVelocity, liftDirection) * forceScale;
                 totalForce += liftForce;
             }
 
@@ -983,6 +984,10 @@ void WaterSimulation::coupleWithRigidBodies(
   std::vector<RigidBodyData>& rigidBodies,
   HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heights)
 {
+
+    static std::function<void(const Real3&, const Real3&, Real)> emitParticles =
+      nullptr;
+
     // TODO: Do this with area < kappa delta x^2 bound as suggested by the paper
     constexpr int subdivisions = 1;
 
@@ -996,17 +1001,40 @@ void WaterSimulation::coupleWithRigidBodies(
               triangle.subdivide(subdivisions);
 
             for (const SubTriangle& subTriangle : subTriangles) {
-                if (!isPositionInWater(static_cast<Real3>(subTriangle.centroid),
-                                       heights))
-                {
+                Real3 centroid = static_cast<Real3>(subTriangle.centroid);
+
+                if (!isPositionInWater(centroid, heights)) {
                     continue;
                 }
 
-                Real3 triangleVelocity = static_cast<Real3>(
-                  rigidBody.getPointVelocity(subTriangle.centroid));
+                Real3 triangleVelocity =
+                  static_cast<Real3>(rigidBody.getPointVelocity(centroid));
 
-                Real3 fluidVelocity = getFluidVelocityAtPosition(
-                  static_cast<Real3>(subTriangle.centroid));
+                // Emit splash particles if object is moving fast enough into
+                // water
+                Real velocityMagnitude = linalg::length(triangleVelocity);
+                if (emitParticles && velocityMagnitude > 0.5f) {
+                    Real waterSurfaceHeight = heights.getWaterHeight(
+                      static_cast<size_t>(
+                        (centroid.z - bottomLeftCornerWorldPos_xz.y) /
+                        cellSize),
+                      static_cast<size_t>(
+                        (centroid.x - bottomLeftCornerWorldPos_xz.x) /
+                        cellSize));
+
+                    // Only emit if close to surface
+                    if (std::abs(centroid.y - waterSurfaceHeight) < 0.1f) {
+                        Real intensity =
+                          std::min(1.0f, velocityMagnitude / 5.0f);
+                        Real3 splashPos = centroid;
+                        splashPos.y =
+                          waterSurfaceHeight; // Emit at water surface
+                        emitParticles(splashPos, triangleVelocity, intensity);
+                    }
+                }
+
+                Real3 fluidVelocity =
+                  getFluidVelocityAtPosition(static_cast<Real3>(centroid));
 
                 Real3 relativeVelocity = triangleVelocity - fluidVelocity;
 
@@ -1015,15 +1043,15 @@ void WaterSimulation::coupleWithRigidBodies(
 
                 rigidBody.applyForce(
                   static_cast<linalg::aliases::float3>(fluidForce),
-                  static_cast<linalg::aliases::float3>(subTriangle.centroid));
+                  static_cast<linalg::aliases::float3>(centroid));
 
                 rigidBody.dampenAngularMomentum();
 
-                updateFluidWithTriangle(
-                  static_cast<Real>(subTriangle.area),
-                  static_cast<Real3>(subTriangle.centroid), triangleVelocity,
-                  relativeVelocity, static_cast<Real3>(subTriangle.normal),
-                  heights);
+                updateFluidWithTriangle(static_cast<Real>(subTriangle.area),
+                                        static_cast<Real3>(centroid),
+                                        triangleVelocity, relativeVelocity,
+                                        static_cast<Real3>(subTriangle.normal),
+                                        heights);
             }
         }
     }

@@ -1,6 +1,7 @@
 #include "controller.hpp"
 #include "frontend/aabbVisualiser.hpp"
 #include "frontend/camera.hpp"
+#include "frontend/particleSystem.hpp"
 #include "frontend/skybox.hpp"
 #include "model.hpp"
 #include "physics/physicsEngine.hpp"
@@ -41,6 +42,9 @@ class Renderer : public Singleton<Renderer>
     Sender<std::vector<PhysicsEngineReceiverData>>* physCmdChannel = nullptr;
 
     WaterMesh waterMesh;
+
+    ParticleSystem particleSystem;
+    ParticleRenderer particleRenderer;
 
     // TODO: Make it easier for user to change the shader and model without
     // having to come in here and poke about

@@ -135,6 +135,17 @@ class CS488Math
     }
 
     /**
+     * @brief Returns a pseudo-random float in the given range [min, max).
+     * @param min The minimum value of the range (inclusive).
+     * @param max The maximum value of the range (exclusive).
+     * @return A float in the range [min, max).
+     */
+    static float randInRange(float min, float max)
+    {
+        return min + (rand() * (max - min));
+    }
+
+    /**
      * @brief A public alias for the compile-time square root function.
      * @return The compile-time computed square root of x.
      */

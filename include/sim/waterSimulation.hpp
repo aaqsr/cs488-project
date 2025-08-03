@@ -339,6 +339,12 @@ class WaterSimulation
     WaterSimulation& operator=(WaterSimulation&&) = delete;
 
     /**
+     * @brief Get particle emitter callback for splash effects
+     */
+    std::function<void(const Real3&, const Real3&, Real)>
+    getParticleEmitter() const;
+
+    /**
      * @brief Sets the initial state of the water surface.
      * @param heightGrid The height grid to be initialized, typically with a
      * disturbance like a sine wave.
