@@ -12,7 +12,7 @@ class RigidBodyData;
  * <blockquote>
  *  "Super collider...
  *      I am dust in a mo-ment"
- * </blockquote> - Radiohead, Supercollider / The Butcher (2011)
+ * </blockquote> - Radiohead, Supercollider (2011)
  * @ingroup physics
  *
  * @details This class centralises all logic related to collisions. It follows a
@@ -34,10 +34,8 @@ class RigidBodyData;
  *
  * @section Data and Code Sources
  * The impulse-based resolution method is a classic technique in game physics,
- * detailed in sources like Chris Hecker's articles on rigid body dynamics and
- * David Baraff's papers for SIGGRAPH.
- * We also drew some inspiration from the "Physics - Collision Detection"
- * tutorial by the University of Newcastle, Game Engineering Lab. Accessible at
+ * We drew some inspiration from the "Physics - Collision Detection" tutorial by
+ * the University of Newcastle, Game Engineering Lab. Accessible at
  * https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/physicstutorials/4collisiondetection/
  *
  * @section Caveats
