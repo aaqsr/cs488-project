@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-class PhysicsEngineReceiverData;
+struct PhysicsEngineReceiverData;
 
 namespace Scene
 {
