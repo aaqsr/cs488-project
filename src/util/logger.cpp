@@ -48,6 +48,12 @@ void Logger::log(std::string str, bool force)
     logChannel.sendSingle(std::move(str));
 }
 
+void Logger::log(linalg::aliases::float3 f, bool force) {
+    std::stringstream iss;
+    iss << f.x << ", " << f.y << ", "  << f.z;
+    Logger::GetInstance().log(iss.str(), force);
+}
+
 void Logger::enable()
 {
     loggingEnabled.store(true);

@@ -69,16 +69,7 @@ AABB AABB::computeMovedAndScaledAABB(
 
     // Compute world extents using absolute values of rotation matrix.
     // This gives us the maximum extent in each world axis. I think.
-    linalg::aliases::float3 worldExtents = {
-      (std::abs(rotationMatrix[0][0]) * currExtents.x) +
-        (std::abs(rotationMatrix[0][1]) * currExtents.y) +
-        (std::abs(rotationMatrix[0][2]) * currExtents.z),
-      (std::abs(rotationMatrix[1][0]) * currExtents.x) +
-        (std::abs(rotationMatrix[1][1]) * currExtents.y) +
-        (std::abs(rotationMatrix[1][2]) * currExtents.z),
-      (std::abs(rotationMatrix[2][0]) * currExtents.x) +
-        (std::abs(rotationMatrix[2][1]) * currExtents.y) +
-        (std::abs(rotationMatrix[2][2]) * currExtents.z)};
+    linalg::aliases::float3 worldExtents = linalg::mul(linalg::abs(rotationMatrix), currExtents);
 
     return AABB{newCentre - worldExtents, newCentre + worldExtents};
 }

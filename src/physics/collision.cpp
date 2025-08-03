@@ -1,4 +1,6 @@
 #include "physics/collision.hpp"
+#include "linalg.h"
+#include "physics/constants.hpp"
 #include "physics/rigidBody.hpp"
 
 namespace
@@ -207,7 +209,7 @@ SuperCollider::detectAABBCollision(const RigidBodyData& bodyA,
         // determine direction based on relative positions
         linalg::aliases::float3 centerA = (aabbA.max + aabbA.min) * 0.5F;
         linalg::aliases::float3 centerB = (aabbB.max + aabbB.min) * 0.5F;
-        if (centerA.x > centerB.x) {
+        if (centerA.x < centerB.x) {
             collision.normal.x = -1.0F;
         }
 
@@ -227,7 +229,7 @@ SuperCollider::detectAABBCollision(const RigidBodyData& bodyA,
 
         linalg::aliases::float3 centerA = (aabbA.max + aabbA.min) * 0.5F;
         linalg::aliases::float3 centerB = (aabbB.max + aabbB.min) * 0.5F;
-        if (centerA.y > centerB.y) {
+        if (centerA.y < centerB.y) {
             collision.normal.y = -1.0F;
         }
 
@@ -247,7 +249,7 @@ SuperCollider::detectAABBCollision(const RigidBodyData& bodyA,
 
         linalg::aliases::float3 centerA = (aabbA.max + aabbA.min) * 0.5F;
         linalg::aliases::float3 centerB = (aabbB.max + aabbB.min) * 0.5F;
-        if (centerA.z > centerB.z) {
+        if (centerA.z < centerB.z) {
             collision.normal.z = -1.0F;
         }
 
@@ -269,63 +271,40 @@ void SuperCollider::resolveAABBCollision(RigidBodyData& bodyA,
                                          RigidBodyData& bodyB,
                                          const AABBCollisionInfo& collision)
 {
-    AABB aabbA = bodyA.computeAABB();
-    AABB aabbB = bodyB.computeAABB();
-
-    linalg::aliases::float3 centerA = (aabbA.min + aabbA.max) * 0.5F;
-    linalg::aliases::float3 centerB = (aabbB.min + aabbB.max) * 0.5F;
-
-    float overlapX =
-      std::min(aabbA.max.x, aabbB.max.x) - std::max(aabbA.min.x, aabbB.min.x);
-    float overlapY =
-      std::min(aabbA.max.y, aabbB.max.y) - std::max(aabbA.min.y, aabbB.min.y);
-    float overlapZ =
-      std::min(aabbA.max.z, aabbB.max.z) - std::max(aabbA.min.z, aabbB.min.z);
-
-    // find minimum overlap axis
-    enum class Axis : uint8_t { X, Y, Z };
-    Axis minAxis = Axis::X;
-    float minOverlap = overlapX;
-
-    if (overlapY < minOverlap) {
-        minOverlap = overlapY;
-        minAxis = Axis::Y;
-    }
-    if (overlapZ < minOverlap) {
-        minOverlap = overlapZ;
-        minAxis = Axis::Z;
-    }
-
-    float direction = 0.0F;
-    if (minAxis == Axis::X) {
-        direction = (centerA.x < centerB.x) ? -1.0F : 1.0F;
-    } else if (minAxis == Axis::Y) {
-        direction = (centerA.y < centerB.y) ? -1.0F : 1.0F;
-    } else {
-        direction = (centerA.z < centerB.z) ? -1.0F : 1.0F;
-    }
-
+    float MAGIC_VALUE = 50.0F;
     float massA = bodyA.getCharacteristics().getInertiaTensor().getMass();
     float massB = bodyB.getCharacteristics().getInertiaTensor().getMass();
 
     float totalMass = massA + massB;
     float ratioA = (massB / totalMass);
     float ratioB = (massA / totalMass);
+    // new velecity ratios
+    float ratio1 = (massA - massB) / totalMass;
+    float ratio2A = 2 * massB / totalMass;
+    float ratio2B = 2 * massA / totalMass;
 
     // we use half the overlap
-    float correctionAmount = 0.5F * minOverlap;
-
-    // apply just enough correction along the minimum axis
-    if (minAxis == Axis::X) {
-        bodyA.worldPosition.x += correctionAmount * ratioA * direction;
-        bodyB.worldPosition.x -= correctionAmount * ratioB * direction;
-    } else if (minAxis == Axis::Y) {
-        bodyA.worldPosition.y += correctionAmount * ratioA * direction;
-        bodyB.worldPosition.y -= correctionAmount * ratioB * direction;
-    } else {
-        bodyA.worldPosition.z += correctionAmount * ratioA * direction;
-        bodyB.worldPosition.z -= correctionAmount * ratioB * direction;
-    }
+    float correctionAmount = 0.5F * collision.penetrationDepth;
+    linalg::aliases::float3 uA = bodyA.worldPosition - bodyA.prevWorldPosition;
+    linalg::aliases::float3 uB = bodyB.worldPosition - bodyB.prevWorldPosition;
+    linalg::aliases::float3 uA_along_dir = linalg::dot(collision.normal, uA) * collision.normal;
+    linalg::aliases::float3 uB_along_dir = linalg::dot(-collision.normal, uB) * -collision.normal;
+    linalg::aliases::float3 bodyA_F = (
+      2 * bodyA.worldPosition - bodyA.prevWorldPosition // reflection
+      + correctionAmount * ratioA * collision.normal // correction
+      -(1 - ratio1) * uA_along_dir // initial velocities remaining component along collision dir
+      + ratio2A * -uB_along_dir
+    ) * massA  / Physics::RigidBody::deltaT / MAGIC_VALUE;
+    linalg::aliases::float3 bodyB_F = (
+      2 * bodyB.worldPosition - bodyB.prevWorldPosition // reflection
+      - correctionAmount * ratioB * collision.normal // correction
+      - (1 - (-ratio1)) * uB_along_dir // initial velocities remaining component along collision dir
+      + ratio2B * -uA_along_dir
+    ) * massB / Physics::RigidBody::deltaT / MAGIC_VALUE;
+    bodyA.accumulatedTorque += linalg::cross(collision.contactPoint - bodyA.getWorldPosOfCenterOfMass(), bodyA_F);
+    bodyB.accumulatedTorque += linalg::cross(collision.contactPoint - bodyB.getWorldPosOfCenterOfMass(), bodyB_F);
+    bodyA.worldPosition += correctionAmount * ratioA * collision.normal;
+    bodyB.worldPosition -= correctionAmount * ratioB * collision.normal; 
 }
 
 void SuperCollider::processAABBCollisions(

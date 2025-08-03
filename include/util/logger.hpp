@@ -110,6 +110,12 @@ class Logger : public Singleton<Logger>
     void log(std::string str, bool force = false);
 
     /**
+     * @brief Enqueues a float3 to be logged asynchronously.
+     * @param f The float3 to log.
+     */
+    void log(linalg::aliases::float3 f, bool force = false);
+
+    /**
      * @brief A template utility function to log the contents of a 2D grid or
      * array.
      * @details This function is useful for debugging grid-based data
