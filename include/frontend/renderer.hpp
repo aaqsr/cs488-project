@@ -17,6 +17,7 @@
 
 #include "GLFW/glfw3.h"
 #include <filesystem>
+#include <string>
 
 struct BridgeChannelData;
 
@@ -46,6 +47,43 @@ class Renderer : public Singleton<Renderer>
     ParticleSystem particleSystem;
     ParticleRenderer particleRenderer;
 
+    static inline std::vector<std::string> genLightUniformNames()
+    {
+        std::vector<std::string> names;
+
+        std::vector<std::string> uniformsPerLight{
+          "lights[{}].position",        "lights[{}].ambient",
+          "lights[{}].diffuse",         "lights[{}].specular",
+          "lights[{}].constantFalloff", "lights[{}].linearFalloff",
+          "lights[{}].quadraticFalloff"};
+
+        for (int i = 0; i < 4; ++i) {
+            for (const auto& uni : uniformsPerLight) {
+                std::string replaced = uni;
+                auto pos = replaced.find("{}");
+                if (pos != std::string::npos) {
+                    replaced.replace(pos, 2, std::to_string(i));
+                }
+                names.push_back(replaced);
+            }
+        }
+
+        names.emplace_back("lightNum");
+
+        return names;
+    };
+
+    template <typename T>
+    static auto concatenate(const std::vector<T>& lhs,
+                            const std::vector<T>& rhs) -> std::vector<T>
+    {
+        auto result = lhs;
+        std::copy(rhs.begin(), rhs.end(), std::back_inserter(result));
+        return result;
+    }
+
+    std::vector<std::string> lightUniNames = genLightUniformNames();
+
     // TODO: Make it easier for user to change the shader and model without
     // having to come in here and poke about
     // Maybe can have a list of models and shaders, and some datastructure can
@@ -55,11 +93,13 @@ class Renderer : public Singleton<Renderer>
       std::filesystem::path{"shaders/fragment/blinnPhongTextureShader.glsl"},
       // TODO: surely there's a better way than listing ALL of these sjsjsjs
       // TODO: oh god arrays...oh god...i REALLY need a better way for this
-      {"projection", "view", "model", "material.diffuse", "material.specular",
-                            "material.Kd", "material.Ks", "material.Ns", "viewPos",
-                            "lights[0].position", "lights[0].ambient", "lights[0].diffuse",
-                            "lights[0].specular", "lights[0].constantFalloff",
-                            "lights[0].linearFalloff", "lights[0].quadraticFalloff"}
+      concatenate(std::vector<std::string>{"projection", "view", "model",
+                                           "material.diffuse",
+                                           "material.specular", "material.Kd",
+                                           "material.Ks", "material.Ns",
+                                           "viewPos"},
+                  lightUniNames)
+
     };
 
     Shader flatShader{
@@ -101,9 +141,19 @@ class Renderer : public Singleton<Renderer>
 
     bool DEBUGMODE = false;
 
+    std::vector<std::unique_ptr<Model>> staticModels;
+    std::vector<Scene::StaticObject> staticObjects;
+
+    // Point lights (up to 4)
+    std::vector<PointLight> pointLights;
+
     std::filesystem::path sceneFilePath;
+    Scene::SceneData currentSceneData;
 
     std::vector<PhysicsEngineReceiverData> createDefaultScene();
+    void renderStaticObjects();
+    void renderPhysicsObjects(const std::vector<RigidBodyData>& bodies);
+    void setupPointLights(Shader::BindObject& shader);
 
   public:
     Renderer(const Renderer&) = delete;
@@ -112,6 +162,11 @@ class Renderer : public Singleton<Renderer>
     Renderer& operator=(Renderer&&) = delete;
 
     void init();
+
+    void loadSceneData();
+
+    [[nodiscard]] const Scene::SceneData& getSceneData() const;
+
     // TODO: Must restructure for the following
     // Minimize per-frame data transfers from CPU to GPU
     // Minimize number of state changes (binding framebuffers, textures,

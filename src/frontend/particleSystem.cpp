@@ -1,20 +1,6 @@
 #include "frontend/particleSystem.hpp"
 #include "frontend/camera.hpp"
 
-struct Particle
-{
-    linalg::aliases::float3 position;
-    linalg::aliases::float3 velocity;
-    float life = 1.0F;    // 0.0 = dead, 1.0 = full life
-    float maxLife = 1.0F; // initial life value
-    float size = 0.02F;   // particle size
-
-    [[nodiscard]] bool isAlive() const
-    {
-        return life > 0.0F;
-    }
-};
-
 struct InstanceData
 {
     linalg::aliases::float3 position;

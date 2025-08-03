@@ -351,7 +351,8 @@ class WaterSimulation
      */
     static void
     setInitConditions(HeightGrid<WaterSimulation::numRows,
-                                 WaterSimulation::numCols>& heightGrid);
+                                 WaterSimulation::numCols>& heightGrid,
+                      float initHumpSz);
 
     /**
      * @brief Advances the fluid simulation by one time step, performing

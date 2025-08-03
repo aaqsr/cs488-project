@@ -91,7 +91,7 @@ class IterationsPerSecondCounter
             double msPerIteration =
               (elapsedSeconds.count() * 1000.0) / numFrames;
             Logger::GetInstance().log(
-              std::format("{:<6}{}\\t{:<9.5f}ms/{}", numFrames, iterationUnit,
+              std::format("{:<6}{}\t{:<9.5f}ms/{}", numFrames, iterationUnit,
                           msPerIteration, millisecondsPerIterationUnit));
 
             numFrames = 0;

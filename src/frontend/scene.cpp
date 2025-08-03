@@ -12,8 +12,7 @@
 namespace Scene
 {
 
-std::vector<SceneObject>
-SceneLoader::loadFromFile(const std::filesystem::path& scenePath)
+SceneData SceneLoader::loadFromFile(const std::filesystem::path& scenePath)
 {
     if (!std::filesystem::exists(scenePath)) {
         throw IrrecoverableError{"Scene file does not exist: " +
@@ -43,37 +42,110 @@ SceneLoader::loadFromFile(const std::filesystem::path& scenePath)
     }
 
     const auto& rootObj = root.asObject();
-    auto objectsIt = rootObj.find("physicsObjects");
-    if (objectsIt == rootObj.end()) {
-        throw IrrecoverableError{"Scene file must contain an 'objects' array"};
-    }
+    SceneData sceneData;
 
-    if (!objectsIt->second.isArray()) {
-        throw IrrecoverableError{"'objects' must be an array in scene file"};
-    }
-
-    const auto& objectsArray = objectsIt->second.asArray();
-    std::vector<SceneObject> sceneObjects;
-    sceneObjects.reserve(objectsArray.size());
-
-    for (const auto& objJson : objectsArray) {
-        if (!objJson.isObject()) {
+    // Parse physics objects (optional)
+    auto physicsObjectsIt = rootObj.find("physicsObjects");
+    if (physicsObjectsIt != rootObj.end()) {
+        if (!physicsObjectsIt->second.isArray()) {
             throw IrrecoverableError{
-              "Each object in 'objects' array must be a JSON object"};
+              "'physicsObjects' must be an array in scene file"};
         }
 
-        SceneObject obj = parseSceneObject(objJson);
-        validateSceneObject(obj);
-        sceneObjects.push_back(std::move(obj));
+        const auto& physicsArray = physicsObjectsIt->second.asArray();
+        sceneData.physicsObjects.reserve(physicsArray.size());
+
+        for (const auto& objJson : physicsArray) {
+            if (!objJson.isObject()) {
+                throw IrrecoverableError{"Each object in 'physicsObjects' "
+                                         "array must be a JSON object"};
+            }
+
+            PhysicsObject obj = parsePhysicsObject(objJson);
+            validatePhysicsObject(obj);
+            sceneData.physicsObjects.push_back(std::move(obj));
+        }
     }
 
-    return sceneObjects;
+    // Parse static objects (optional)
+    auto staticObjectsIt = rootObj.find("staticObjects");
+    if (staticObjectsIt != rootObj.end()) {
+        if (!staticObjectsIt->second.isArray()) {
+            throw IrrecoverableError{
+              "'staticObjects' must be an array in scene file"};
+        }
+
+        const auto& staticArray = staticObjectsIt->second.asArray();
+        sceneData.staticObjects.reserve(staticArray.size());
+
+        for (const auto& objJson : staticArray) {
+            if (!objJson.isObject()) {
+                throw IrrecoverableError{
+                  "Each object in 'staticObjects' array must be a JSON object"};
+            }
+
+            StaticObject obj = parseStaticObject(objJson);
+            validateStaticObject(obj);
+            sceneData.staticObjects.push_back(std::move(obj));
+        }
+    }
+
+    // Parse point lights (optional, max 4)
+    auto pointLightsIt = rootObj.find("pointLights");
+    if (pointLightsIt != rootObj.end()) {
+        if (!pointLightsIt->second.isArray()) {
+            throw IrrecoverableError{
+              "'pointLights' must be an array in scene file"};
+        }
+
+        const auto& lightsArray = pointLightsIt->second.asArray();
+        if (lightsArray.size() > 4) {
+            throw IrrecoverableError{"Maximum of 4 point lights are supported"};
+        }
+
+        sceneData.pointLights.reserve(lightsArray.size());
+
+        for (const auto& lightJson : lightsArray) {
+            if (!lightJson.isObject()) {
+                throw IrrecoverableError{
+                  "Each object in 'pointLights' array must be a JSON object"};
+            }
+
+            PointLightData light = parsePointLight(lightJson);
+            validatePointLight(light);
+            sceneData.pointLights.push_back(std::move(light));
+        }
+    }
+
+    // Parse water configuration (optional)
+    auto waterEnabledIt = rootObj.find("waterEnabled");
+    if (waterEnabledIt != rootObj.end()) {
+        if (!waterEnabledIt->second.isBool()) {
+            throw IrrecoverableError{"'waterEnabled' must be a boolean"};
+        }
+        sceneData.waterEnabled = waterEnabledIt->second.asBool();
+    } else {
+        sceneData.waterEnabled = true;
+    }
+
+    auto waterHumpSizeIt = rootObj.find("waterInitialHumpSize");
+    if (waterHumpSizeIt != rootObj.end()) {
+        if (!waterHumpSizeIt->second.isNumber()) {
+            throw IrrecoverableError{"'waterInitialHumpSize' must be a number"};
+        }
+        sceneData.waterInitialHumpSize =
+          static_cast<float>(waterHumpSizeIt->second.asNumber());
+    } else {
+        sceneData.waterInitialHumpSize = 0.4F;
+    }
+
+    return sceneData;
 }
 
-SceneObject SceneLoader::parseSceneObject(const json::JsonValue& objJson)
+PhysicsObject SceneLoader::parsePhysicsObject(const json::JsonValue& objJson)
 {
     const auto& obj = objJson.asObject();
-    SceneObject sceneObj;
+    PhysicsObject physicsObj;
 
     // required fields
     auto getRequiredField =
@@ -81,7 +153,7 @@ SceneObject SceneLoader::parseSceneObject(const json::JsonValue& objJson)
         auto it = obj.find(fieldName);
         if (it == obj.end()) {
             throw IrrecoverableError{"Missing required field '" + fieldName +
-                                     "' in scene object"};
+                                     "' in physics object"};
         }
         return it->second;
     };
@@ -91,13 +163,14 @@ SceneObject SceneLoader::parseSceneObject(const json::JsonValue& objJson)
     if (!modelPathJson.isString()) {
         throw IrrecoverableError{"'modelPath' must be a string"};
     }
-    sceneObj.modelPath = modelPathJson.asString();
+    physicsObj.modelPath = modelPathJson.asString();
 
     // scale (can be single number or array of 3)
     const auto& scaleJson = getRequiredField("scale");
     if (scaleJson.isNumber()) {
         float scaleVal = static_cast<float>(scaleJson.asNumber());
-        sceneObj.scale[0] = sceneObj.scale[1] = sceneObj.scale[2] = scaleVal;
+        physicsObj.scale[0] = physicsObj.scale[1] = physicsObj.scale[2] =
+          scaleVal;
     } else if (scaleJson.isArray()) {
         const auto& scaleArray = scaleJson.asArray();
         if (scaleArray.size() != 3) {
@@ -108,7 +181,7 @@ SceneObject SceneLoader::parseSceneObject(const json::JsonValue& objJson)
             if (!scaleArray[i].isNumber()) {
                 throw IrrecoverableError{"All scale values must be numbers"};
             }
-            sceneObj.scale[i] = static_cast<float>(scaleArray[i].asNumber());
+            physicsObj.scale[i] = static_cast<float>(scaleArray[i].asNumber());
         }
     } else {
         throw IrrecoverableError{
@@ -137,37 +210,268 @@ SceneObject SceneLoader::parseSceneObject(const json::JsonValue& objJson)
     };
 
     // initial position
-    parse3DVector(getRequiredField("initPos"), "initPos", sceneObj.initPos);
+    parse3DVector(getRequiredField("initPos"), "initPos", physicsObj.initPos);
 
     // initial velocity
-    parse3DVector(getRequiredField("initVel"), "initVel", sceneObj.initVel);
+    parse3DVector(getRequiredField("initVel"), "initVel", physicsObj.initVel);
 
     // initial angular velocity
     parse3DVector(getRequiredField("initAngVel"), "initAngVel",
-                  sceneObj.initAngVel);
+                  physicsObj.initAngVel);
 
     // density
     const auto& densityJson = getRequiredField("density");
     if (!densityJson.isNumber()) {
         throw IrrecoverableError{"'density' must be a number"};
     }
-    sceneObj.density = static_cast<float>(densityJson.asNumber());
+    physicsObj.density = static_cast<float>(densityJson.asNumber());
 
-    // and the optional name field
+    // shader type (optional, defaults to flat)
+    auto shaderIt = obj.find("shader");
+    if (shaderIt != obj.end()) {
+        if (!shaderIt->second.isString()) {
+            throw IrrecoverableError{"'shader' must be a string"};
+        }
+        physicsObj.shader = parseShaderType(shaderIt->second.asString());
+    } else {
+        physicsObj.shader = ShaderType::FLAT;
+    }
+
+    // optional name field
     auto nameIt = obj.find("name");
     if (nameIt != obj.end()) {
         if (!nameIt->second.isString()) {
             throw IrrecoverableError{"'name' must be a string"};
         }
-        sceneObj.name = nameIt->second.asString();
+        physicsObj.name = nameIt->second.asString();
     } else {
-        sceneObj.name = "Unnamed Object";
+        physicsObj.name = "Unnamed Physics Object";
     }
 
-    return sceneObj;
+    return physicsObj;
 }
 
-void SceneLoader::validateSceneObject(const SceneObject& obj)
+StaticObject SceneLoader::parseStaticObject(const json::JsonValue& objJson)
+{
+    const auto& obj = objJson.asObject();
+    StaticObject staticObj;
+
+    // required fields
+    auto getRequiredField =
+      [&obj](const std::string& fieldName) -> const json::JsonValue& {
+        auto it = obj.find(fieldName);
+        if (it == obj.end()) {
+            throw IrrecoverableError{"Missing required field '" + fieldName +
+                                     "' in static object"};
+        }
+        return it->second;
+    };
+
+    // model path
+    const auto& modelPathJson = getRequiredField("modelPath");
+    if (!modelPathJson.isString()) {
+        throw IrrecoverableError{"'modelPath' must be a string"};
+    }
+    staticObj.modelPath = modelPathJson.asString();
+
+    // scale (can be single number or array of 3)
+    const auto& scaleJson = getRequiredField("scale");
+    if (scaleJson.isNumber()) {
+        float scaleVal = static_cast<float>(scaleJson.asNumber());
+        staticObj.scale[0] = staticObj.scale[1] = staticObj.scale[2] = scaleVal;
+    } else if (scaleJson.isArray()) {
+        const auto& scaleArray = scaleJson.asArray();
+        if (scaleArray.size() != 3) {
+            throw IrrecoverableError{
+              "'scale' array must have exactly 3 elements"};
+        }
+        for (size_t i = 0; i < 3; ++i) {
+            if (!scaleArray[i].isNumber()) {
+                throw IrrecoverableError{"All scale values must be numbers"};
+            }
+            staticObj.scale[i] = static_cast<float>(scaleArray[i].asNumber());
+        }
+    } else {
+        throw IrrecoverableError{
+          "'scale' must be a number or array of 3 numbers"};
+    }
+
+    // helper lambda to parse 3D vectors
+    auto parse3DVector = [](const json::JsonValue& vectorJson,
+                            const std::string& fieldName, float output[3]) {
+        if (!vectorJson.isArray()) {
+            throw IrrecoverableError{"'" + fieldName +
+                                     "' must be an array of 3 numbers"};
+        }
+        const auto& array = vectorJson.asArray();
+        if (array.size() != 3) {
+            throw IrrecoverableError{"'" + fieldName +
+                                     "' array must have exactly 3 elements"};
+        }
+        for (size_t i = 0; i < 3; ++i) {
+            if (!array[i].isNumber()) {
+                throw IrrecoverableError{"All '" + fieldName +
+                                         "' values must be numbers"};
+            }
+            output[i] = static_cast<float>(array[i].asNumber());
+        }
+    };
+
+    // position
+    parse3DVector(getRequiredField("position"), "position", staticObj.position);
+
+    // rotation (optional, defaults to 0,0,0)
+    auto rotationIt = obj.find("rotation");
+    if (rotationIt != obj.end()) {
+        parse3DVector(rotationIt->second, "rotation", staticObj.rotation);
+    } else {
+        staticObj.rotation[0] = staticObj.rotation[1] = staticObj.rotation[2] =
+          0.0F;
+    }
+
+    // shader type
+    const auto& shaderJson = getRequiredField("shader");
+    if (!shaderJson.isString()) {
+        throw IrrecoverableError{"'shader' must be a string"};
+    }
+    staticObj.shader = parseShaderType(shaderJson.asString());
+
+    // optional name field
+    auto nameIt = obj.find("name");
+    if (nameIt != obj.end()) {
+        if (!nameIt->second.isString()) {
+            throw IrrecoverableError{"'name' must be a string"};
+        }
+        staticObj.name = nameIt->second.asString();
+    } else {
+        staticObj.name = "Unnamed Static Object";
+    }
+
+    return staticObj;
+}
+
+PointLightData SceneLoader::parsePointLight(const json::JsonValue& lightJson)
+{
+    const auto& light = lightJson.asObject();
+    PointLightData lightData;
+
+    // required fields
+    auto getRequiredField =
+      [&light](const std::string& fieldName) -> const json::JsonValue& {
+        auto it = light.find(fieldName);
+        if (it == light.end()) {
+            throw IrrecoverableError{"Missing required field '" + fieldName +
+                                     "' in point light"};
+        }
+        return it->second;
+    };
+
+    // helper lambda to parse 3D vectors with default values
+    auto parse3DVector = [](const json::JsonValue& vectorJson,
+                            const std::string& fieldName, float output[3]) {
+        if (!vectorJson.isArray()) {
+            throw IrrecoverableError{"'" + fieldName +
+                                     "' must be an array of 3 numbers"};
+        }
+        const auto& array = vectorJson.asArray();
+        if (array.size() != 3) {
+            throw IrrecoverableError{"'" + fieldName +
+                                     "' array must have exactly 3 elements"};
+        }
+        for (size_t i = 0; i < 3; ++i) {
+            if (!array[i].isNumber()) {
+                throw IrrecoverableError{"All '" + fieldName +
+                                         "' values must be numbers"};
+            }
+            output[i] = static_cast<float>(array[i].asNumber());
+        }
+    };
+
+    // position (required)
+    parse3DVector(getRequiredField("position"), "position", lightData.position);
+
+    // ambient colour (optional, defaults to 0.1, 0.1, 0.1)
+    auto ambientIt = light.find("ambientColour");
+    if (ambientIt != light.end()) {
+        parse3DVector(ambientIt->second, "ambientColour",
+                      lightData.ambientColour);
+    } else {
+        lightData.ambientColour[0] = lightData.ambientColour[1] =
+          lightData.ambientColour[2] = 0.1F;
+    }
+
+    // diffuse colour (optional, defaults to 0.5, 0.5, 0.5)
+    auto diffuseIt = light.find("diffuseColour");
+    if (diffuseIt != light.end()) {
+        parse3DVector(diffuseIt->second, "diffuseColour",
+                      lightData.diffuseColour);
+    } else {
+        lightData.diffuseColour[0] = lightData.diffuseColour[1] =
+          lightData.diffuseColour[2] = 0.5F;
+    }
+
+    // specular colour (optional, defaults to 0.5, 0.5, 0.5)
+    auto specularIt = light.find("specularColour");
+    if (specularIt != light.end()) {
+        parse3DVector(specularIt->second, "specularColour",
+                      lightData.specularColour);
+    } else {
+        lightData.specularColour[0] = lightData.specularColour[1] =
+          lightData.specularColour[2] = 0.5F;
+    }
+
+    // falloff parameters (optional, with sensible defaults)
+    auto constantIt = light.find("constantFalloff");
+    if (constantIt != light.end()) {
+        if (!constantIt->second.isNumber()) {
+            throw IrrecoverableError{"'constantFalloff' must be a number"};
+        }
+        lightData.constantFalloff =
+          static_cast<float>(constantIt->second.asNumber());
+    } else {
+        lightData.constantFalloff = 1.0F;
+    }
+
+    auto linearIt = light.find("linearFalloff");
+    if (linearIt != light.end()) {
+        if (!linearIt->second.isNumber()) {
+            throw IrrecoverableError{"'linearFalloff' must be a number"};
+        }
+        lightData.linearFalloff =
+          static_cast<float>(linearIt->second.asNumber());
+    } else {
+        lightData.linearFalloff = 0.35F;
+    }
+
+    auto quadraticIt = light.find("quadraticFalloff");
+    if (quadraticIt != light.end()) {
+        if (!quadraticIt->second.isNumber()) {
+            throw IrrecoverableError{"'quadraticFalloff' must be a number"};
+        }
+        lightData.quadraticFalloff =
+          static_cast<float>(quadraticIt->second.asNumber());
+    } else {
+        lightData.quadraticFalloff = 0.44F;
+    }
+
+    return lightData;
+}
+
+ShaderType SceneLoader::parseShaderType(const std::string& shaderStr)
+{
+    if (shaderStr == "flat") {
+        return ShaderType::FLAT;
+    } else if (shaderStr == "light") {
+        return ShaderType::LIGHT;
+    } else if (shaderStr == "sun") {
+        return ShaderType::SUN;
+    } else {
+        throw IrrecoverableError{"Unknown shader type '" + shaderStr +
+                                 "'. Valid types are: 'flat', 'light', 'sun'"};
+    }
+}
+
+void SceneLoader::validatePhysicsObject(const PhysicsObject& obj)
 {
     if (!std::filesystem::exists(obj.modelPath)) {
         throw IrrecoverableError{"Model file does not exist: " + obj.modelPath};
@@ -176,45 +480,80 @@ void SceneLoader::validateSceneObject(const SceneObject& obj)
     for (float i : obj.scale) {
         if (i <= 0.0F) {
             throw IrrecoverableError{
-              "Scale values must be positive for object: " + obj.name};
+              "Scale values must be positive for physics object: " + obj.name};
         }
     }
 
     if (obj.density <= 0.0F) {
-        throw IrrecoverableError{"Density must be positive for object: " +
-                                 obj.name};
+        throw IrrecoverableError{
+          "Density must be positive for physics object: " + obj.name};
+    }
+}
+
+void SceneLoader::validateStaticObject(const StaticObject& obj)
+{
+    if (!std::filesystem::exists(obj.modelPath)) {
+        throw IrrecoverableError{"Model file does not exist: " + obj.modelPath};
+    }
+
+    for (float i : obj.scale) {
+        if (i <= 0.0F) {
+            throw IrrecoverableError{
+              "Scale values must be positive for static object: " + obj.name};
+        }
+    }
+}
+
+void SceneLoader::validatePointLight(const PointLightData& light)
+{
+    // Check that colour values are non-negative
+    for (int i = 0; i < 3; ++i) {
+        if (light.ambientColour[i] < 0.0F || light.diffuseColour[i] < 0.0F ||
+            light.specularColour[i] < 0.0F)
+        {
+            throw IrrecoverableError{
+              "Light colour values must be non-negative"};
+        }
+    }
+
+    // Check that falloff values are sensible
+    if (light.constantFalloff < 0.0F || light.linearFalloff < 0.0F ||
+        light.quadraticFalloff < 0.0F)
+    {
+        throw IrrecoverableError{"Light falloff values must be non-negative"};
     }
 }
 
 std::vector<PhysicsEngineReceiverData> SceneLoader::convertToPhysicsObjects(
-  const std::vector<SceneObject>& sceneObjects)
+  const std::vector<PhysicsObject>& physicsObjects)
 {
-    std::vector<PhysicsEngineReceiverData> physicsObjects;
-    physicsObjects.reserve(sceneObjects.size());
+    std::vector<PhysicsEngineReceiverData> physicsEngineObjects;
+    physicsEngineObjects.reserve(physicsObjects.size());
 
-    for (const auto& sceneObj : sceneObjects) {
-        PhysicsEngineReceiverData physObj{
-          .model =
-            std::make_unique<Model>(std::filesystem::path{sceneObj.modelPath}
+    for (const auto& physicsObj : physicsObjects) {
+        PhysicsEngineReceiverData physEngineObj{
+          .model = std::make_unique<Model>(
+            std::filesystem::path{physicsObj.modelPath}
             ),
-          .scale = linalg::aliases::float3{sceneObj.scale[0], sceneObj.scale[1],
-                                                          sceneObj.scale[2]},
-          .initPos =
-            linalg::aliases::float3{sceneObj.initPos[0], sceneObj.initPos[1],
-                                                          sceneObj.initPos[2]},
-          .initVel =
-            linalg::aliases::float3{sceneObj.initVel[0], sceneObj.initVel[1],
-                                                          sceneObj.initVel[2]},
-          .initAngVel = linalg::aliases::float3{sceneObj.initAngVel[0],
-                                                          sceneObj.initAngVel[1],
-                                                          sceneObj.initAngVel[2]},
-          .density = sceneObj.density
+          .scale =
+            linalg::aliases::float3{physicsObj.scale[0], physicsObj.scale[1],
+                                  physicsObj.scale[2]},
+          .initPos = linalg::aliases::float3{physicsObj.initPos[0],
+                                  physicsObj.initPos[1],
+                                  physicsObj.initPos[2]},
+          .initVel = linalg::aliases::float3{physicsObj.initVel[0],
+                                  physicsObj.initVel[1],
+                                  physicsObj.initVel[2]},
+          .initAngVel = linalg::aliases::float3{physicsObj.initAngVel[0],
+                                  physicsObj.initAngVel[1],
+                                  physicsObj.initAngVel[2]},
+          .density = physicsObj.density
         };
 
-        physicsObjects.push_back(std::move(physObj));
+        physicsEngineObjects.push_back(std::move(physEngineObj));
     }
 
-    return physicsObjects;
+    return physicsEngineObjects;
 }
 
 } // namespace Scene

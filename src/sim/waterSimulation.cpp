@@ -136,12 +136,13 @@ std::pair<int, int> getClosestGridPoint(Real x, float z)
 WaterSimulation::WaterSimulation() = default;
 
 void WaterSimulation::setInitConditions(
-  HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heightGrid)
+  HeightGrid<WaterSimulation::numRows, WaterSimulation::numCols>& heightGrid,
+  float initHumpSz)
 {
-    constexpr static auto fn = [](Real x, float y) {
+    constexpr static auto fn = [](Real x, float y, float initHumpSz) {
         // Gaussian hump function
-        const Real sigma = 0.25F;    // width of the hump
-        const Real amplitude = 0.4F; // height of the hump
+        const Real sigma = 0.25F;          // width of the hump
+        const Real amplitude = initHumpSz; // height of the hump
         Real r_squared = (x * x) + (y * y);
         return amplitude * std::exp(-r_squared / (2.0F * sigma * sigma));
     };
@@ -161,7 +162,7 @@ void WaterSimulation::setInitConditions(
                          WaterSimulation::cellSize;
 
                 // add the hump to the base level of 1.0
-                heightGrid.setWaterHeight(i, j, 1.0F + fn(x, y));
+                heightGrid.setWaterHeight(i, j, 1.0F + fn(x, y, initHumpSz));
             } else {
                 heightGrid.setWaterHeight(i, j, 1.0F);
             }

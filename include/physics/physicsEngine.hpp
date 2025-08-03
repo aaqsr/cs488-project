@@ -138,7 +138,9 @@ class PhysicsEngine
      * @param rigidBodies A vector of all dynamic rigid body data to be updated.
      * @param prevRigidBodies A const reference to the state of the bodies from
      * the previous frame.
+     * @param keepBodiesWithinWaterPool Should bodies be kept in the water pool
      */
     void updateRigidBodies(std::vector<RigidBodyData>& rigidBodies,
-                           const std::vector<RigidBodyData>& prevRigidBodies);
+                           const std::vector<RigidBodyData>& prevRigidBodies,
+                           bool keepBodiesWithinWaterPool);
 };

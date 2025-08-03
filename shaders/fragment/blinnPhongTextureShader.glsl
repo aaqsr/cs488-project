@@ -28,9 +28,11 @@ struct Light {
     float quadraticFalloff;
 };
 
-#define NUM_LIGHTS 1
+#define NUM_LIGHTS 4
 
 uniform Material material;
+
+uniform int lightNum;
 
 uniform Light lights[NUM_LIGHTS];
 
@@ -87,7 +89,7 @@ void main()
 
     vec3 result = vec3(0.0);
 
-    for (int i = 0; i < NUM_LIGHTS; ++i) {
+    for (int i = 0; i < lightNum; ++i) {
         result += calcLight(lights[i], norm, viewDir);
     }
 

@@ -148,7 +148,8 @@ PhysicsEngine::PhysicsEngine(
 
 void PhysicsEngine::updateRigidBodies(
   std::vector<RigidBodyData>& rigidBodies,
-  const std::vector<RigidBodyData>& prevRigidBodies)
+  const std::vector<RigidBodyData>& prevRigidBodies,
+  bool keepBodiesWithinWaterPool)
 {
     if (prevRigidBodies.size() > rigidBodies.size()) {
         for (size_t newElemIdx = rigidBodies.size();
@@ -195,7 +196,10 @@ void PhysicsEngine::updateRigidBodies(
         if (SuperCollider::thePoolLimits.contains(body.worldPosition) &&
             body.worldPosition.y <= SuperCollider::poolHeight)
         {
-            SuperCollider::keepWithinAABB(SuperCollider::thePoolLimits, body);
+            if (keepBodiesWithinWaterPool) {
+                SuperCollider::keepWithinAABB(SuperCollider::thePoolLimits,
+                                              body);
+            }
         } else {
             SuperCollider::keepWithinAABB(SuperCollider::theWorldLimits, body);
         }
@@ -208,4 +212,3 @@ void PhysicsEngine::updateRigidBodies(
     }
     SuperCollider::processAABBCollisions(rigidBodies);
 }
-

@@ -1,16 +1,16 @@
 #pragma once
 
 #include "linalg.h"
+#include "physics/AABB.hpp"
 #include "shader.hpp"
 #include <string>
 
 // Does not use PBR (irradiance, wattage, etc.) because Phong lighting was
 // easier and computationally cheaper to implement
-// Also point light has no model yet...might wish to chage that to a small cube
+// Also point light has no model yet...might wish to change that to a small cube
 // or something...
 class PointLight
 {
-    // linalg::aliases::float3 worldPof{0.0F, 0.4F, 0.0F};
     linalg::aliases::float3 worldPos{0.0F, 0.2F, 1.0F};
 
     linalg::aliases::float3 ambientColour{0.1F, 0.1F, 0.1F};
@@ -26,16 +26,61 @@ class PointLight
   public:
     PointLight() = default;
 
-    // USER MUST BIND SHADER
-    // TODO: there must be consistency... The convention could be that caller
-    // always binds shader...
+    // Constructor for configurable point light
+    PointLight(const linalg::aliases::float3& position,
+               const linalg::aliases::float3& ambient,
+               const linalg::aliases::float3& diffuse,
+               const linalg::aliases::float3& specular, float constant,
+               float linear, float quadratic);
+
     void setUniforms(Shader::BindObject& shader, int lightNum);
+
+    [[nodiscard]] AABB computeAABB() const
+    {
+        return AABB{worldPos - linalg::aliases::float3(0.1F),
+                    worldPos + linalg::aliases::float3(0.1)};
+    }
 
     [[nodiscard]] const linalg::aliases::float3& getPos() const
     {
         return worldPos;
     }
+
+    // Setters for runtime modification
+    void setPosition(const linalg::aliases::float3& position)
+    {
+        worldPos = position;
+    }
+    void setAmbientColour(const linalg::aliases::float3& colour)
+    {
+        ambientColour = colour;
+    }
+    void setDiffuseColour(const linalg::aliases::float3& colour)
+    {
+        diffuseColour = colour;
+    }
+    void setSpecularColour(const linalg::aliases::float3& colour)
+    {
+        specularColour = colour;
+    }
+    void setFalloff(float constant, float linear, float quadratic)
+    {
+        constantFalloff = constant;
+        linearFalloff = linear;
+        quadraticFalloff = quadratic;
+    }
 };
+
+inline PointLight::PointLight(const linalg::aliases::float3& position,
+                              const linalg::aliases::float3& ambient,
+                              const linalg::aliases::float3& diffuse,
+                              const linalg::aliases::float3& specular,
+                              float constant, float linear, float quadratic)
+  : worldPos(position), ambientColour(ambient), diffuseColour(diffuse),
+    specularColour(specular), constantFalloff(constant), linearFalloff(linear),
+    quadraticFalloff(quadratic)
+{
+}
 
 inline void PointLight::setUniforms(Shader::BindObject& shader, int lightNum)
 {

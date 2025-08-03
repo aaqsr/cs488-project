@@ -126,5 +126,23 @@
       ],
       "density": 800.0
     }
+  ],
+  "staticObjects": [
+    {
+      "modelPath": "assets/models/pool/pool.obj",
+      "scale": 1.0,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shader": "flat",
+      "name": "Swimming Pool"
+    }
   ]
 }

@@ -16,6 +16,7 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <string>
 #include <thread>
 
 namespace
@@ -24,7 +25,8 @@ namespace
 void physicsAndSimulationThread(
   Sender<BridgeChannelData>& bridgeChannel,
   Receiver<std::vector<PhysicsEngineReceiverData>>& physCmdChannel,
-  const std::atomic<bool>& appShouldExit)
+  const std::atomic<bool>& appShouldExit, bool waterEnabled,
+  float waterInitHumpSz)
 {
     WaterSimulation sim;
     PhysicsEngine phys{physCmdChannel};
@@ -32,10 +34,11 @@ void physicsAndSimulationThread(
     std::atomic<bool> isPlaying{false};
     Controller::GetInstance().setIsPlayingBoolPtr(&isPlaying);
 
-    {
+    if (waterEnabled) {
         // Initial conditions
         auto msg = bridgeChannel.createMessage();
-        WaterSimulation::setInitConditions(msg.getWriteBuffer().waterHeights);
+        WaterSimulation::setInitConditions(msg.getWriteBuffer().waterHeights,
+                                           waterInitHumpSz);
     }
 
     // we want it such that deltaT is less than the time between rendered frames
@@ -65,15 +68,21 @@ void physicsAndSimulationThread(
                 // TODO: split sim.update in half. A function that needs the
                 // channel to be open and one that does not. So we can send
                 // message as fast as possible.
-                sim.update(msg.getWriteBuffer().waterHeights,
-                           msg.getPreviousWriteBuffer().waterHeights);
+
+                if (waterEnabled) {
+                    sim.update(msg.getWriteBuffer().waterHeights,
+                               msg.getPreviousWriteBuffer().waterHeights);
+                }
 
                 phys.updateRigidBodies(
                   msg.getWriteBuffer().physicsObjects,
-                  msg.getPreviousWriteBuffer().physicsObjects);
+                  msg.getPreviousWriteBuffer().physicsObjects, waterEnabled);
 
-                sim.coupleWithRigidBodies(msg.getWriteBuffer().physicsObjects,
-                                          msg.getWriteBuffer().waterHeights);
+                if (waterEnabled) {
+                    sim.coupleWithRigidBodies(
+                      msg.getWriteBuffer().physicsObjects,
+                      msg.getWriteBuffer().waterHeights);
+                }
             }
         }
 
@@ -163,12 +172,20 @@ void run(int argc, const char* argv[])
     MPSCQueueChannel<PhysicsEngineReceiverData> physCmdChannel;
     renderer.attachPhysicsEngineCommandsChannel(&(physCmdChannel.getSender()));
 
+    renderer.loadSceneData();
+
     // aaaaaaand awayyyyy we go!
     std::atomic<bool> appShouldExit{false};
 
-    std::jthread simulationThread{
-      physicsAndSimulationThread, std::ref(bridgeChannel.getSender()),
-      std::ref(physCmdChannel.getReceiver()), std::cref(appShouldExit)};
+    std::jthread simulationThread{physicsAndSimulationThread,
+                                  std::ref(bridgeChannel.getSender()),
+                                  std::ref(physCmdChannel.getReceiver()),
+                                  std::cref(appShouldExit),
+                                  renderer.getSceneData().waterEnabled,
+                                  renderer.getSceneData().waterInitialHumpSize};
+
+    Logger::GetInstance().log(
+      "AAAA" + std::to_string(renderer.getSceneData().waterInitialHumpSize));
 
     try {
         renderer.init();

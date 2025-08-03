@@ -2,6 +2,7 @@
 #include "bridgeChannelData.hpp"
 #include "frontend/crosshair.hpp"
 #include "frontend/debugShapes.hpp"
+#include "frontend/particleSystem.hpp"
 #include "frontend/shader.hpp"
 #include "linalg.h"
 #include "physics/physicsEngine.hpp"
@@ -132,20 +133,13 @@ void Renderer::init()
           "Render::init() called without setting required channels"};
     }
 
-    // load scene objects from JSON file
     std::vector<PhysicsEngineReceiverData> physicsObjects;
 
-    if (!sceneFilePath.empty()) {
-        try {
-            auto sceneObjects = Scene::SceneLoader::loadFromFile(sceneFilePath);
-            physicsObjects =
-              Scene::SceneLoader::convertToPhysicsObjects(sceneObjects);
-        } catch (const std::exception& e) {
-            throw IrrecoverableError{"Failed to load scene file '" +
-                                     sceneFilePath.string() + "': " + e.what()};
-        }
+    if (!currentSceneData.physicsObjects.empty()) {
+        physicsObjects = Scene::SceneLoader::convertToPhysicsObjects(
+          currentSceneData.physicsObjects);
     } else {
-        // fallback to hardcoded objects if no scene file provided
+        // Fallback to hardcoded objects if no physics objects in scene
         physicsObjects = createDefaultScene();
     }
 
@@ -161,43 +155,21 @@ void Renderer::init()
         Shader::BindObject shader = waterShader.bind();
         skybox.setSkyboxSamplerUniform(shader);
     }
-
-    {
-        Shader::BindObject shader = waterShader.bind();
-        skybox.setSkyboxSamplerUniform(shader);
-    }
 }
 
 void Renderer::update()
 {
-    // TODO: should be easier to do than one object
-    // TODO: should be easier to do different shaders without everyone assigning
-    // things that don't exist
-    // TODO: make it so that we can call UseShader on a shader once before
-    // all calls to it
-    // TODO: should be less easy to forget to do this correctly
-
-    // {
-    //     Shader::BindObject boundShader = shader.bind();
-    //     mainCamera.setUniforms(boundShader);
-    //     light.setUniforms(boundShader, 0);
-    //     mainModel.updateModelMatrixAndDraw(boundShader);
-    // }
-
-    {
-        Shader::BindObject boundShader = flatShader.bind();
-        mainCamera.setUniforms(boundShader);
-        pool.draw(boundShader);
-    }
+    // Render static objects from scene
+    renderStaticObjects();
 
     {
         bool isThisNewData = bridgeChannel->isMessageReady();
         auto message = bridgeChannel->receive();
 
         {
-            // Check for splash conditions and emit particles (only when
+            // check for splash conditions and emit particles (only when
             // simulation is running)
-            if (isThisNewData) {
+            if (isThisNewData && currentSceneData.waterEnabled) {
                 for (const auto& rigidBody : message.getBuffer().physicsObjects)
                 {
                     if (!rigidBody.enabled) {
@@ -226,8 +198,8 @@ void Renderer::update()
                 }
             }
 
-            // Update particles only when simulation is running
-            // Check if we received new data to determine if simulation is
+            // update particles only when simulation is running
+            // check if we received new data to determine if simulation is
             // running
             float simulationDeltaTime = isThisNewData ? deltaTime : 0.0;
 
@@ -257,38 +229,28 @@ void Renderer::update()
               });
         }
 
-        {
-            Shader::BindObject boundShader = sunShader.bind();
-            mainCamera.setUniforms(boundShader);
-            for (const auto& rigidBody : message.getBuffer().physicsObjects) {
-                if (!rigidBody.enabled) {
-                    continue;
-                }
+        renderPhysicsObjects(message.getBuffer().physicsObjects);
 
-                Model& m = *(rigidBody.getModelPtr());
-                m.updateModelMatrix(rigidBody.getWorldPosition(),
-                                    rigidBody.getOrientation(),
-                                    rigidBody.getScale());
-                m.draw(boundShader);
-            }
-        }
-
-        // Should be second last thing drawn
+        // should be second last thing drawn except bounding boxes and particles
         {
             skybox.setUniformsAndDraw(mainCamera);
         }
 
         if (DEBUGMODE) {
+            // physics & light aabbs
             aabbs.clear();
             for (const auto& rigidBody : message.getBuffer().physicsObjects) {
                 aabbs.emplace_back(rigidBody.computeAABB());
+            }
+            for (const auto& light : pointLights) {
+                aabbs.emplace_back(light.computeAABB());
             }
             aabbVisualiser.draw(aabbs, mainCamera.getViewMatrix(),
                                 mainCamera.getPerspectiveMatrix());
         }
 
-        // Should be last thing drawn
-        {
+        // should be last thing drawn except particles
+        if (currentSceneData.waterEnabled) {
             Shader::BindObject boundShader = waterShader.bind();
             mainCamera.setUniforms(boundShader);
 
@@ -393,4 +355,186 @@ void Renderer::toggleDebugMode()
 void Renderer::setSceneFile(const std::filesystem::path& scenePath)
 {
     sceneFilePath = scenePath;
+}
+
+void Renderer::loadSceneData()
+{
+    if (!sceneFilePath.empty()) {
+        try {
+            currentSceneData = Scene::SceneLoader::loadFromFile(sceneFilePath);
+        } catch (const std::exception& e) {
+            throw IrrecoverableError{"Failed to load scene file '" +
+                                     sceneFilePath.string() + "': " + e.what()};
+        }
+    } else {
+        // Create default scene data with empty static objects and lights
+        currentSceneData = Scene::SceneData{};
+    }
+
+    // Load static models
+    staticModels.clear();
+    staticObjects.clear();
+    staticModels.reserve(currentSceneData.staticObjects.size());
+    staticObjects.reserve(currentSceneData.staticObjects.size());
+
+    for (const auto& staticObj : currentSceneData.staticObjects) {
+        staticModels.emplace_back(
+          std::make_unique<Model>(std::filesystem::path{staticObj.modelPath}));
+        staticObjects.push_back(staticObj);
+    }
+
+    // Setup point lights
+    pointLights.clear();
+    pointLights.reserve(currentSceneData.pointLights.size());
+
+    for (const auto& lightData : currentSceneData.pointLights) {
+        linalg::aliases::float3 position{
+          lightData.position[0], lightData.position[1], lightData.position[2]};
+        linalg::aliases::float3 ambient{lightData.ambientColour[0],
+                                        lightData.ambientColour[1],
+                                        lightData.ambientColour[2]};
+        linalg::aliases::float3 diffuse{lightData.diffuseColour[0],
+                                        lightData.diffuseColour[1],
+                                        lightData.diffuseColour[2]};
+        linalg::aliases::float3 specular{lightData.specularColour[0],
+                                         lightData.specularColour[1],
+                                         lightData.specularColour[2]};
+
+        pointLights.emplace_back(
+          position, ambient, diffuse, specular, lightData.constantFalloff,
+          lightData.linearFalloff, lightData.quadraticFalloff);
+    }
+}
+
+void Renderer::renderStaticObjects()
+{
+    for (size_t i = 0; i < staticModels.size(); ++i) {
+        const auto& staticObj = staticObjects[i];
+        auto& model = staticModels[i];
+
+        Shader* currentShader = nullptr;
+
+        // Choose shader based on static object configuration
+        switch (staticObj.shader) {
+            case Scene::ShaderType::FLAT: currentShader = &flatShader; break;
+            case Scene::ShaderType::LIGHT: currentShader = &shader; break;
+            case Scene::ShaderType::SUN: currentShader = &sunShader; break;
+        }
+
+        if (currentShader != nullptr) {
+            Shader::BindObject boundShader = currentShader->bind();
+            mainCamera.setUniforms(boundShader);
+
+            // Set up lights for light and sun shaders
+            if (staticObj.shader == Scene::ShaderType::LIGHT) {
+                setupPointLights(boundShader);
+            }
+
+            // Calculate transformation matrix
+            linalg::aliases::float3 position{staticObj.position[0],
+                                             staticObj.position[1],
+                                             staticObj.position[2]};
+            linalg::aliases::float3 scale{
+              staticObj.scale[0], staticObj.scale[1], staticObj.scale[2]};
+
+            // convert Euler angles (degrees) to radians and create quaternion
+            float pitchRadians = staticObj.rotation[0] * (M_PI / 180.0F);
+            float yawRadians = staticObj.rotation[1] * (M_PI / 180.0F);
+            float rollRadians = staticObj.rotation[2] * (M_PI / 180.0F);
+
+            Quaternion orientation = Quaternion::fromEulerAngles(
+              rollRadians, pitchRadians, yawRadians);
+
+            model->updateModelMatrix(position, orientation, scale);
+            model->draw(boundShader);
+        }
+    }
+}
+
+void Renderer::setupPointLights(Shader::BindObject& shader)
+{
+    // Set up point lights for shaders that support them
+    for (size_t i = 0; i < pointLights.size() && i < 4; ++i) {
+        shader.setUniformInt("lightNum", static_cast<int>(pointLights.size()));
+        pointLights[i].setUniforms(shader, static_cast<int>(i));
+    }
+}
+
+const Scene::SceneData& Renderer::getSceneData() const
+{
+    return currentSceneData;
+}
+
+void Renderer::renderPhysicsObjects(const std::vector<RigidBodyData>& bodies)
+{
+    // Group physics objects by shader type for efficiency
+    std::vector<const RigidBodyData*> flatObjects;
+    std::vector<const RigidBodyData*> lightObjects;
+    std::vector<const RigidBodyData*> sunObjects;
+
+    size_t physicsObjIndex = 0;
+    for (const auto& rigidBody : bodies) {
+        if (!rigidBody.enabled) {
+            continue;
+        }
+
+        Scene::ShaderType shaderType = Scene::ShaderType::SUN; // Default
+        if (physicsObjIndex < currentSceneData.physicsObjects.size()) {
+            shaderType =
+              currentSceneData.physicsObjects[physicsObjIndex].shader;
+        }
+
+        switch (shaderType) {
+            case Scene::ShaderType::FLAT:
+                flatObjects.push_back(&rigidBody);
+                break;
+            case Scene::ShaderType::LIGHT:
+                lightObjects.push_back(&rigidBody);
+                break;
+            case Scene::ShaderType::SUN:
+                sunObjects.push_back(&rigidBody);
+                break;
+        }
+        physicsObjIndex++;
+    }
+
+    // Render flat shader objects
+    if (!flatObjects.empty()) {
+        Shader::BindObject boundShader = flatShader.bind();
+        mainCamera.setUniforms(boundShader);
+        for (const auto* rigidBody : flatObjects) {
+            Model& m = *(rigidBody->getModelPtr());
+            m.updateModelMatrix(rigidBody->getWorldPosition(),
+                                rigidBody->getOrientation(),
+                                rigidBody->getScale());
+            m.draw(boundShader);
+        }
+    }
+
+    // Render light shader objects
+    if (!lightObjects.empty()) {
+        Shader::BindObject boundShader = shader.bind();
+        mainCamera.setUniforms(boundShader);
+        setupPointLights(boundShader);
+        for (const auto* rigidBody : lightObjects) {
+            Model& m = *(rigidBody->getModelPtr());
+            m.updateModelMatrix(rigidBody->getWorldPosition(),
+                                rigidBody->getOrientation(),
+                                rigidBody->getScale());
+            m.draw(boundShader);
+        }
+    }
+
+    // Render sun shader objects
+    if (!sunObjects.empty()) {
+        Shader::BindObject boundShader = sunShader.bind();
+        mainCamera.setUniforms(boundShader);
+        for (const auto* rigidBody : sunObjects) {
+            Model& m = *(rigidBody->getModelPtr());
+            m.updateModelMatrix(rigidBody->getWorldPosition(),
+                                rigidBody->getOrientation(),
+                                rigidBody->getScale());
+            m.draw(boundShader);
+        }
+    }
 }
