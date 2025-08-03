@@ -9,6 +9,10 @@
 struct SubTriangle;
 class RigidBodyData;
 
+/** @defgroup sim Water Simulation
+ *  Classes that are related to the main height-field water simulation.
+ */
+
 /**
  * @class WaterSimulation
  * @brief Manages a 2D heightfield fluid simulation with two-way rigid body
