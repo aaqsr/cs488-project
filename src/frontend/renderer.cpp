@@ -9,6 +9,7 @@
 #include "util/channel.hpp"
 #include "util/error.hpp"
 #include <memory>
+#include <numbers>
 
 std::vector<PhysicsEngineReceiverData> Renderer::createDefaultScene()
 {
@@ -435,9 +436,12 @@ void Renderer::renderStaticObjects()
               staticObj.scale[0], staticObj.scale[1], staticObj.scale[2]};
 
             // convert Euler angles (degrees) to radians and create quaternion
-            float pitchRadians = staticObj.rotation[0] * (M_PI / 180.0F);
-            float yawRadians = staticObj.rotation[1] * (M_PI / 180.0F);
-            float rollRadians = staticObj.rotation[2] * (M_PI / 180.0F);
+            float pitchRadians =
+              staticObj.rotation[0] * (std::numbers::pi / 180.0F);
+            float yawRadians =
+              staticObj.rotation[1] * (std::numbers::pi / 180.0F);
+            float rollRadians =
+              staticObj.rotation[2] * (std::numbers::pi / 180.0F);
 
             Quaternion orientation = Quaternion::fromEulerAngles(
               rollRadians, pitchRadians, yawRadians);
