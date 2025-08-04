@@ -13,6 +13,8 @@ To allow the user to easily simulate a large variety of scenes, the project feat
 For more details, kindly see the technical report as well as the extensive code documentation available via `doxygen`.
 Documentation should be generated in the `docs/compiled/` folder when the project is compiled, provided `doxygen` is available.
 
+See `videos/` for videos that demo the various objectives listed at the bottom of this file.
+
 # How to Build This?
 
 CMake gave us a lot of problems throughout development.
