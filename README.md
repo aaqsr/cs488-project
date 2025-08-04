@@ -190,18 +190,54 @@ We recommend the following:
 
 Nearly all the implementation details are available in the technical report or the code documentation.
 
-## Sources
+## Algorithms, data structures, and complexities
+
+See the documentation and technical report.
+
+## Platform and system dependence or independence, global constants and configurability
+
+The project has been tested on Mac OS 14.5 running on an M1 macbook, compiled with clang, and performs best there.
+It has also been tested on windows 11, compiled with MSVC.
+It has not been tested on Linux, although it should work there as well.
+
+Configurability has been specified in the sections above.
+
+## Input/output syntax, pre- and post-processing
+
+Specified in the sections above.
+
+## Acknowledgment of External Sources
 
 We would like to acknowledge that we relied upon the sources that have been mentioned in the code documentation, as well as the technical report.
 In addition to those sources, we would like to give credit
 
 ### Assets
 
-- The model of the goose was taken from a source online: Goose by Poly by Google [CC-BY](https://creativecommons.org/licenses/by/3.0/) via [Poly Pizza](https://poly.pizza/m/9wn3If7Qgb4). We modified the `.mtl` file to adapt it to our renderer.
+- The models of the goose and car were taken from a source online: Goose by Poly by Google [CC-BY](https://creativecommons.org/licenses/by/3.0/) via [Poly Pizza](https://poly.pizza/m/9wn3If7Qgb4). We modified the `.mtl` files to adapt it to our renderer.
 - The brick texture used by the pool and the teapot was taken from the the `.mtl` file bundled with the Utah Teapot available from the Computer Graphics department at the University of Utah.
 - The skybox we use is a colour modified version of a sky-only version of   Citrus Orchard by Dimitrios Savva and Jarod Guest, licensed under [CC0](https://polyhaven.com/license) (essentially creative commons). Avaialble at https://polyhaven.com/a/citrus_orchard_puresky.
-- 
+- The container texture was provided by `learnopengl.com`
+- Cornellbox was taken from the assignment
 
+### Code
+
+- We use the following open source libraries
+    - `glew`
+    - `glfw`
+    - `linalg` by Sterling Orsten
+    - `stb_image`
+
+Certain sections of code might be, at times, inspired by techniques or ideas from other sources.
+We have tried to the best of our ability to cite such sources in the documentation and apologise if any were missed by accident.
+
+## Caveats, bugs, cautions, assumptions
+
+Detailed in the technical report and the documentation.
+
+This is not meant to be a realistic physics simulator. It is meant to be fun to look at.
+Where necessary, we sacrifice accuracy for performance and/or aesthetics.
+
+No geese were harmed in the making of this project. We cannot say anything about the bottles however...
 
 # Objectives
 
@@ -218,3 +254,32 @@ All of the following were achieved:
 7. Simulate change in water levels and waves when objects collide as described in the technical outline.
 8. Implement fluid-body interaction (buoyancy and drag) as described in the technical outline.
 
+## Extras
+
+The following tasks, which took effort significant enough for them to have been an objective themselves, were also completed:
+
+1. Improve performance by running the simulation, logger, and renderer on separate threads.
+2. Decouple the rate of the simulation and the rate of rendering by use of a non-blocking, lock-free, triple-buffer channel, often seen in similar real-time systems, for memory-efficient communication between threads. This allows the simulation and render threads to never block each other.
+3. Compute the inertia tensor for arbitrary convex meshes. Add realistic rotational dynamics, torque and gyroscopic effect for physics objects.
+4. Implement a JSON scene loader to allow the user to configure a variety of scenes, and make the renderer somewhat general-purpose.
+5. Add a sky map, and add cube map reflections, along with specular highlights, to the water surface.
+6. Add interactivity: looking, movement, throwing bottles, pausing/unpausing the simulation. Also adding a heads-up display for crosshair and play/pause icon.
+7. Documentation: document important sections of the code base with `doxygen`.
+8. Simple particles: Add simple randomised particles when objects splash in water whose strength is based on the size of the splash. Note that they have minimal collision.
+9. Add support for up to 4 point lights. Very basic support for blinn-phong point lights.
+10. Object and material loader that loads most `.obj` files and includes support for most standard `.mtl` files, along with support for diffuse and specular maps. (Note that the diffuse and specular maps are multiplied by the coefficient values in the `.mtl` files which may not be expected by some authors).
+11. Add a simple spatial grid to improve the performance of the collision broad phase check.
+12. Use quaternions to represent the stored state of all rotations, prevent gimbal lock and other issues.
+
+## Future plans
+
+There is a lot more on our wishlist of features. We would love to achieve the other extra objectives as stated in the final proposal, as well as add support for saving/reloading the simulator's state.
+And maybe even add support for compilation to web.
+
+---
+
+Water Physics with Rigid Bodies. (Formerly Bottles & Water.)
+
+Palaksha Drolia, Awab Qureshi.
+
+pdrolia, a9quresh.
