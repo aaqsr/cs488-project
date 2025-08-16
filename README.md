@@ -1,5 +1,7 @@
 # Brief Description
 
+![Screenshot from the project](https://github.com/aaqsr/cs488-project/blob/master/screenshot.png)
+
 This project is an interactive physics simulator which primarily focuses on simulating the interaction between concave meshes (such as a bottle) and a body of water in real-time.
 Where necessary, it sacrifices accuracy for performance and/or aesthetics.
 
@@ -13,7 +15,16 @@ To allow the user to easily simulate a large variety of scenes, the project feat
 For more details, kindly see the technical report as well as the extensive code documentation available via `doxygen`.
 Documentation should be generated in the `docs/compiled/` folder when the project is compiled, provided `doxygen` is available.
 
-See `videos/` for videos that demo the various objectives listed at the bottom of this file.
+~~See `videos/` for videos that demo the various objectives listed at the bottom of this file.~~
+Videos are available on YouTube. 
+
+The following demo shows off buoyancy of a light and dense bottle,
+
+[![Buoyancy of a Light and Dense Bottle](https://img.youtube.com/vi/2HPwxRoNqrs/0.jpg)](https://www.youtube.com/watch?v=2HPwxRoNqrs)
+
+and the following is a general showcase of the project,
+
+[![General Showcase](https://img.youtube.com/vi/6L5K9m5ZTMM/0.jpg)](https://www.youtube.com/watch?v=6L5K9m5ZTMM)
 
 # How to Build This?
 
